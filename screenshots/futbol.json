@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/deporte/futbol",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Melilla Directo",
+      "hasCanvas": false,
+      "bodyTextLen": 4312,
+      "bodyTextHash": "f140daddf84965c94ad3d9ac49d77f54a6fd9a508f811444856e0d3c041f323d",
+      "bodyTextPrefix": "Melilla Directo DEPORTE EN VIVO Fútbol Baloncesto Voleibol Balon",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/futbol.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Melilla Directo",
+      "hasCanvas": false,
+      "bodyTextLen": 3841,
+      "bodyTextHash": "ef94febb272a6aa5684ae5439ddf32871388cb3ee051a90d5581c483c2db091f",
+      "bodyTextPrefix": "Melilla Directo DEPORTE EN VIVO Fútbol Basket Voley Handball Fut",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/futbol-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/futbol.json"
+}

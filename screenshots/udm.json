@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/equipo/ud-melilla",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Melilla Directo",
+      "hasCanvas": false,
+      "bodyTextLen": 852,
+      "bodyTextHash": "bfad0a10febad128220f389847420274c925c8e1c4af65fdccbccfd2a3d26977",
+      "bodyTextPrefix": "Melilla Directo DEPORTE EN VIVO Fútbol Baloncesto Voleibol Balon",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/udm.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Melilla Directo",
+      "hasCanvas": false,
+      "bodyTextLen": 827,
+      "bodyTextHash": "d61070a7dbb3df71531375458bf881e0f761aff208031127c25591fafc401619",
+      "bodyTextPrefix": "Melilla Directo DEPORTE EN VIVO Fútbol Basket Voley Handball Fut",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/udm-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/udm.json"
+}

@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Melilla Directo",
+      "hasCanvas": false,
+      "bodyTextLen": 2852,
+      "bodyTextHash": "022110d69c7078c36c84376c6a9b3062993e5a1dc007a12ecde8489463b803e4",
+      "bodyTextPrefix": "Melilla Directo DEPORTE EN VIVO Fútbol Baloncesto Voleibol Balon",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Melilla Directo",
+      "hasCanvas": false,
+      "bodyTextLen": 2827,
+      "bodyTextHash": "aea367157f90dac036d529d35cb8937e892fcccca8bb2e3287b80a6938adfef5",
+      "bodyTextPrefix": "Melilla Directo DEPORTE EN VIVO Fútbol Basket Voley Handball Fut",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}

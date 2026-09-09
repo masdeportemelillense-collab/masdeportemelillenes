@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c3d6e"/>
+      <stop offset="1" stop-color="#1c3d6e" stop-opacity="0.82"/>
+    </linearGradient>
+  </defs>
+  <path d="M64 6 L114 22 V62 C114 94 90 116 64 122 C38 116 14 94 14 62 V22 Z" fill="url(#g)" stroke="#e8e6dc" stroke-width="4"/>
+  <path d="M64 18 L100 30 V60 C100 84 82 102 64 107 C46 102 28 84 28 60 V30 Z" fill="none" stroke="#e8e6dc" stroke-opacity="0.35" stroke-width="2"/>
+  <circle cx="64" cy="36" r="4" fill="#e8e6dc"/>
+  <text x="64" y="78" text-anchor="middle" fill="#e8e6dc" font-family="Georgia, 'Times New Roman', serif" font-size="28" font-weight="700">SPE</text>
+</svg>
