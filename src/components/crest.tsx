@@ -1,4 +1,5 @@
 import { badgeFor } from "@/data/badges";
+import { futbolmeBadge } from "@/data/futbolme-badges";
 import type { Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +37,7 @@ export function TeamBadge({
   size?: number;
   className?: string;
 }) {
-  const src = badgeFor(id, name);
+  const src = futbolmeBadge(id, name) || badgeFor(id, name);
   if (src) {
     return (
       <img
@@ -115,10 +116,11 @@ export function OpponentMark({
   size?: number;
   badgeUrl?: string;
 }) {
-  if (badgeUrl) {
+  const src = badgeUrl || futbolmeBadge(undefined, name) || futbolmeBadge(short, name);
+  if (src) {
     return (
       <img
-        src={badgeUrl}
+        src={src}
         alt=""
         width={size}
         height={size}
