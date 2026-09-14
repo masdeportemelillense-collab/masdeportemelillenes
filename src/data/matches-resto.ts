@@ -1,61 +1,27 @@
+import { tbnMatches } from "@/data/matches-tbn";
+import { tbnbMatches } from "@/data/matches-tbnb";
+import { mlsMatches } from "@/data/matches-mls";
+import { neraMatches } from "@/data/matches-nera";
+import { dhfsMatches } from "@/data/matches-dhfs";
 import { m } from "@/data/match-builder";
 import type { Spec } from "@/data/match-builder";
 import type { Match } from "@/lib/types";
 
-const rows: Spec[] = [
-{id:"tbn-j1", league:"fs-primera-f", sport:"futsal", at:"2026-09-05T18:00:00+02:00", venue:"Javier Imbroda Ortiz", jornada:1, home:"torreblanca", away:"Atlético Torcal|TOR", events:[[4,"H","gol","Amandinha"],[9,"A","gol","Lucía"],[14,"H","gol","Ana Luiza"],[19,"H","gol","Amandinha"],[27,"H","gol","Lydia"],[33,"A","gol","Carmen"],[38,"H","gol","Silvina"],[44,"A","gol","Lucía"]]},
-{id:"tbn-j2", league:"fs-primera-f", sport:"futsal", at:"2026-09-12T18:00:00+02:00", venue:"Javier Imbroda Ortiz", jornada:2, home:"torreblanca", away:"Burela FS|BUR"},
-{id:"tbn-j3", league:"fs-primera-f", sport:"futsal", at:"2026-09-19T18:00:00+02:00", venue:"Pabellón Municipal Ourense", jornada:3, home:"Ourense Envialia|OUR", away:"torreblanca"},
-{id:"tbn-j4", league:"fs-primera-f", sport:"futsal", at:"2026-09-26T18:00:00+02:00", venue:"Javier Imbroda Ortiz", jornada:4, home:"torreblanca", away:"Futsi Atlético|FUT"},
-{id:"tbn-j5", league:"fs-primera-f", sport:"futsal", at:"2026-10-03T18:00:00+02:00", venue:"Pabellón Municipal Esplugues", jornada:5, home:"AE Penya Esplugues|ESP", away:"torreblanca"},
-{id:"tbnb-j1", league:"fs-segunda-f", sport:"futsal", at:"2026-09-19T17:00:00+02:00", venue:"Guillermo García Pezzi", jornada:1, home:"torreblanca-b", away:"Majadahonda F.S.F./Afar 4|MAJ"},
-{id:"tbnb-j2", league:"fs-segunda-f", sport:"futsal", at:"2026-09-26T17:00:00+02:00", venue:"Pabellón Ramón y Cajal", jornada:2, home:"Ramón y Cajal Féminas|RYC", away:"torreblanca-b"},
-{id:"tbnb-j3", league:"fs-segunda-f", sport:"futsal", at:"2026-10-03T17:00:00+02:00", venue:"Guillermo García Pezzi", jornada:3, home:"torreblanca-b", away:"Sporting Club Garrovilla|GAR"},
-{id:"tbnb-j4", league:"fs-segunda-f", sport:"futsal", at:"2026-10-10T17:00:00+02:00", venue:"Pabellón Municipal Almagro", jornada:4, home:"Almagro FSF|ALM", away:"torreblanca-b"},
-{id:"tbnb-j5", league:"fs-segunda-f", sport:"futsal", at:"2026-10-17T17:00:00+02:00", venue:"Guillermo García Pezzi", jornada:5, home:"torreblanca-b", away:"UDAF Afanion|AFA"},
-{id:"tbnb-j6", league:"fs-segunda-f", sport:"futsal", at:"2026-10-24T17:00:00+02:00", venue:"Pabellón IES Luis de Camoens", jornada:6, home:"IES Luis de Camoens|CAM", away:"torreblanca-b"},
-{id:"tbnb-j7", league:"fs-segunda-f", sport:"futsal", at:"2026-11-07T17:00:00+01:00", venue:"Pabellón Europa", jornada:7, home:"CDE Leganés FS|LEG", away:"torreblanca-b"},
-{id:"tbnb-j10", league:"fs-segunda-f", sport:"futsal", at:"2026-11-21T17:00:00+01:00", venue:"Guillermo García Pezzi", jornada:10, home:"torreblanca-b", away:"CD Salesianos Puertollano|SAL"},
-{id:"tbnb-j11", league:"fs-segunda-f", sport:"futsal", at:"2026-11-28T17:00:00+01:00", venue:"Pabellón Municipal Dos Hermanas", jornada:11, home:"Dos Hermanas FS|DSH", away:"torreblanca-b"},
-{id:"tbnb-j12", league:"fs-segunda-f", sport:"futsal", at:"2026-12-05T17:00:00+01:00", venue:"Guillermo García Pezzi", jornada:12, home:"torreblanca-b", away:"Globalcaja Albacete FS|ALB"},
-{id:"tbnb-j13", league:"fs-segunda-f", sport:"futsal", at:"2026-12-12T17:00:00+01:00", venue:"Pabellón Municipal Alcorcón", jornada:13, home:"ARRIVA AD Alcorcón FSF|ALC", away:"torreblanca-b"},
-{id:"tbnb-j14", league:"fs-segunda-f", sport:"futsal", at:"2026-12-19T17:00:00+01:00", venue:"Guillermo García Pezzi", jornada:14, home:"torreblanca-b", away:"Atlético Navalcarnero|NAV"},
-{id:"tbnb-j15", league:"fs-segunda-f", sport:"futsal", at:"2027-01-09T17:00:00+01:00", venue:"Pabellón Municipal Martos", jornada:15, home:"Martos FS Jaén Paraíso Interior|MAR", away:"torreblanca-b"},
-{id:"tbnb-j16", league:"fs-segunda-f", sport:"futsal", at:"2027-01-16T17:00:00+01:00", venue:"Pabellón Municipal Majadahonda", jornada:16, home:"Majadahonda F.S.F./Afar 4|MAJ", away:"torreblanca-b"},
-{id:"tbnb-j17", league:"fs-segunda-f", sport:"futsal", at:"2027-01-23T17:00:00+01:00", venue:"Guillermo García Pezzi", jornada:17, home:"torreblanca-b", away:"Ramón y Cajal Féminas|RYC"},
-{id:"tbnb-j18", league:"fs-segunda-f", sport:"futsal", at:"2027-02-06T17:00:00+01:00", venue:"Pabellón Municipal Garrovilla", jornada:18, home:"Sporting Club Garrovilla|GAR", away:"torreblanca-b"},
-{id:"tbnb-j19", league:"fs-segunda-f", sport:"futsal", at:"2027-02-13T17:00:00+01:00", venue:"Guillermo García Pezzi", jornada:19, home:"torreblanca-b", away:"Almagro FSF|ALM"},
-{id:"tbnb-j20", league:"fs-segunda-f", sport:"futsal", at:"2027-02-20T17:00:00+01:00", venue:"Pabellón UDAF Afanion", jornada:20, home:"UDAF Afanion|AFA", away:"torreblanca-b"},
-{id:"tbnb-j21", league:"fs-segunda-f", sport:"futsal", at:"2027-03-06T17:00:00+01:00", venue:"Guillermo García Pezzi", jornada:21, home:"torreblanca-b", away:"IES Luis de Camoens|CAM"},
-{id:"tbnb-j22", league:"fs-segunda-f", sport:"futsal", at:"2027-03-13T17:00:00+01:00", venue:"Pabellón Municipal San Fernando", jornada:22, home:"CFS Femenino San Fernando|SFE", away:"torreblanca-b"},
-{id:"tbnb-j23", league:"fs-segunda-f", sport:"futsal", at:"2027-03-20T17:00:00+01:00", venue:"Guillermo García Pezzi", jornada:23, home:"torreblanca-b", away:"CDE Leganés FS|LEG"},
-{id:"tbnb-j24", league:"fs-segunda-f", sport:"futsal", at:"2027-04-03T17:00:00+02:00", venue:"Guillermo García Pezzi", jornada:24, home:"torreblanca-b", away:"Fundación UAPO Granada FS|GRA"},
-{id:"tbnb-j25", league:"fs-segunda-f", sport:"futsal", at:"2027-04-10T17:00:00+02:00", venue:"Pabellón Salesianos Puertollano", jornada:25, home:"CD Salesianos Puertollano|SAL", away:"torreblanca-b"},
-{id:"tbnb-j26", league:"fs-segunda-f", sport:"futsal", at:"2027-04-24T17:00:00+02:00", venue:"Guillermo García Pezzi", jornada:26, home:"torreblanca-b", away:"Dos Hermanas FS|DSH"},
-{id:"tbnb-j27", league:"fs-segunda-f", sport:"futsal", at:"2027-05-01T17:00:00+02:00", venue:"Pabellón Municipal Albacete", jornada:27, home:"Globalcaja Albacete FS|ALB", away:"torreblanca-b"},
-{id:"tbnb-j28", league:"fs-segunda-f", sport:"futsal", at:"2027-05-08T17:00:00+02:00", venue:"Guillermo García Pezzi", jornada:28, home:"torreblanca-b", away:"ARRIVA AD Alcorcón FSF|ALC"},
-{id:"tbnb-j29", league:"fs-segunda-f", sport:"futsal", at:"2027-05-15T17:00:00+02:00", venue:"Pabellón Municipal Navalcarnero", jornada:29, home:"Atlético Navalcarnero|NAV", away:"torreblanca-b"},
-{id:"tbnb-j30", league:"fs-segunda-f", sport:"futsal", at:"2027-05-22T17:00:00+02:00", venue:"Guillermo García Pezzi", jornada:30, home:"torreblanca-b", away:"Martos FS Jaén Paraíso Interior|MAR"},
-{id:"mls-pre", league:"fs-segunda-m", sport:"futsal", at:"2026-09-04T20:00:00+02:00", venue:"Javier Imbroda Ortiz", jornada:0, home:"melistar", away:"nueva-era", events:[[6,"H","gol","Cezar"],[15,"A","gol","Nadir"],[24,"H","gol","Hamadi"],[37,"H","gol","Cezar"]]},
-{id:"mls-j1", league:"fs-segunda-m", sport:"futsal", at:"2026-09-19T19:00:00+02:00", venue:"Javier Imbroda Ortiz", jornada:1, home:"melistar", away:"CFS Pinatar|PIN"},
-{id:"mls-j2", league:"fs-segunda-m", sport:"futsal", at:"2026-09-26T19:00:00+02:00", venue:"Pabellón Mataró", jornada:2, home:"Aliança Mataró|MAT", away:"melistar"},
-{id:"mls-j3", league:"fs-segunda-m", sport:"futsal", at:"2026-10-03T19:00:00+02:00", venue:"Pabellón Príncipe Felipe", jornada:3, home:"Colo Colo Zaragoza|CCZ", away:"melistar"},
-{id:"mls-j4", league:"fs-segunda-m", sport:"futsal", at:"2026-10-10T19:00:00+02:00", venue:"Javier Imbroda Ortiz", jornada:4, home:"melistar", away:"CD Leganés FS|LEG"},
-{id:"nera-j1", league:"fs-segunda-b", sport:"futsal", at:"2026-09-13T19:30:00+02:00", venue:"Guillermo García Pezzi", jornada:1, home:"nueva-era", away:"Blanca FS|BLA"},
-{id:"nera-j2", league:"fs-segunda-b", sport:"futsal", at:"2026-09-20T19:00:00+02:00", venue:"Palacio de los Deportes Murcia", jornada:2, home:"ElPozo Murcia B|EPO", away:"nueva-era"},
-{id:"nera-j3", league:"fs-segunda-b", sport:"futsal", at:"2026-09-27T19:30:00+02:00", venue:"Guillermo García Pezzi", jornada:3, home:"nueva-era", away:"CFS Jumilla|JUM"},
-{id:"nera-j4", league:"fs-segunda-b", sport:"futsal", at:"2026-10-04T19:00:00+02:00", venue:"Pabellón Municipal Bujalance", jornada:4, home:"CD Bujalance|BUJ", away:"nueva-era"},
-{id:"dhfs-derby", league:"fs-dh-juv", sport:"futsal", at:"2026-09-07T19:00:00+02:00", venue:"Pabellón Lázaro Fernández", jornada:1, home:"pena-rm-fs", away:"rusadir-fs-dh", events:[[8,"H","gol","Adrián"],[19,"H","gol","Youssef"],[31,"A","gol","Ayman"],[38,"H","gol","Adrián"],[46,"A","gol","Bilal"]]},
-{id:"rusfs-j2", league:"fs-dh-juv", sport:"futsal", at:"2026-09-14T18:00:00+02:00", venue:"Pabellón Lázaro Fernández", jornada:2, home:"rusadir-fs-dh", away:"ElPozo Murcia Juvenil|EPO"},
-{id:"prm-j2", league:"fs-dh-juv", sport:"futsal", at:"2026-09-14T20:00:00+02:00", venue:"Pabellón Lázaro Fernández", jornada:2, home:"pena-rm-fs", away:"Jaén FS Juvenil|JAE"},
-{id:"rusfs-j3", league:"fs-dh-juv", sport:"futsal", at:"2026-09-21T12:00:00+02:00", venue:"Palacio de los Deportes Murcia", jornada:3, home:"Cartagena FS Juvenil|CAR", away:"rusadir-fs-dh"},
-{id:"prm-j3", league:"fs-dh-juv", sport:"futsal", at:"2026-09-21T18:00:00+02:00", venue:"Ciudad del Fútbol", jornada:3, home:"Inter Movistar Juvenil|INT", away:"pena-rm-fs"},
-{id:"rusfs-j4", league:"fs-dh-juv", sport:"futsal", at:"2026-09-28T18:00:00+02:00", venue:"Pabellón Lázaro Fernández", jornada:4, home:"rusadir-fs-dh", away:"pena-rm-fs"},
-{id:"bsr-pre", league:"bsr-segunda", sport:"bsr", at:"2026-09-07T11:00:00+02:00", venue:"Javier Imbroda Ortiz", jornada:0, home:"melilla-bsr", away:"Covirán Churriana|CHU", duration:40, events:[[10,"H","periodo","Q1","*14-16"],[20,"H","periodo","Q2","*29-33"],[30,"H","periodo","Q3","*44-49"],[40,"A","punto","Final","*58-61"]]},
-{id:"bsr-j1", league:"bsr-segunda", sport:"bsr", at:"2026-11-29T11:00:00+01:00", venue:"Javier Imbroda Ortiz", jornada:1, home:"melilla-bsr", away:"Opticlass Raíces Móstoles|MOS"},
-{id:"bsr-j2", league:"bsr-segunda", sport:"bsr", at:"2026-12-14T12:00:00+01:00", venue:"Pabellón Bahía de Cádiz", jornada:2, home:"CDA Bahía de Cádiz|CAD", away:"melilla-bsr"},
-{id:"bsr-j3", league:"bsr-segunda", sport:"bsr", at:"2027-01-18T12:00:00+01:00", venue:"Pabellón Churriana", jornada:3, home:"Covirán Churriana|CHU", away:"melilla-bsr"},
-{id:"bsr-j4", league:"bsr-segunda", sport:"bsr", at:"2027-01-25T12:00:00+01:00", venue:"Javier Imbroda Ortiz", jornada:4, home:"melilla-bsr", away:"BSR Fortuna Murcia|FOR"},
+const IMB = "Javier Imbroda Ortiz";
+
+const bsr: Spec[] = [
+  {id:"bsr-pre", league:"bsr-segunda", sport:"bsr", at:"2026-09-07T11:00:00+02:00", venue:IMB, jornada:0, home:"melilla-bsr", away:"Covirán Churriana|CHU", duration:40, events:[[10,"H","periodo","Q1","*14-16"],[20,"H","periodo","Q2","*29-33"],[30,"H","periodo","Q3","*44-49"],[40,"A","punto","Final","*58-61"]]},
+  {id:"bsr-j1", league:"bsr-segunda", sport:"bsr", at:"2026-11-29T11:00:00+01:00", venue:IMB, jornada:1, home:"melilla-bsr", away:"Opticlass Raíces Móstoles|MOS"},
+  {id:"bsr-j2", league:"bsr-segunda", sport:"bsr", at:"2026-12-14T12:00:00+01:00", venue:"Pabellón Bahía de Cádiz", jornada:2, home:"CDA Bahía de Cádiz|CAD", away:"melilla-bsr"},
+  {id:"bsr-j3", league:"bsr-segunda", sport:"bsr", at:"2027-01-18T12:00:00+01:00", venue:"Pabellón Churriana", jornada:3, home:"Covirán Churriana|CHU", away:"melilla-bsr"},
+  {id:"bsr-j4", league:"bsr-segunda", sport:"bsr", at:"2027-01-25T12:00:00+01:00", venue:IMB, jornada:4, home:"melilla-bsr", away:"BSR Fortuna Murcia|FOR"},
 ];
 
-export const restoMatches: Match[] = rows.map(m);
+export const restoMatches: Match[] = [
+  ...tbnMatches,
+  ...tbnbMatches,
+  ...mlsMatches,
+  ...neraMatches,
+  ...dhfsMatches,
+  ...bsr.map(m),
+];
