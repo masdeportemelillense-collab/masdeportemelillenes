@@ -1,5 +1,14 @@
 [build]
-  command = "npm run build"
+  command = "node scripts/with-app-env.mjs vite build && mkdir -p dist/client && cp -R public/. dist/client/ && touch dist/client/.netlify-ok"
+  publish = "dist/client"
 
 [build.environment]
   NODE_VERSION = "22"
+
+[functions]
+  directory = ".netlify/functions-internal"
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/server"
+  status = 200
