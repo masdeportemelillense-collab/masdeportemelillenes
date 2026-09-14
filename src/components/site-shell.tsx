@@ -105,7 +105,7 @@ function Header() {
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:px-6">
         <Link to="/" className="flex shrink-0 items-center gap-2">
           <img
-            src="/logo-mdm.jpg"
+            src="/logo-mdm.svg"
             alt="Más deporte Melillense"
             className="h-14 w-auto max-w-[200px] object-contain sm:h-16"
           />
@@ -116,7 +116,7 @@ function Header() {
               key={s.id}
               to="/deporte/$sport"
               params={{ sport: s.id }}
-              className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-fg hover:text-accent"
+              className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-accent"
             >
               <SportMark sport={s.id} />
               {s.label}
