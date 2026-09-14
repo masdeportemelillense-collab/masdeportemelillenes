@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Menu, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SportMark } from "@/components/sport-mark";
 import { Crest } from "@/components/crest";
@@ -84,9 +84,18 @@ function FeedBar() {
   );
 }
 
+function navClass(active: boolean) {
+  return cn(
+    "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm transition-colors duration-150",
+    active ? "bg-accent/15 font-medium text-accent" : "text-muted hover:bg-surface-2 hover:text-accent",
+  );
+}
+
 function Header() {
   const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (term.length < 2) return [];
@@ -103,27 +112,30 @@ function Header() {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-bg/92 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:px-6">
-        <Link to="/" className="flex shrink-0 items-center gap-2">
+        <Link to="/" className="flex shrink-0 items-center gap-2" onClick={() => setOpen(false)}>
           <img
             src="/logo-mdm.svg"
             alt="Más deporte Melillense"
-            className="h-14 w-auto max-w-[200px] object-contain sm:h-16"
+            className="h-14 w-auto max-w-[180px] object-contain sm:h-16"
           />
         </Link>
-        <nav className="ml-2 hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto lg:flex">
+        <nav className="ml-2 hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto lg:flex" aria-label="Principal">
+          <Link to="/" className={navClass(pathname === "/")}>
+            Inicio
+          </Link>
           {SPORTS.map((s) => (
             <Link
               key={s.id}
               to="/deporte/$sport"
               params={{ sport: s.id }}
-              className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-accent"
+              className={navClass(pathname === `/deporte/${s.id}`)}
             >
               <SportMark sport={s.id} />
               {s.label}
             </Link>
           ))}
         </nav>
-        <div className="relative ml-auto w-[9.5rem] sm:w-full sm:max-w-xs">
+        <div className="relative ml-auto w-[8.5rem] sm:w-full sm:max-w-xs">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
           <input
             value={q}
@@ -141,6 +153,7 @@ function Header() {
                     className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-surface"
                     onClick={() => {
                       setQ("");
+                      setOpen(false);
                       void navigate({ to: "/equipo/$slug", params: { slug: t.id } });
                     }}
                   >
@@ -152,22 +165,42 @@ function Header() {
             </ul>
           )}
         </div>
+        <button
+          type="button"
+          className="grid size-11 shrink-0 place-items-center rounded-md bg-surface text-fg shadow-[var(--shadow-border)] lg:hidden"
+          aria-expanded={open}
+          aria-label={open ? "Cerrar menú" : "Abrir menú"}
+          onClick={() => setOpen((v) => !v)}
+        >
+          {open ? <X className="size-5" /> : <Menu className="size-5" />}
+        </button>
       </div>
-      <nav className="flex gap-1 overflow-x-auto px-4 pb-3 lg:hidden">
-        {SPORTS.map((s) => (
+      {open && (
+        <nav className="border-t border-border bg-surface-2 px-4 py-3 lg:hidden" aria-label="Móvil">
           <Link
-            key={s.id}
-            to="/deporte/$sport"
-            params={{ sport: s.id }}
-            className={cn(
-              "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-surface px-3 text-xs text-muted shadow-[var(--shadow-border)]",
-            )}
+            to="/"
+            onClick={() => setOpen(false)}
+            className={cn("mb-1 flex h-11 items-center rounded-md px-3 text-sm", pathname === "/" ? "bg-accent/15 text-accent" : "text-fg")}
           >
-            <SportMark sport={s.id} />
-            {s.short}
+            Inicio
           </Link>
-        ))}
-      </nav>
+          {SPORTS.map((s) => (
+            <Link
+              key={s.id}
+              to="/deporte/$sport"
+              params={{ sport: s.id }}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex h-11 items-center gap-2 rounded-md px-3 text-sm",
+                pathname === `/deporte/${s.id}` ? "bg-accent/15 text-accent" : "text-fg",
+              )}
+            >
+              <SportMark sport={s.id} />
+              {s.label}
+            </Link>
+          ))}
+        </nav>
+      )}
     </header>
   );
 }
