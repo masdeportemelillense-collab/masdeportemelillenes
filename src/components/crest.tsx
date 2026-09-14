@@ -1,5 +1,6 @@
 import { badgeFor } from "@/data/badges";
 import { futbolmeBadge } from "@/data/futbolme-badges";
+import { solofutsalBadge } from "@/data/solofutsal-badges";
 import type { Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +38,7 @@ export function TeamBadge({
   size?: number;
   className?: string;
 }) {
-  const src = futbolmeBadge(id, name) || badgeFor(id, name);
+  const src = solofutsalBadge(id, name) || futbolmeBadge(id, name) || badgeFor(id, name);
   if (src) {
     return (
       <img
@@ -116,7 +117,8 @@ export function OpponentMark({
   size?: number;
   badgeUrl?: string;
 }) {
-  const src = badgeUrl || futbolmeBadge(undefined, name) || futbolmeBadge(short, name);
+  const src =
+    badgeUrl || solofutsalBadge(undefined, name) || futbolmeBadge(undefined, name) || futbolmeBadge(short, name);
   if (src) {
     return (
       <img
