@@ -2,19 +2,19 @@
 @import "tw-animate-css";
 
 @theme {
-  --color-bg: #0c0e12;
-  --color-surface: #14171c;
-  --color-surface-2: #1b1f26;
-  --color-fg: #eceae4;
-  --color-muted: #8f908a;
-  --color-subtle: #6a6b66;
-  --color-accent: #8aa4b3;
-  --color-accent-fg: #0c0e12;
-  --color-live: #c45c4a;
-  --color-win: #7d9a7e;
-  --color-loss: #a07070;
-  --color-border: color-mix(in oklab, var(--color-fg) 12%, transparent);
-  --color-border-strong: color-mix(in oklab, var(--color-fg) 22%, transparent);
+  --color-bg: #071a33;
+  --color-surface: #0d2b4a;
+  --color-surface-2: #123a5c;
+  --color-fg: #fff8e7;
+  --color-muted: #b8c9d9;
+  --color-subtle: #7fa0b8;
+  --color-accent: #f5a623;
+  --color-accent-fg: #071a33;
+  --color-live: #e24b3b;
+  --color-win: #2e8b57;
+  --color-loss: #c45c4a;
+  --color-border: color-mix(in oklab, var(--color-fg) 14%, transparent);
+  --color-border-strong: color-mix(in oklab, var(--color-accent) 35%, transparent);
   --font-display: "Bebas Neue", "Arial Narrow", Impact, sans-serif;
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --radius-xs: 4px;
@@ -22,7 +22,7 @@
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
-  --shadow-border: 0 0 0 1px color-mix(in oklab, var(--color-fg) 8%, transparent);
+  --shadow-border: 0 0 0 1px color-mix(in oklab, var(--color-accent) 18%, transparent);
 }
 
 @layer base {
@@ -43,6 +43,10 @@
   body {
     font-family: var(--font-sans);
     line-height: 1.5;
+    background-image:
+      radial-gradient(1200px 500px at 10% -10%, color-mix(in oklab, #1e90ff 22%, transparent), transparent 60%),
+      radial-gradient(900px 420px at 90% 0%, color-mix(in oklab, #f5a623 16%, transparent), transparent 55%);
+    background-attachment: fixed;
   }
 
   h1,
