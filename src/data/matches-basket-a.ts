@@ -1,0 +1,58 @@
+import { m } from "@/data/match-builder";
+import type { Spec } from "@/data/match-builder";
+import type { Match } from "@/lib/types";
+
+const rows: Spec[] = [
+{id:"melb-pre", league:"segunda-feb", sport:"baloncesto", at:"2026-08-30T19:00:00+02:00", venue:"Javier Imbroda Ortiz", jornada:0, home:"melilla-baloncesto", away:"Unicaja|UNI", duration:40, events:[
+      [6, "A", "punto", "Lukosius", "*12-21"],
+      [10, "H", "periodo", "Q1", "*18-27"],
+      [20, "H", "periodo", "Q2", "*34-54"],
+      [30, "H", "periodo", "Q3", "*51-79"],
+      [40, "A", "punto", "Final", "*67-105"],
+    ]},
+  {id:"melb-j1", league:"segunda-feb", sport:"baloncesto", at:"2026-10-03T18:00:00+02:00", venue:"Pabellón Pisuerga", jornada:1, home:"UEMC Baloncesto Valladolid|VLL", away:"melilla-baloncesto"},
+  {id:"melb-j2", league:"segunda-feb", sport:"baloncesto", at:"2026-10-10T18:00:00+02:00", venue:"Javier Imbroda Ortiz", jornada:2, home:"melilla-baloncesto", away:"Clínica Ponferrada SDP|PON"},
+  {id:"melb-j3", league:"segunda-feb", sport:"baloncesto", at:"2026-10-17T18:00:00+02:00", venue:"Palacio de los Deportes de León", jornada:3, home:"Cultural y Deportiva Leonesa|CUL", away:"melilla-baloncesto"},
+  {id:"melb-j4", league:"segunda-feb", sport:"baloncesto", at:"2026-10-24T18:00:00+02:00", venue:"Javier Imbroda Ortiz", jornada:4, home:"melilla-baloncesto", away:"CB Tres Cantos|TCS"},
+  {id:"melb-j5", league:"segunda-feb", sport:"baloncesto", at:"2026-10-31T18:00:00+01:00", venue:"Pabellón Magariños", jornada:5, home:"Movistar Estudiantes|EST", away:"melilla-baloncesto"},
+  {id:"melb-j6", league:"segunda-feb", sport:"baloncesto", at:"2026-11-07T18:00:00+01:00", venue:"Javier Imbroda Ortiz", jornada:6, home:"melilla-baloncesto", away:"CB Starlabs Morón|MOR"},
+  {id:"melb-j7", league:"segunda-feb", sport:"baloncesto", at:"2026-11-14T18:00:00+01:00", venue:"Polideportivo Ideo", jornada:7, home:"Spanish Basketball Academy|SBA", away:"melilla-baloncesto"},
+  {id:"melb-j8", league:"segunda-feb", sport:"baloncesto", at:"2026-11-21T18:00:00+01:00", venue:"Javier Imbroda Ortiz", jornada:8, home:"melilla-baloncesto", away:"Club Baloncesto Toledo Basket|TOL"},
+  {id:"melb-j9", league:"segunda-feb", sport:"baloncesto", at:"2026-11-28T18:00:00+01:00", venue:"Javier Imbroda Ortiz", jornada:9, home:"melilla-baloncesto", away:"CB Getafe|GET"},
+  {id:"melb-j10", league:"segunda-feb", sport:"baloncesto", at:"2026-12-05T18:00:00+01:00", venue:"Pabellón La Granadilla", jornada:10, home:"BC Badajoz|BDJ", away:"melilla-baloncesto"},
+  {id:"melb-j11", league:"segunda-feb", sport:"baloncesto", at:"2026-12-12T18:00:00+01:00", venue:"Javier Imbroda Ortiz", jornada:11, home:"melilla-baloncesto", away:"Cáceres Patrimonio de la Humanidad|CAC"},
+  {id:"melb-j12", league:"segunda-feb", sport:"baloncesto", at:"2026-12-19T18:00:00+01:00", venue:"Pabellón Dr. Juan Carlos Mateo", jornada:12, home:"CB Algeciras|ALG", away:"melilla-baloncesto"},
+  {id:"melb-j13", league:"segunda-feb", sport:"baloncesto", at:"2027-01-03T18:00:00+01:00", venue:"Javier Imbroda Ortiz", jornada:13, home:"melilla-baloncesto", away:"Jaén Paraíso Interior FS|JAE"},
+  {id:"melb-j14", league:"segunda-feb", sport:"baloncesto", at:"2027-01-09T18:00:00+01:00", venue:"Javier Imbroda Ortiz", jornada:14, home:"melilla-baloncesto", away:"UEMC Baloncesto Valladolid|VLL"},
+  {id:"melb-j15", league:"segunda-feb", sport:"baloncesto", at:"2027-01-16T18:00:00+01:00", venue:"Pabellón Lydia Valentín", jornada:15, home:"Clínica Ponferrada SDP|PON", away:"melilla-baloncesto"},
+  {id:"melb-j16", league:"segunda-feb", sport:"baloncesto", at:"2027-01-30T18:00:00+01:00", venue:"Javier Imbroda Ortiz", jornada:16, home:"melilla-baloncesto", away:"Cultural y Deportiva Leonesa|CUL"},
+  {id:"melb-j17", league:"segunda-feb", sport:"baloncesto", at:"2027-02-06T18:00:00+01:00", venue:"Pabellón Municipal Tres Cantos", jornada:17, home:"CB Tres Cantos|TCS", away:"melilla-baloncesto"},
+  {id:"melb-j18", league:"segunda-feb", sport:"baloncesto", at:"2027-02-13T18:00:00+01:00", venue:"Javier Imbroda Ortiz", jornada:18, home:"melilla-baloncesto", away:"Movistar Estudiantes|EST"},
+  {id:"melb-j19", league:"segunda-feb", sport:"baloncesto", at:"2027-02-20T18:00:00+01:00", venue:"Pabellón Alameda", jornada:19, home:"CB Starlabs Morón|MOR", away:"melilla-baloncesto"},
+  {id:"melb-j20", league:"segunda-feb", sport:"baloncesto", at:"2027-02-27T18:00:00+01:00", venue:"Javier Imbroda Ortiz", jornada:20, home:"melilla-baloncesto", away:"Spanish Basketball Academy|SBA"},
+  {id:"melb-j21", league:"segunda-feb", sport:"baloncesto", at:"2027-03-06T18:00:00+01:00", venue:"Pabellón Javier Martín", jornada:21, home:"Club Baloncesto Toledo Basket|TOL", away:"melilla-baloncesto"},
+  {id:"melb-j22", league:"segunda-feb", sport:"baloncesto", at:"2027-03-13T18:00:00+01:00", venue:"Pabellón Jorge Garbajosa", jornada:22, home:"CB Getafe|GET", away:"melilla-baloncesto"},
+  {id:"melb-j23", league:"segunda-feb", sport:"baloncesto", at:"2027-03-20T18:00:00+01:00", venue:"Javier Imbroda Ortiz", jornada:23, home:"melilla-baloncesto", away:"BC Badajoz|BDJ"},
+  {id:"melb-j24", league:"segunda-feb", sport:"baloncesto", at:"2027-03-27T18:00:00+01:00", venue:"Multiusos Ciudad de Cáceres", jornada:24, home:"Cáceres Patrimonio de la Humanidad|CAC", away:"melilla-baloncesto"},
+  {id:"melb-j25", league:"segunda-feb", sport:"baloncesto", at:"2027-04-03T18:00:00+02:00", venue:"Javier Imbroda Ortiz", jornada:25, home:"melilla-baloncesto", away:"CB Algeciras|ALG"},
+  {id:"melb-j26", league:"segunda-feb", sport:"baloncesto", at:"2027-04-10T18:00:00+02:00", venue:"Olivo Arena", jornada:26, home:"Jaén Paraíso Interior FS|JAE", away:"melilla-baloncesto"},
+  {id:"sallef-pre", league:"lf-challenge", sport:"baloncesto", at:"2026-09-05T18:00:00+02:00", venue:"Guillermo García Pezzi", jornada:0, home:"la-salle-fem", away:"Unicaja Mijas|MIJ", duration:40, events:[
+      [10, "H", "periodo", "Q1", "*19-16"],
+      [20, "H", "periodo", "Q2", "*38-34"],
+      [30, "H", "periodo", "Q3", "*54-55"],
+      [40, "A", "punto", "Final", "*68-71"],
+    ]},
+  {id:"sallef-j1", league:"lf-challenge", sport:"baloncesto", at:"2026-10-03T18:30:00+02:00", venue:"Guillermo García Pezzi", jornada:1, home:"la-salle-fem", away:"Bosonit Unibasket|UNI"},
+  {id:"sallef-j2", league:"lf-challenge", sport:"baloncesto", at:"2026-10-10T18:00:00+02:00", venue:"Pabellón Nou Poliesportiu", jornada:2, home:"MCR Lima-Horta Barcelona|LHB", away:"la-salle-fem"},
+  {id:"sallef-j3", league:"lf-challenge", sport:"baloncesto", at:"2026-10-17T18:30:00+02:00", venue:"Guillermo García Pezzi", jornada:3, home:"la-salle-fem", away:"Recoletas Zamora|ZAM"},
+  {id:"sallef-j4", league:"lf-challenge", sport:"baloncesto", at:"2026-10-24T18:00:00+02:00", venue:"Palacio de Deportes San Pablo", jornada:4, home:"Cajasol Baloncesto Sevilla|SEV", away:"la-salle-fem"},
+  {id:"sallef-j5", league:"lf-challenge", sport:"baloncesto", at:"2026-10-31T18:30:00+01:00", venue:"Guillermo García Pezzi", jornada:5, home:"la-salle-fem", away:"Valencia Basket|VBC"},
+  {id:"sallef-j6", league:"lf-challenge", sport:"baloncesto", at:"2026-11-06T18:00:00+01:00", venue:"Pabellón Maristas", jornada:6, home:"Sparking Truth Maristas|MAR", away:"la-salle-fem"},
+  {id:"sallef-j7", league:"lf-challenge", sport:"baloncesto", at:"2026-11-21T18:30:00+01:00", venue:"Guillermo García Pezzi", jornada:7, home:"la-salle-fem", away:"Osés Construcción|OSE"},
+  {id:"sallef-j8", league:"lf-challenge", sport:"baloncesto", at:"2026-11-28T18:00:00+01:00", venue:"Pabellón Ciutat de Castelló", jornada:8, home:"Fustecma NBF Castelló|CAS", away:"la-salle-fem"},
+  {id:"sallef-j9", league:"lf-challenge", sport:"baloncesto", at:"2026-12-05T18:30:00+01:00", venue:"Guillermo García Pezzi", jornada:9, home:"la-salle-fem", away:"Alter Enersun Al-Qázeres Extremadura|AQZ"},
+  {id:"sallef-j10", league:"lf-challenge", sport:"baloncesto", at:"2026-12-08T18:00:00+01:00", venue:"Polideportivo Municipal Azpeitia", jornada:10, home:"Domusa Teknik ISB|ISB", away:"la-salle-fem"},
+  {id:"sallef-j11", league:"lf-challenge", sport:"baloncesto", at:"2026-12-12T18:30:00+01:00", venue:"Guillermo García Pezzi", jornada:11, home:"la-salle-fem", away:"SPAR Gran Canaria|GCA"},
+];
+
+export const basketAMatches: Match[] = rows.map(m);
