@@ -1,5 +1,7 @@
 import { teamById } from "@/data/teams";
 import { badgeFor } from "@/data/badges";
+import { futbolmeBadge } from "@/data/futbolme-badges";
+import { solofutsalBadge } from "@/data/solofutsal-badges";
 import type { EventKind, Match, MatchEvent, Side, Sport } from "@/lib/types";
 
 const DURATION: Record<Sport, number> = {
@@ -36,7 +38,7 @@ export function sideOf(token: string): { id?: string; name: string; short: strin
 
 export function parseMatchScore(note?: string): { home: number; away: number } | null {
   if (!note) return null;
-  const m = note.match(/^\*(\d+)-(\d+)$/);
+  const m = note.match(/^\\*(\\d+)-(\\d+)$/);
   if (!m) return null;
   return { home: Number(m[1]), away: Number(m[2]) };
 }
@@ -59,6 +61,10 @@ export function buildEvents(specs: EventSpec[] | undefined): MatchEvent[] {
   });
 }
 
+function resolveBadge(id?: string, name?: string): string | undefined {
+  return solofutsalBadge(id, name) || futbolmeBadge(id, name) || badgeFor(id, name);
+}
+
 export function m(spec: Spec): Match {
   const home = sideOf(spec.home);
   const away = sideOf(spec.away);
@@ -71,11 +77,11 @@ export function m(spec: Spec): Match {
     homeId: home.id,
     homeName: home.name,
     homeShort: home.short,
-    homeBadge: badgeFor(home.id, home.name),
+    homeBadge: resolveBadge(home.id, home.name),
     awayId: away.id,
     awayName: away.name,
     awayShort: away.short,
-    awayBadge: badgeFor(away.id, away.name),
+    awayBadge: resolveBadge(away.id, away.name),
     kickoff: spec.at,
     liveElapsed: spec.live,
     events: buildEvents(spec.events),
