@@ -1,10 +1,14 @@
-import { matchesPartA } from "@/data/matches-part-a";
-import { matchesPartB } from "@/data/matches-part-b";
+import { futbolMatches } from "@/data/matches-futbol";
+import { basketAMatches } from "@/data/matches-basket-a";
+import { basketBMatches } from "@/data/matches-basket-b";
+import { restoMatches } from "@/data/matches-resto";
 import type { Match } from "@/lib/types";
 
 export const matches: Match[] = [
-  ...matchesPartA,
-  ...matchesPartB,
+  ...futbolMatches,
+  ...basketAMatches,
+  ...basketBMatches,
+  ...restoMatches,
 ];
 
 export const matchById = Object.fromEntries(matches.map((m) => [m.id, m])) as Record<
