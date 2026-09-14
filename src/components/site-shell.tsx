@@ -19,18 +19,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p>Melilla Directo · Temporada 2026-27</p>
+          <p>Más deporte Melillense · Temporada 2026-27</p>
           <p>
-            Marcadores oficiales de{" "}
-            <a
-              href="https://www.thesportsdb.com"
-              className="text-accent hover:underline"
-              target="_blank"
-              rel="noreferrer"
-            >
-              TheSportsDB
-            </a>
-            , cada minuto. Calendario local del resto de equipos.
+            Calendario y clasificaciones de los equipos de Melilla. Fútbol: LaPreferente · Fútbol sala:
+            Solo-FutSal.
           </p>
         </div>
       </footer>
@@ -110,10 +102,13 @@ function Header() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-bg/92 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
-        <Link to="/" className="shrink-0">
-          <p className="font-display text-2xl leading-none tracking-wide text-fg">Melilla Directo</p>
-          <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Deporte en vivo</p>
+      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:px-6">
+        <Link to="/" className="flex shrink-0 items-center gap-2">
+          <img
+            src="/logo-mdm.jpg"
+            alt="Más deporte Melillense"
+            className="h-14 w-auto max-w-[200px] object-contain sm:h-16"
+          />
         </Link>
         <nav className="ml-2 hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto lg:flex">
           {SPORTS.map((s) => (
@@ -121,7 +116,7 @@ function Header() {
               key={s.id}
               to="/deporte/$sport"
               params={{ sport: s.id }}
-              className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-fg"
+              className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-fg hover:text-accent"
             >
               <SportMark sport={s.id} />
               {s.label}
