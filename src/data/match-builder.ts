@@ -38,7 +38,7 @@ export function sideOf(token: string): { id?: string; name: string; short: strin
 
 export function parseMatchScore(note?: string): { home: number; away: number } | null {
   if (!note) return null;
-  const m = note.match(/^\\*(\\d+)-(\\d+)$/);
+  const m = note.match(/^\*(\d+)-(\d+)$/);
   if (!m) return null;
   return { home: Number(m[1]), away: Number(m[2]) };
 }
