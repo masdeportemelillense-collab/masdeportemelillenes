@@ -9,6 +9,7 @@ import { teams } from "@/data/teams";
 import { POLL_MS, useFeed } from "@/lib/api/feed";
 import { SPORTS } from "@/lib/sports";
 import { cn } from "@/lib/utils";
+import { LOGO_MDM_SRC } from "@/lib/logo-data";
 
 export function SiteShell({ children }: { children: ReactNode }) {
   return (
@@ -94,6 +95,7 @@ function navClass(active: boolean) {
 function Header() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
+  const [logoOk, setLogoOk] = useState(true);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const results = useMemo(() => {
@@ -112,12 +114,21 @@ function Header() {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-bg/92 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:px-6">
-        <Link to="/" className="flex shrink-0 items-center gap-2" onClick={() => setOpen(false)}>
-          <img
-            src="/logo-mdm.svg"
-            alt="Más deporte Melillense"
-            className="h-14 w-auto max-w-[180px] object-contain sm:h-16"
-          />
+        <Link to="/" className="flex shrink-0 items-center gap-2.5" onClick={() => setOpen(false)}>
+          {logoOk && (
+            <img
+              src={LOGO_MDM_SRC}
+              alt=""
+              className="h-12 w-12 rounded-md object-cover sm:h-14 sm:w-14"
+              onError={() => setLogoOk(false)}
+            />
+          )}
+          <span className="flex flex-col leading-none">
+            <span className="font-display text-[1.35rem] tracking-wide text-fg sm:text-[1.55rem]">
+              MÁS DEPORTE
+            </span>
+            <span className="mt-0.5 text-[10px] uppercase tracking-[0.22em] text-accent">Melillense</span>
+          </span>
         </Link>
         <nav className="ml-2 hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto lg:flex" aria-label="Principal">
           <Link to="/" className={navClass(pathname === "/")}>
