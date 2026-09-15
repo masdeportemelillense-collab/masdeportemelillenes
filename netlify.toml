@@ -1,5 +1,5 @@
 [build]
-  command = "node scripts/write-logo.mjs && node scripts/with-app-env.mjs vite build && node scripts/netlify-publish.mjs"
+  command = "node scripts/with-app-env.mjs vite build && node scripts/netlify-publish.mjs"
   publish = "dist"
 
 [build.environment]
