@@ -117,7 +117,9 @@ function Header() {
           <img
             src={LOGO_MDM_SRC}
             alt="Más deporte Melillense"
-            className="h-14 w-14 object-contain sm:h-16 sm:w-16"
+            width={72}
+            height={72}
+            className="h-16 w-16 rounded-md object-contain sm:h-[4.5rem] sm:w-[4.5rem]"
           />
         </Link>
         <nav className="ml-1 hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto lg:flex" aria-label="Principal">
