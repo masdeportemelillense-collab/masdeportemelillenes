@@ -9,7 +9,60 @@ import { teams } from "@/data/teams";
 import { POLL_MS, useFeed } from "@/lib/api/feed";
 import { SPORTS } from "@/lib/sports";
 import { cn } from "@/lib/utils";
-import { LOGO_MDM_SRC } from "@/lib/logo-data";
+
+function BrandMark({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 72 72"
+      className={className}
+      role="img"
+      aria-label="Más deporte Melillense"
+    >
+      <rect width="72" height="72" rx="14" fill="#071526" />
+      <rect x="2" y="2" width="68" height="68" rx="12" fill="none" stroke="#d4a017" strokeWidth="2.5" />
+      <circle cx="36" cy="26" r="12" fill="#f4f0e6" />
+      <path
+        d="M28 26c3-6 13-6 16 0M28 26c3 6 13 6 16 0M36 14v24M24 26h24"
+        fill="none"
+        stroke="#071526"
+        strokeWidth="1.4"
+      />
+      <text
+        x="36"
+        y="48"
+        textAnchor="middle"
+        fontFamily="Arial Black, Impact, sans-serif"
+        fontSize="9"
+        fontWeight="800"
+        fill="#f4f0e6"
+      >
+        MÁS
+      </text>
+      <text
+        x="36"
+        y="57"
+        textAnchor="middle"
+        fontFamily="Arial, sans-serif"
+        fontSize="6.2"
+        fontWeight="700"
+        fill="#d4a017"
+      >
+        DEPORTE
+      </text>
+      <text
+        x="36"
+        y="65"
+        textAnchor="middle"
+        fontFamily="Arial, sans-serif"
+        fontSize="5.4"
+        fontWeight="600"
+        fill="#f4f0e6"
+      >
+        MELILLENSE
+      </text>
+    </svg>
+  );
+}
 
 export function SiteShell({ children }: { children: ReactNode }) {
   return (
@@ -114,13 +167,7 @@ function Header() {
     <header className="sticky top-0 z-30 border-b border-border bg-bg/92 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2 sm:px-6">
         <Link to="/" className="flex shrink-0 items-center" onClick={() => setOpen(false)}>
-          <img
-            src={LOGO_MDM_SRC}
-            alt="Más deporte Melillense"
-            width={72}
-            height={72}
-            className="h-16 w-16 rounded-md object-contain sm:h-[4.5rem] sm:w-[4.5rem]"
-          />
+          <BrandMark className="h-14 w-14 sm:h-16 sm:w-16" />
         </Link>
         <nav className="ml-1 hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto lg:flex" aria-label="Principal">
           <Link to="/" className={navClass(pathname === "/")}>
