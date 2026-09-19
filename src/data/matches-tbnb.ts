@@ -3,7 +3,7 @@ import type { Spec } from "@/data/match-builder";
 import type { Match } from "@/lib/types";
 const PEZ = "Guillermo García Pezzi";
 const rows: Spec[] = [
-{id:"tbnb-j1", league:"fs-segunda-f", sport:"futsal", at:"2026-09-19T17:00:00+02:00", venue:PEZ, jornada:1, home:"torreblanca-b", away:"Majadahonda F.S.F. Afar 4|MAJ"},
+{id:"tbnb-j1", league:"fs-segunda-f", sport:"futsal", at:"2026-09-19T16:00:00+02:00", venue:PEZ, jornada:1, home:"torreblanca-b", away:"Majadahonda F.S.F. Afar 4|MAJ"},
 {id:"tbnb-j2", league:"fs-segunda-f", sport:"futsal", at:"2026-09-26T17:00:00+02:00", venue:"Pabellón Ramón y Cajal", jornada:2, home:"Ramón y Cajal Féminas|RYC", away:"torreblanca-b"},
 {id:"tbnb-j3", league:"fs-segunda-f", sport:"futsal", at:"2026-10-03T17:00:00+02:00", venue:PEZ, jornada:3, home:"torreblanca-b", away:"Sporting Club Garrovilla|GAR"},
 {id:"tbnb-j4", league:"fs-segunda-f", sport:"futsal", at:"2026-10-10T17:00:00+02:00", venue:"Pabellón Municipal Almagro", jornada:4, home:"C.D.B. Almagro F.S.|ALM", away:"torreblanca-b"},
