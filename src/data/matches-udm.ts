@@ -6,7 +6,7 @@ export const udmMatches: Match[] = [
   m({ id: "udm-copa", league: "copa-federacion", sport: "futbol", at: "2026-09-09T17:30:00+02:00", venue: "Estadio Álvarez Claro", jornada: 0, home: "ud-melilla", away: "Conil CF|CONIL", events: [[90, "A", "gol", "Conil", "*0-1"]] }),
   m({ id: "udm-j2", league: "tercera-g9", sport: "futbol", at: "2026-09-12T16:00:00+02:00", venue: "Estadio Álvarez Claro", jornada: 2, home: "ud-melilla", away: "CD Huétor Vega|HUV", events: [[36, "H", "gol", "Elliot"], [44, "H", "gol", "Robinho"], [71, "H", "gol", "Nágera"]] }),
   m({ id: "udm-j3", league: "tercera-g9", sport: "futbol", at: "2026-09-20T12:00:00+02:00", venue: "Estadio Juan Manuel Azuaga", jornada: 3, home: "UD Torre del Mar|TDM", away: "ud-melilla" }),
-  m({ id: "udm-j4", league: "tercera-g9", sport: "futbol", at: "2026-09-27T12:00:00+02:00", venue: "Estadio Álvarez Claro", jornada: 4, home: "ud-melilla", away: "Málaga Juniors FC|MJF" }),
+  m({ id: "udm-j4", league: "tercera-g9", sport: "futbol", at: "2026-09-27T12:30:00+02:00", venue: "Estadio Álvarez Claro", jornada: 4, home: "ud-melilla", away: "Málaga Juniors FC|MJF" }),
   m({ id: "udm-j5", league: "tercera-g9", sport: "futbol", at: "2026-10-04T12:00:00+02:00", venue: "Estadio Miguel Fijones", jornada: 5, home: "CD Alhaurino|ALH9", away: "ud-melilla" }),
   m({ id: "udm-j6", league: "tercera-g9", sport: "futbol", at: "2026-10-11T12:00:00+02:00", venue: "Estadio Álvarez Claro", jornada: 6, home: "ud-melilla", away: "UD San Pedro|SPE" }),
   m({ id: "udm-j7", league: "tercera-g9", sport: "futbol", at: "2026-10-18T12:00:00+02:00", venue: "Estadio San Benito", jornada: 7, home: "Atlético de Porcuna CF|POR", away: "ud-melilla" }),
