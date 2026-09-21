@@ -284,11 +284,29 @@ async function pullSnapshot(): Promise<LiveSnapshot> {
   };
 }
 
+async function mergeSolo(base: LiveSnapshot): Promise<LiveSnapshot> {
+  try {
+    const { fetchSoloFutsalEvents } = await import("./solofutsal.server");
+    const extra = await fetchSoloFutsalEvents();
+    if (!extra.length) return { ...base, ok: base.ok || false };
+    const byId = new Map(base.events.map((e) => [e.externalId, e]));
+    for (const ev of extra) byId.set(ev.externalId, ev);
+    return {
+      ...base,
+      ok: true,
+      events: [...byId.values()],
+    };
+  } catch {
+    return base;
+  }
+}
+
 export async function fetchLiveSnapshot(): Promise<LiveSnapshot> {
   const now = Date.now();
   if (cache && now - cache.at < TTL_MS) return cache.data;
   if (inflight) return inflight;
   inflight = pullSnapshot()
+    .then((data) => mergeSolo(data))
     .then((data) => {
       cache = { at: Date.now(), data };
       return data;
