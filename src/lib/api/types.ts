@@ -1,3 +1,4 @@
+import type { AdminOverride } from "@/lib/admin/types";
 import type { MatchEvent, MatchStatus, Sport, StandingRow } from "@/lib/types";
 
 export type ApiEvent = {
@@ -33,4 +34,5 @@ export type LiveSnapshot = {
   error?: string;
   events: ApiEvent[];
   tables: Record<string, StandingRow[]>;
+  overrides?: AdminOverride[];
 };
