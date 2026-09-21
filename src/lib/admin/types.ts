@@ -1,4 +1,4 @@
-import type { MatchStatus } from "@/lib/types";
+import type { MatchEvent, MatchStatus } from "@/lib/types";
 
 export type AdminOverride = {
   matchId: string;
@@ -12,6 +12,7 @@ export type AdminOverride = {
   awayName?: string;
   minute?: number;
   note?: string;
+  events?: MatchEvent[];
   deleted?: boolean;
   updatedAt: number;
 };
