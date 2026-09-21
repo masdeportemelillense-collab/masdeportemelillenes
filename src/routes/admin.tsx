@@ -9,9 +9,10 @@ import {
   adminSaveOverride,
   adminSession,
 } from "@/lib/admin/actions";
+import { draftsToEvents, scoreFromEvents, type DraftEvent } from "@/lib/admin/apply";
 import type { AdminOverride } from "@/lib/admin/types";
 import { useFeed } from "@/lib/api/feed";
-import type { MatchStatus, ResolvedMatch } from "@/lib/types";
+import type { EventKind, MatchStatus, ResolvedMatch, Side } from "@/lib/types";
 
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
@@ -117,7 +118,7 @@ function Editor({ onLogout }: { onLogout: () => void }) {
           <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-accent">Panel</p>
           <h1 className="mt-1 font-display text-4xl leading-none">Editar resultados</h1>
           <p className="mt-2 text-sm text-muted">
-            Los cambios se publican al momento y sustituyen al calendario y a Solo-FutSal.
+            Cambia marcador, horario y cronología (goles y tarjetas). Se publica al momento.
           </p>
         </div>
         <button
@@ -171,6 +172,15 @@ function Editor({ onLogout }: { onLogout: () => void }) {
   );
 }
 
+function toDraft(events: ResolvedMatch["happened"]): DraftEvent[] {
+  return events.map((ev) => ({
+    minute: String(ev.minute),
+    side: ev.side,
+    kind: ev.kind,
+    player: ev.player,
+  }));
+}
+
 function MatchEditor({
   match,
   saved,
@@ -185,21 +195,46 @@ function MatchEditor({
   const [status, setStatus] = useState<MatchStatus>(saved?.status ?? match.status);
   const [kickoff, setKickoff] = useState((saved?.kickoff ?? match.kickoff).slice(0, 16));
   const [venue, setVenue] = useState(saved?.venue ?? match.venue);
+  const [rows, setRows] = useState<DraftEvent[]>(
+    toDraft(saved?.events?.length ? saved.events : match.happened),
+  );
   const [msg, setMsg] = useState("");
 
+  function syncScore(next: DraftEvent[]) {
+    const scored = draftsToEvents(next);
+    const totals = scoreFromEvents(scored);
+    setHome(String(totals.home));
+    setAway(String(totals.away));
+  }
+
+  function patchRow(index: number, patch: Partial<DraftEvent>) {
+    setRows((prev) => {
+      const next = prev.map((row, i) => (i === index ? { ...row, ...patch } : row));
+      syncScore(next);
+      return next;
+    });
+  }
+
   const save = useMutation({
-    mutationFn: () =>
-      adminSaveOverride({
+    mutationFn: () => {
+      const events = draftsToEvents(rows);
+      const totals = events.length
+        ? scoreFromEvents(events)
+        : { home: Number(home) || 0, away: Number(away) || 0, minute: 0 };
+      return adminSaveOverride({
         data: {
           matchId: match.id,
-          homeScore: Number(home) || 0,
-          awayScore: Number(away) || 0,
+          homeScore: totals.home,
+          awayScore: totals.away,
+          minute: totals.minute,
           status,
           kickoff: kickoff.length === 16 ? `${kickoff}:00` : kickoff,
           venue,
+          events,
           updatedAt: Date.now(),
         },
-      }),
+      });
+    },
     onSuccess: (res) => {
       setMsg(res.ok ? "Guardado" : res.error || "Error");
       if (res.ok) onSaved();
@@ -223,7 +258,6 @@ function MatchEditor({
           <h2 className="mt-1 text-base font-medium">
             {match.homeName} — {match.awayName}
           </h2>
-          <p className="text-xs text-muted">{match.id}</p>
         </div>
         {saved ? <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] uppercase text-accent">Editado</span> : null}
       </div>
@@ -262,6 +296,79 @@ function MatchEditor({
           Pabellón
           <input value={venue} onChange={(e) => setVenue(e.target.value)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm" />
         </label>
+      </div>
+
+      <div className="mt-4 border-t border-border pt-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted">Cronología y goleadores</p>
+          <button
+            type="button"
+            className="h-8 rounded-md bg-surface-2 px-3 text-xs text-fg"
+            onClick={() =>
+              setRows((prev) => [
+                ...prev,
+                { minute: "0", side: "home", kind: "gol", player: "" },
+              ])
+            }
+          >
+            + Añadir
+          </button>
+        </div>
+        {rows.length === 0 ? (
+          <p className="mt-2 text-xs text-muted">Sin eventos. Añade goles, tarjetas o anotaciones.</p>
+        ) : (
+          <ul className="mt-2 space-y-2">
+            {rows.map((row, i) => (
+              <li key={i} className="grid gap-2 sm:grid-cols-12">
+                <input
+                  value={row.minute}
+                  onChange={(e) => patchRow(i, { minute: e.target.value })}
+                  placeholder="Min"
+                  className="h-9 rounded-md bg-surface-2 px-2 text-sm sm:col-span-1"
+                />
+                <select
+                  value={row.side}
+                  onChange={(e) => patchRow(i, { side: e.target.value as Side })}
+                  className="h-9 rounded-md bg-surface-2 px-2 text-sm sm:col-span-3"
+                >
+                  <option value="home">{match.homeShort || match.homeName}</option>
+                  <option value="away">{match.awayShort || match.awayName}</option>
+                </select>
+                <select
+                  value={row.kind}
+                  onChange={(e) => patchRow(i, { kind: e.target.value as EventKind })}
+                  className="h-9 rounded-md bg-surface-2 px-2 text-sm sm:col-span-2"
+                >
+                  <option value="gol">Gol</option>
+                  <option value="gol_pp">Gol en propia</option>
+                  <option value="amarilla">Amarilla</option>
+                  <option value="roja">Roja</option>
+                  <option value="punto">Anotación</option>
+                  <option value="set">Set</option>
+                </select>
+                <input
+                  value={row.player}
+                  onChange={(e) => patchRow(i, { player: e.target.value })}
+                  placeholder="Goleador o jugador"
+                  className="h-9 rounded-md bg-surface-2 px-2 text-sm sm:col-span-5"
+                />
+                <button
+                  type="button"
+                  className="h-9 rounded-md bg-surface-2 text-xs text-muted sm:col-span-1"
+                  onClick={() =>
+                    setRows((prev) => {
+                      const next = prev.filter((_, idx) => idx !== i);
+                      syncScore(next);
+                      return next;
+                    })
+                  }
+                >
+                  Quitar
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
