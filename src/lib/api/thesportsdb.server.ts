@@ -77,7 +77,7 @@ function num(value: unknown): number {
 function kickoffIso(ev: TsdbEvent): string {
   const ts = ev.strTimestamp?.trim();
   if (ts) {
-    if (ts.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(ts)) return ts;
+    if (ts.endsWith("Z") || /[+\-]\d{2}:?\d{2}$/.test(ts)) return ts;
     return `${ts}Z`;
   }
   const date = ev.dateEvent ?? "1970-01-01";
@@ -301,12 +301,28 @@ async function mergeSolo(base: LiveSnapshot): Promise<LiveSnapshot> {
   }
 }
 
+async function mergeFutbolme(base: LiveSnapshot): Promise<LiveSnapshot> {
+  try {
+    const { fetchFutbolmeTables } = await import("./futbolme.server");
+    const official = await fetchFutbolmeTables();
+    if (!Object.keys(official).length) return base;
+    return {
+      ...base,
+      ok: true,
+      tables: { ...base.tables, ...official },
+    };
+  } catch {
+    return base;
+  }
+}
+
 export async function fetchLiveSnapshot(): Promise<LiveSnapshot> {
   const now = Date.now();
   if (cache && now - cache.at < TTL_MS) return cache.data;
   if (inflight) return inflight;
   inflight = pullSnapshot()
     .then((data) => mergeSolo(data))
+    .then((data) => mergeFutbolme(data))
     .then((data) => {
       cache = { at: Date.now(), data };
       return data;
