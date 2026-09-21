@@ -1,5 +1,35 @@
 import type { AdminOverride } from "@/lib/admin/types";
-import type { ResolvedMatch } from "@/lib/types";
+import type { EventKind, MatchEvent, ResolvedMatch, Side } from "@/lib/types";
+
+function isScoreEvent(kind: EventKind): boolean {
+  return kind === "gol" || kind === "gol_pp" || kind === "punto" || kind === "set";
+}
+
+export function finalizeEvents(raw: MatchEvent[]): MatchEvent[] {
+  let home = 0;
+  let away = 0;
+  return [...raw]
+    .sort((a, b) => a.minute - b.minute)
+    .map((ev) => {
+      if (isScoreEvent(ev.kind)) {
+        if (ev.kind === "gol_pp") {
+          if (ev.side === "home") away += 1;
+          else home += 1;
+        } else if (ev.side === "home") home += 1;
+        else away += 1;
+      }
+      return { ...ev, homeScore: home, awayScore: away };
+    });
+}
+
+export function scoreFromEvents(events: MatchEvent[]): { home: number; away: number; minute: number } {
+  const last = events[events.length - 1];
+  return {
+    home: last?.homeScore ?? 0,
+    away: last?.awayScore ?? 0,
+    minute: last?.minute ?? 0,
+  };
+}
 
 export function applyAdminOverrides(
   list: ResolvedMatch[],
@@ -16,9 +46,13 @@ export function applyAdminOverrides(
       continue;
     }
     if (hit.deleted) continue;
-    const homeScore = hit.homeScore ?? match.homeScore;
-    const awayScore = hit.awayScore ?? match.awayScore;
     const status = hit.status ?? match.status;
+    const events = hit.events ? finalizeEvents(hit.events) : status === "scheduled" ? [] : match.events;
+    const fromEvents = events.length ? scoreFromEvents(events) : null;
+    const homeScore = status === "scheduled" ? 0 : (hit.homeScore ?? fromEvents?.home ?? match.homeScore);
+    const awayScore = status === "scheduled" ? 0 : (hit.awayScore ?? fromEvents?.away ?? match.awayScore);
+    const minute = hit.minute ?? fromEvents?.minute ?? match.minute;
+
     out.push({
       ...match,
       homeName: hit.homeName || match.homeName,
@@ -27,41 +61,38 @@ export function applyAdminOverrides(
       jornada: hit.jornada ?? match.jornada,
       kickoff: hit.kickoff || match.kickoff,
       status,
-      homeScore: status === "scheduled" ? 0 : homeScore,
-      awayScore: status === "scheduled" ? 0 : awayScore,
-      minute: hit.minute ?? match.minute,
+      homeScore,
+      awayScore,
+      minute,
       displayClock: status === "live" ? "LIVE" : status === "finished" ? "Fin" : match.displayClock,
-      period:
-        status === "live" ? "En directo" : status === "finished" ? "Finalizado" : "Previsto",
-      events:
-        status === "scheduled"
-          ? []
-          : [
-              {
-                minute: hit.minute ?? 40,
-                side: homeScore >= awayScore ? "home" : "away",
-                kind: "gol",
-                player: hit.note || "Admin",
-                homeScore,
-                awayScore,
-              },
-            ],
-      happened:
-        status === "scheduled"
-          ? []
-          : [
-              {
-                minute: hit.minute ?? 40,
-                side: homeScore >= awayScore ? "home" : "away",
-                kind: "gol",
-                player: hit.note || "Admin",
-                homeScore,
-                awayScore,
-              },
-            ],
+      period: status === "live" ? "En directo" : status === "finished" ? "Finalizado" : "Previsto",
+      events,
+      happened: events,
       source: match.source ?? "catalog",
     });
   }
 
   return out;
+}
+
+export type DraftEvent = {
+  minute: string;
+  side: Side;
+  kind: EventKind;
+  player: string;
+};
+
+export function draftsToEvents(rows: DraftEvent[]): MatchEvent[] {
+  return finalizeEvents(
+    rows
+      .filter((row) => row.player.trim() || isScoreEvent(row.kind))
+      .map((row) => ({
+        minute: Number(row.minute) || 0,
+        side: row.side,
+        kind: row.kind,
+        player: row.player.trim() || (row.kind === "gol" || row.kind === "gol_pp" ? "Gol" : row.kind),
+        homeScore: 0,
+        awayScore: 0,
+      })),
+  );
 }
