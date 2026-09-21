@@ -20,7 +20,10 @@ export const adminLogout = createServerFn({ method: "POST" }).handler(async () =
 
 export const adminSession = createServerFn({ method: "GET" }).handler(async () => {
   const { requireAdmin } = await import("./session.server");
-  return { ok: await requireAdmin() };
+  const ok = await requireAdmin();
+  if (!ok) return { ok: false as const, persist: "file" as const };
+  const { persistBackend } = await import("@/lib/persist.server");
+  return { ok: true as const, persist: await persistBackend() };
 });
 
 export const adminListOverrides = createServerFn({ method: "GET" }).handler(async () => {
