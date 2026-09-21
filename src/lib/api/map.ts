@@ -7,7 +7,15 @@ export const TSDB_TEAM_TO_SLUG: Record<string, string> = {
   "144622": "melilla-baloncesto",
 };
 
-export const API_TRACKED_SLUGS = new Set(Object.values(TSDB_TEAM_TO_SLUG));
+export const API_TRACKED_SLUGS = new Set([
+  ...Object.values(TSDB_TEAM_TO_SLUG),
+  "torreblanca",
+  "torreblanca-b",
+  "melistar",
+  "nueva-era",
+  "rusadir-fs-dh",
+  "pena-rm-fs",
+]);
 
 export const TSDB_SPORT: Record<string, Sport> = {
   Soccer: "futbol",
