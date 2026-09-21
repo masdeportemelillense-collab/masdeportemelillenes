@@ -76,7 +76,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <p>Más deporte Melillense · Temporada 2026-27</p>
           <p>
             Calendario y clasificaciones de los equipos de Melilla. Fútbol: LaPreferente · Fútbol sala:
-            Solo-FutSal.
+            Solo-FutSal.{" "}
+            <Link to="/admin" className="text-muted/80 underline-offset-2 hover:text-accent hover:underline">
+              Admin
+            </Link>
           </p>
         </div>
       </footer>
