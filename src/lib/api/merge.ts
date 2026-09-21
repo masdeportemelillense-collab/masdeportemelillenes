@@ -1,3 +1,4 @@
+import { applyAdminOverrides } from "@/lib/admin/apply";
 import { leagueById } from "@/data/leagues";
 import { matches } from "@/data/matches";
 import { API_TRACKED_SLUGS, normName } from "@/lib/api/map";
@@ -124,7 +125,7 @@ export function buildResolvedFeed(now: number, snapshot?: LiveSnapshot | null): 
     out.push(apiToResolved(ev));
   }
 
-  return out;
+  return applyAdminOverrides(out, snapshot?.overrides);
 }
 
 export function liveOf(list: ResolvedMatch[]): ResolvedMatch[] {
