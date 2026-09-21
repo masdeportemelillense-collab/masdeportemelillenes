@@ -47,6 +47,18 @@ function LoginForm({ onOk }: { onOk: () => void }) {
   );
 }
 
+function persistLabel(kind?: string) {
+  if (kind === "sql") return "Guardado permanente en la base de datos.";
+  if (kind === "blobs") return "Guardado permanente en Netlify (porra y resultados).";
+  return "Aviso: este entorno usa almacenamiento temporal.";
+}
+
+function PersistHint() {
+  const session = useQuery({ queryKey: ["admin-session"], queryFn: () => adminSession() });
+  const kind = session.data && "persist" in session.data ? session.data.persist : undefined;
+  return <p className="mt-1 text-xs text-muted">{persistLabel(kind)}</p>;
+}
+
 function Editor({ onLogout }: { onLogout: () => void }) {
   const feed = useFeed();
   const qc = useQueryClient();
@@ -69,6 +81,7 @@ function Editor({ onLogout }: { onLogout: () => void }) {
           <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-accent">Panel</p>
           <h1 className="mt-1 font-display text-4xl leading-none">{tab === "porra" ? "Porra" : "Editar resultados"}</h1>
           <p className="mt-2 text-sm text-muted">{tab === "porra" ? "Publica los partidos de la quiniela y marca el 1-X-2 cuando terminen." : "Cambia marcador, horario y cronología. Se publica al momento."}</p>
+          <PersistHint />
         </div>
         <button type="button" className="h-10 rounded-md bg-surface px-4 text-sm text-muted hover:text-fg" onClick={() => logout.mutate()}>Cerrar sesión</button>
       </div>
