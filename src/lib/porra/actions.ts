@@ -1,0 +1,156 @@
+import { createServerFn } from "@tanstack/react-start";
+import { randomBytes } from "node:crypto";
+import { leaderboard } from "./score";
+import { isLocked, nextFridayLockIso } from "./time";
+import type { PorraMatch, PorraPublicState, PorraSlate, Quiniela } from "./types";
+
+const NAME_RE = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 ._'-]{3,24}$/;
+
+function cleanName(raw: string): string {
+  return raw.trim().replace(/\s+/g, " ");
+}
+
+async function publicState(): Promise<PorraPublicState> {
+  const { currentPorraUser } = await import("./session.server");
+  const store = await import("./store.server");
+  const [me, users, slates, picks] = await Promise.all([
+    currentPorraUser(),
+    store.listUsers(),
+    store.listSlates(),
+    store.listPicks(),
+  ]);
+  const visible = slates.filter((s) => s.published);
+  return {
+    now: Date.now(),
+    user: me,
+    slates: visible,
+    myPicks: me ? picks.filter((p) => p.userId === me.id) : [],
+    board: leaderboard(users, visible, picks),
+  };
+}
+
+export const porraState = createServerFn({ method: "GET" }).handler(async () => publicState());
+
+export const porraRegister = createServerFn({ method: "POST" })
+  .inputValidator((d: { name: string; password: string }) => d)
+  .handler(async ({ data }) => {
+    const name = cleanName(data.name ?? "");
+    const password = String(data.password ?? "");
+    if (!NAME_RE.test(name)) {
+      return { ok: false as const, error: "El alias debe tener entre 3 y 24 caracteres." };
+    }
+    if (password.length < 4) {
+      return { ok: false as const, error: "La contraseña necesita al menos 4 caracteres." };
+    }
+    const store = await import("./store.server");
+    if (await store.findUserByName(name)) {
+      return { ok: false as const, error: "Ese alias ya está en uso." };
+    }
+    const user = await store.createUser(name, password);
+    const session = await import("./session.server");
+    await session.writePorraCookie(await session.issueUserToken(user.id, user.name));
+    return { ok: true as const, state: await publicState() };
+  });
+
+export const porraLogin = createServerFn({ method: "POST" })
+  .inputValidator((d: { name: string; password: string }) => d)
+  .handler(async ({ data }) => {
+    const store = await import("./store.server");
+    const user = await store.findUserByName(cleanName(data.name ?? ""));
+    if (!user || !(await store.checkPass(String(data.password ?? ""), user.pass))) {
+      return { ok: false as const, error: "Alias o contraseña incorrectos." };
+    }
+    const session = await import("./session.server");
+    await session.writePorraCookie(await session.issueUserToken(user.id, user.name));
+    return { ok: true as const, state: await publicState() };
+  });
+
+export const porraLogout = createServerFn({ method: "POST" }).handler(async () => {
+  const session = await import("./session.server");
+  await session.clearPorraCookie();
+  return { ok: true as const, state: await publicState() };
+});
+
+export const porraSavePicks = createServerFn({ method: "POST" })
+  .inputValidator((d: { slateId: string; picks: Array<{ matchId: string; pick: Quiniela }> }) => d)
+  .handler(async ({ data }) => {
+    const session = await import("./session.server");
+    const me = await session.currentPorraUser();
+    if (!me) return { ok: false as const, error: "Regístrate para pronosticar." };
+    const store = await import("./store.server");
+    const slates = await store.listSlates();
+    const slate = slates.find((s) => s.id === data.slateId && s.published);
+    if (!slate) return { ok: false as const, error: "Jornada no encontrada." };
+    if (isLocked(slate.lockAt)) {
+      return { ok: false as const, error: "La porra se cerró el viernes a las 17:00 (hora española)." };
+    }
+    const allowed = new Set(slate.matches.map((m) => m.id));
+    for (const row of data.picks ?? []) {
+      if (!allowed.has(row.matchId)) continue;
+      if (row.pick !== "1" && row.pick !== "X" && row.pick !== "2") continue;
+      await store.savePick({
+        userId: me.id,
+        slateId: slate.id,
+        matchId: row.matchId,
+        pick: row.pick,
+        updatedAt: Date.now(),
+      });
+    }
+    return { ok: true as const, state: await publicState() };
+  });
+
+export const porraAdminList = createServerFn({ method: "GET" }).handler(async () => {
+  const { requireAdmin } = await import("@/lib/admin/session.server");
+  if (!(await requireAdmin())) return { ok: false as const, slates: [] as PorraSlate[] };
+  const store = await import("./store.server");
+  return { ok: true as const, slates: await store.listSlates() };
+});
+
+export const porraAdminSaveSlate = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: {
+      id?: string;
+      title: string;
+      lockAt?: string;
+      published?: boolean;
+      matches: Array<{ id?: string; home: string; away: string; kickoff?: string; result?: Quiniela | null }>;
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    const { requireAdmin } = await import("@/lib/admin/session.server");
+    if (!(await requireAdmin())) return { ok: false as const, error: "Sesión caducada." };
+    const title = String(data.title ?? "").trim();
+    if (title.length < 3) return { ok: false as const, error: "Pon un nombre a la jornada." };
+    const matches: PorraMatch[] = (data.matches ?? [])
+      .map((m) => ({
+        id: m.id?.trim() || randomBytes(5).toString("hex"),
+        home: String(m.home ?? "").trim(),
+        away: String(m.away ?? "").trim(),
+        kickoff: m.kickoff?.trim() || undefined,
+        result: m.result === "1" || m.result === "X" || m.result === "2" ? m.result : null,
+      }))
+      .filter((m) => m.home && m.away);
+    if (!matches.length) return { ok: false as const, error: "Añade al menos un partido." };
+    const store = await import("./store.server");
+    const existing = data.id ? (await store.listSlates()).find((s) => s.id === data.id) : undefined;
+    const slate: PorraSlate = {
+      id: existing?.id || data.id?.trim() || randomBytes(6).toString("hex"),
+      title,
+      lockAt: data.lockAt?.trim() || existing?.lockAt || nextFridayLockIso(),
+      matches,
+      createdAt: existing?.createdAt || Date.now(),
+      published: data.published ?? existing?.published ?? true,
+    };
+    await store.upsertSlate(slate);
+    return { ok: true as const, slate };
+  });
+
+export const porraAdminDeleteSlate = createServerFn({ method: "POST" })
+  .inputValidator((d: { id: string }) => d)
+  .handler(async ({ data }) => {
+    const { requireAdmin } = await import("@/lib/admin/session.server");
+    if (!(await requireAdmin())) return { ok: false as const, error: "Sesión caducada." };
+    const store = await import("./store.server");
+    await store.removeSlate(data.id);
+    return { ok: true as const };
+  });
