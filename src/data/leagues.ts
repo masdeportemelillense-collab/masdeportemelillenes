@@ -2,6 +2,8 @@ import type { League } from "@/lib/types";
 
 const t = (name: string, short: string, id?: string) => ({ name, short, id });
 
+export const CUP_LEAGUE_IDS = new Set(["copa-federacion", "copa-espana-bsk"]);
+
 export const leagues: League[] = [
   {
     id: "tercera-g9",
@@ -101,7 +103,7 @@ export const leagues: League[] = [
   },
   {
     id: "tercera-fem",
-    name: "Tercera Federación Femenina",
+    name: "Tercera Federación Femenina · Grupo 9",
     shortName: "3ª ERFEF Fem.",
     sport: "futbol",
     scoring: "football",
@@ -233,6 +235,20 @@ export const leagues: League[] = [
       t("Cáceres Patrimonio de la Humanidad", "CAC"),
       t("CB Algeciras", "ALG"),
       t("Jaén Paraíso Interior FS", "JAE"),
+    ],
+  },
+  {
+    id: "copa-espana-bsk",
+    name: "Copa de España",
+    shortName: "Copa España",
+    sport: "baloncesto",
+    scoring: "basket",
+    format: "cup",
+    teams: [
+      t("Melilla Baloncesto", "MELB", "melilla-baloncesto"),
+      t("CB Algeciras", "ALG"),
+      t("Jaén Paraíso Interior", "JAE"),
+      t("CB Starlabs Morón", "MOR"),
     ],
   },
   {
