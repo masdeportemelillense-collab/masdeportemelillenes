@@ -6,7 +6,7 @@ import { formatDay, MatchCard } from "@/components/match-card";
 import { SportMark } from "@/components/sport-mark";
 import { StandingsTable } from "@/components/standings-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { leagueById } from "@/data/leagues";
+import { CUP_LEAGUE_IDS, leagueById } from "@/data/leagues";
 import { getSquad, groupSquad, type TeamSquad } from "@/data/squads";
 import { getTeam } from "@/data/teams";
 import { useFeed } from "@/lib/api/feed";
@@ -26,8 +26,12 @@ function TeamPage() {
   const feed = useFeed();
   const league = leagueById[team.leagueId];
   const all = feed.forTeam(team.id);
-  const results = [...all].filter((m) => m.status === "finished").reverse();
-  const calendar = all.filter((m) => m.status !== "finished");
+  const cupMatches = all.filter((m) => CUP_LEAGUE_IDS.has(m.leagueId));
+  const leagueMatches = all.filter((m) => !CUP_LEAGUE_IDS.has(m.leagueId));
+  const results = [...leagueMatches].filter((m) => m.status === "finished").reverse();
+  const calendar = leagueMatches.filter((m) => m.status !== "finished");
+  const cupResults = [...cupMatches].filter((m) => m.status === "finished").reverse();
+  const cupCalendar = cupMatches.filter((m) => m.status !== "finished");
   const live = all.filter((m) => m.status === "live");
   const next = feed.next(team.id);
   const form = feed.form(team.id);
@@ -43,8 +47,12 @@ function TeamPage() {
     refetchInterval: 6 * 60 * 60_000,
   });
   const squad = (remote.data as TeamSquad | null) ?? local;
+  const showCopa = cupMatches.length > 0;
+  const copaName =
+    cupMatches[0] ? leagueById[cupMatches[0].leagueId]?.name ?? "Copa" : "Copa";
 
   const groupedCalendar = groupByDay(calendar.map((m) => ({ ...m, sort: m.kickoff })));
+  const groupedCup = groupByDay([...cupResults, ...cupCalendar].map((m) => ({ ...m, sort: m.kickoff })));
 
   return (
     <div className="space-y-8">
@@ -96,6 +104,7 @@ function TeamPage() {
           <TabsTrigger value="resultados">Resultados</TabsTrigger>
           <TabsTrigger value="calendario">Calendario</TabsTrigger>
           <TabsTrigger value="clasificacion">Clasificación</TabsTrigger>
+          {showCopa ? <TabsTrigger value="copa">{copaName}</TabsTrigger> : null}
           {squad ? <TabsTrigger value="plantilla">Plantilla</TabsTrigger> : null}
         </TabsList>
         <TabsContent value="resultados">
@@ -143,6 +152,31 @@ function TeamPage() {
             <Empty text="Clasificación no disponible." />
           )}
         </TabsContent>
+        {showCopa ? (
+          <TabsContent value="copa">
+            {cupMatches.length === 0 ? (
+              <Empty text="Todavía no hay partidos de copa." />
+            ) : (
+              <div className="space-y-6">
+                <p className="text-sm text-muted">
+                  Fase de grupos de la Copa de España. Resultados y próximos partidos.
+                </p>
+                {groupedCup.map(([day, list]) => (
+                  <div key={day}>
+                    <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+                      {formatDay(list[0].kickoff)}
+                    </p>
+                    <div className="grid gap-3">
+                      {list.map((m) => (
+                        <MatchCard key={m.id} match={m} highlightId={team.id} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        ) : null}
         {squad ? (
           <TabsContent value="plantilla">
             <SquadPanel squad={squad} loading={remote.isFetching} />
