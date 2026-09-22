@@ -2,9 +2,9 @@
  * Durable JSON documents for admin overrides and the porra.
  *
  * Priority:
- *  1. Neon / Postgres when DATABASE_URL is set (`app_kv` table)
- *  2. Netlify Blobs on Netlify (survives deploys and cold starts)
- *  3. /tmp + memory (local preview)
+ *  1. Neon / Postgres when DATABASE_URL or Netlify Database is available
+ *  2. Netlify Blobs (survives deploys and cold starts)
+ *  3. /tmp + memory (last resort — one isolate only)
  */
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
@@ -57,95 +57,55 @@ function fileDriver(): Driver {
   };
 }
 
-type BlobsCtx = {
-  token: string;
-  siteID?: string;
-  apiURL?: string;
-  edgeURL?: string;
-  uncachedEdgeURL?: string;
-  url?: string;
-};
-
-function decodeBlobsContext(): BlobsCtx | null {
-  const raw = process.env.NETLIFY_BLOBS_CONTEXT;
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw.startsWith("{") ? raw : Buffer.from(raw, "base64").toString("utf8")) as BlobsCtx;
-      if (parsed?.token) return parsed;
-    } catch {
-      /* ignore */
-    }
-  }
-  const token = process.env.NETLIFY_BLOBS_TOKEN || process.env.BLOBS_TOKEN;
-  const siteID = process.env.NETLIFY_SITE_ID || process.env.SITE_ID;
-  if (token && siteID) return { token, siteID, apiURL: "https://api.netlify.com" };
-  return null;
-}
-
-function blobObjectUrl(ctx: BlobsCtx, key: string): string {
-  const siteID = ctx.siteID || process.env.NETLIFY_SITE_ID || process.env.SITE_ID || "";
-  const store = `site:mdm-persist`;
-  const path = `/${siteID}/${store}/${key}`;
-  const edge = ctx.uncachedEdgeURL || ctx.edgeURL || ctx.url;
-  if (edge && !edge.includes("api.netlify.com")) {
-    return new URL(path, edge).toString();
-  }
-  return new URL(`/api/v1/blobs${path}`, ctx.apiURL || "https://api.netlify.com").toString();
-}
-
-async function blobsDriver(): Promise<Driver | null> {
+async function netlifySqlUrl(): Promise<string | undefined> {
+  const direct = process.env.DATABASE_URL?.trim();
+  if (direct) return direct;
   try {
-    const mod = await import("@netlify/blobs").catch(() => null);
-    if (mod?.getStore) {
-      const store = mod.getStore({ name: "mdm-persist", consistency: "strong" });
-      return {
-        name: "blobs",
-        async get(key) {
-          const value = await store.get(key, { type: "text" });
-          return value == null ? null : String(value);
-        },
-        async set(key, value) {
-          await store.set(key, value);
-        },
-      };
-    }
+    const mod = (await import("@netlify/database").catch(() => null)) as
+      | { getConnectionString?: () => string | Promise<string> }
+      | null;
+    const url = await mod?.getConnectionString?.();
+    return url?.trim() || undefined;
   } catch {
-    /* package missing or env not wired */
+    return undefined;
   }
-
-  const ctx = decodeBlobsContext();
-  if (!ctx) return null;
-  return {
-    name: "blobs",
-    async get(key) {
-      const res = await fetch(blobObjectUrl(ctx, key), {
-        headers: { authorization: `Bearer ${ctx.token}` },
-      });
-      if (res.status === 404) return null;
-      if (!res.ok) throw new Error(`blobs get ${res.status}`);
-      return await res.text();
-    },
-    async set(key, value) {
-      const res = await fetch(blobObjectUrl(ctx, key), {
-        method: "PUT",
-        headers: {
-          authorization: `Bearer ${ctx.token}`,
-          "content-type": "text/plain; charset=utf-8",
-        },
-        body: value,
-      });
-      if (!res.ok) throw new Error(`blobs set ${res.status}`);
-    },
-  };
 }
 
 async function sqlDriver(): Promise<Driver | null> {
-  const url = process.env.DATABASE_URL?.trim();
+  const url = await netlifySqlUrl();
   if (!url) return null;
   try {
     const { getSql } = await import("@/lib/db");
-    const sql = await getSql();
-    await sql.query(
+    // getSql() only uses DATABASE_URL; if only Netlify Database is present,
+    // talk to pg directly with that connection string.
+    if (process.env.DATABASE_URL?.trim()) {
+      const sql = await getSql();
+      await sql.query(
+        `create table if not exists app_kv (
+          key text primary key,
+          value text not null,
+          updated_at timestamptz not null default now()
+        )`,
+      );
+      return {
+        name: "sql",
+        async get(key) {
+          const rows = await sql.query<{ value: string }>("select value from app_kv where key = $1", [key]);
+          return rows[0]?.value ?? null;
+        },
+        async set(key, value) {
+          await sql.query(
+            `insert into app_kv (key, value, updated_at) values ($1, $2, now())
+             on conflict (key) do update set value = excluded.value, updated_at = now()`,
+            [key, value],
+          );
+        },
+      };
+    }
+
+    const { Pool } = await import("pg");
+    const pool = new Pool({ connectionString: url, max: 1 });
+    await pool.query(
       `create table if not exists app_kv (
         key text primary key,
         value text not null,
@@ -155,23 +115,49 @@ async function sqlDriver(): Promise<Driver | null> {
     return {
       name: "sql",
       async get(key) {
-        const rows = await sql.query<{ value: string }>(
-          "select value from app_kv where key = $1",
-          [key],
-        );
-        return rows[0]?.value ?? null;
+        const res = await pool.query("select value from app_kv where key = $1", [key]);
+        return (res.rows[0]?.value as string | undefined) ?? null;
       },
       async set(key, value) {
-        await sql.query(
-          `insert into app_kv (key, value, updated_at)
-           values ($1, $2, now())
+        await pool.query(
+          `insert into app_kv (key, value, updated_at) values ($1, $2, now())
            on conflict (key) do update set value = excluded.value, updated_at = now()`,
           [key, value],
         );
       },
     };
   } catch (err) {
-    console.error("[persist] sql driver failed, falling back", err);
+    console.error("[persist] sql driver failed", err);
+    return null;
+  }
+}
+
+async function officialBlobsDriver(): Promise<Driver | null> {
+  try {
+    const mod = (await import("@netlify/blobs").catch(() => null)) as
+      | {
+          getStore?: (opts: { name: string; consistency?: string }) => {
+            get: (key: string, opts?: { type: string }) => Promise<string | null>;
+            set: (key: string, value: string) => Promise<void>;
+          };
+        }
+      | null;
+    if (!mod?.getStore) return null;
+    const store = mod.getStore({ name: "mdm-persist", consistency: "strong" });
+    // Probe: a missing key must resolve, not throw.
+    await store.get("__probe__", { type: "text" });
+    return {
+      name: "blobs",
+      async get(key) {
+        const value = await store.get(key, { type: "text" });
+        return value == null ? null : String(value);
+      },
+      async set(key, value) {
+        await store.set(key, value);
+      },
+    };
+  } catch (err) {
+    console.error("[persist] netlify blobs package unavailable", err);
     return null;
   }
 }
@@ -181,8 +167,9 @@ async function resolveDriver(): Promise<Driver> {
     g.__mdmPersistDriver = (async () => {
       const sql = await sqlDriver();
       if (sql) return sql;
-      const blobs = await blobsDriver();
+      const blobs = await officialBlobsDriver();
       if (blobs) return blobs;
+      console.warn("[persist] using ephemeral file store — edits will not survive another function instance");
       return fileDriver();
     })().catch((err) => {
       g.__mdmPersistDriver = undefined;
@@ -197,22 +184,41 @@ export async function persistBackend(): Promise<Driver["name"]> {
 }
 
 export async function readDoc<T>(key: string, fallback: T): Promise<T> {
+  const cached = mem().get(key);
+  if (cached) {
+    try {
+      return JSON.parse(cached) as T;
+    } catch {
+      /* fall through */
+    }
+  }
   const driver = await resolveDriver();
   try {
     const raw = await driver.get(key);
     if (!raw) return fallback;
+    mem().set(key, raw);
     return JSON.parse(raw) as T;
-  } catch {
+  } catch (err) {
+    console.error("[persist] read failed", key, err);
     return fallback;
   }
 }
 
 export async function writeDoc<T>(key: string, value: T): Promise<void> {
+  const raw = JSON.stringify(value);
+  mem().set(key, raw);
   const driver = await resolveDriver();
-  await driver.set(key, JSON.stringify(value));
+  await driver.set(key, raw);
+  // Mirror to /tmp so the same isolate can recover if the remote read is slow.
+  if (driver.name !== "file") {
+    try {
+      await fileDriver().set(key, raw);
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
-/** Serialize read-modify-write per key inside one isolate. */
 export async function updateDoc<T>(
   key: string,
   fallback: T,
