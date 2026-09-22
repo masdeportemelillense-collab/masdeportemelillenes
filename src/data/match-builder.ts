@@ -1,6 +1,7 @@
 import { teamById } from "@/data/teams";
 import { badgeFor } from "@/data/badges";
 import { futbolmeBadge } from "@/data/futbolme-badges";
+import { officialBadge } from "@/data/official-badges";
 import { solofutsalBadge } from "@/data/solofutsal-badges";
 import type { EventKind, Match, MatchEvent, Side, Sport } from "@/lib/types";
 
@@ -62,7 +63,7 @@ export function buildEvents(specs: EventSpec[] | undefined): MatchEvent[] {
 }
 
 function resolveBadge(id?: string, name?: string): string | undefined {
-  return solofutsalBadge(id, name) || futbolmeBadge(id, name) || badgeFor(id, name);
+  return officialBadge(id, name) || solofutsalBadge(id, name) || futbolmeBadge(id, name) || badgeFor(id, name);
 }
 
 export function m(spec: Spec): Match {
