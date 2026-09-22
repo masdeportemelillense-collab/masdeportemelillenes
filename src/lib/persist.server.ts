@@ -10,6 +10,8 @@ type Driver = {
   set: (key: string, value: string) => Promise<void>;
 };
 
+const KV_SECRET = "mdm-kv-melilla-2026";
+
 const g = globalThis as typeof globalThis & {
   __mdmPersistDriver?: Promise<Driver>;
   __mdmPersistMem?: Map<string, string>;
@@ -52,81 +54,54 @@ function fileDriver(): Driver {
   };
 }
 
+function siteOrigin(): string | null {
+  const candidates = [
+    process.env.URL,
+    process.env.DEPLOY_PRIME_URL,
+    process.env.DEPLOY_URL,
+    process.env.SITE_URL,
+    "https://masdeportemelillene.netlify.app",
+  ];
+  for (const raw of candidates) {
+    const value = raw?.trim();
+    if (value && /^https?:\/\//.test(value)) return value.replace(/\/$/, "");
+  }
+  return null;
+}
+
+async function edgeKvDriver(): Promise<Driver | null> {
+  const origin = siteOrigin();
+  if (!origin || !origin.includes("netlify.app")) return null;
+  const endpoint = (key: string) => `${origin}/__mdm-kv?key=${encodeURIComponent(key)}&s=${KV_SECRET}`;
+  try {
+    const probe = await fetch(endpoint("__probe__"), { method: "GET" });
+    if (probe.status === 403 || probe.status === 404 || probe.status === 200) {
+      /* endpoint exists */
+    } else if (probe.status >= 500) {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+  return {
+    name: "blobs",
+    async get(key) {
+      const res = await fetch(endpoint(key), { method: "GET" });
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error(`kv get ${res.status}`);
+      return await res.text();
+    },
+    async set(key, value) {
+      const res = await fetch(endpoint(key), { method: "PUT", body: value });
+      if (!res.ok) throw new Error(`kv set ${res.status}`);
+    },
+  };
+}
+
 async function dynImport(mod: string): Promise<any | null> {
   try {
     return await (Function("m", "return import(m)") as (m: string) => Promise<any>)(mod);
   } catch {
-    return null;
-  }
-}
-
-async function netlifySqlUrl(): Promise<string | undefined> {
-  const direct = process.env.DATABASE_URL?.trim();
-  if (direct) return direct;
-  const mod = await dynImport("@netlify/database");
-  try {
-    const url = await mod?.getConnectionString?.();
-    return typeof url === "string" && url.trim() ? url.trim() : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-async function sqlDriver(): Promise<Driver | null> {
-  const url = await netlifySqlUrl();
-  if (!url) return null;
-  try {
-    if (process.env.DATABASE_URL?.trim()) {
-      const { getSql } = await import("@/lib/db");
-      const sql = await getSql();
-      await sql.query(
-        `create table if not exists app_kv (
-          key text primary key,
-          value text not null,
-          updated_at timestamptz not null default now()
-        )`,
-      );
-      return {
-        name: "sql",
-        async get(key) {
-          const rows = await sql.query<{ value: string }>("select value from app_kv where key = $1", [key]);
-          return rows[0]?.value ?? null;
-        },
-        async set(key, value) {
-          await sql.query(
-            `insert into app_kv (key, value, updated_at) values ($1, $2, now())
-             on conflict (key) do update set value = excluded.value, updated_at = now()`,
-            [key, value],
-          );
-        },
-      };
-    }
-
-    const { Pool } = await import("pg");
-    const pool = new Pool({ connectionString: url, max: 1 });
-    await pool.query(
-      `create table if not exists app_kv (
-        key text primary key,
-        value text not null,
-        updated_at timestamptz not null default now()
-      )`,
-    );
-    return {
-      name: "sql",
-      async get(key) {
-        const res = await pool.query("select value from app_kv where key = $1", [key]);
-        return (res.rows[0]?.value as string | undefined) ?? null;
-      },
-      async set(key, value) {
-        await pool.query(
-          `insert into app_kv (key, value, updated_at) values ($1, $2, now())
-           on conflict (key) do update set value = excluded.value, updated_at = now()`,
-          [key, value],
-        );
-      },
-    };
-  } catch (err) {
-    console.error("[persist] sql driver failed", err);
     return null;
   }
 }
@@ -147,8 +122,39 @@ async function officialBlobsDriver(): Promise<Driver | null> {
         await store.set(key, value);
       },
     };
-  } catch (err) {
-    console.error("[persist] netlify blobs unavailable", err);
+  } catch {
+    return null;
+  }
+}
+
+async function sqlDriver(): Promise<Driver | null> {
+  const url = process.env.DATABASE_URL?.trim();
+  if (!url) return null;
+  try {
+    const { getSql } = await import("@/lib/db");
+    const sql = await getSql();
+    await sql.query(
+      `create table if not exists app_kv (
+        key text primary key,
+        value text not null,
+        updated_at timestamptz not null default now()
+      )`,
+    );
+    return {
+      name: "sql",
+      async get(key) {
+        const rows = await sql.query<{ value: string }>("select value from app_kv where key = $1", [key]);
+        return rows[0]?.value ?? null;
+      },
+      async set(key, value) {
+        await sql.query(
+          `insert into app_kv (key, value, updated_at) values ($1, $2, now())
+           on conflict (key) do update set value = excluded.value, updated_at = now()`,
+          [key, value],
+        );
+      },
+    };
+  } catch {
     return null;
   }
 }
@@ -158,9 +164,10 @@ async function resolveDriver(): Promise<Driver> {
     g.__mdmPersistDriver = (async () => {
       const sql = await sqlDriver();
       if (sql) return sql;
+      const edge = await edgeKvDriver();
+      if (edge) return edge;
       const blobs = await officialBlobsDriver();
       if (blobs) return blobs;
-      console.warn("[persist] ephemeral file store");
       return fileDriver();
     })().catch((err) => {
       g.__mdmPersistDriver = undefined;
@@ -175,22 +182,26 @@ export async function persistBackend(): Promise<Driver["name"]> {
 }
 
 export async function readDoc<T>(key: string, fallback: T): Promise<T> {
-  const cached = mem().get(key);
-  if (cached) {
-    try {
-      return JSON.parse(cached) as T;
-    } catch {
-      /* fall through */
-    }
-  }
   const driver = await resolveDriver();
   try {
     const raw = await driver.get(key);
-    if (!raw) return fallback;
+    if (!raw) {
+      const cached = mem().get(key);
+      if (cached) return JSON.parse(cached) as T;
+      return fallback;
+    }
     mem().set(key, raw);
     return JSON.parse(raw) as T;
   } catch (err) {
     console.error("[persist] read failed", key, err);
+    const cached = mem().get(key);
+    if (cached) {
+      try {
+        return JSON.parse(cached) as T;
+      } catch {
+        /* ignore */
+      }
+    }
     return fallback;
   }
 }
@@ -199,14 +210,10 @@ export async function writeDoc<T>(key: string, value: T): Promise<void> {
   const raw = JSON.stringify(value);
   mem().set(key, raw);
   const driver = await resolveDriver();
-  await driver.set(key, raw);
-  if (driver.name !== "file") {
-    try {
-      await fileDriver().set(key, raw);
-    } catch {
-      /* ignore */
-    }
+  if (driver.name === "file" && process.env.NETLIFY) {
+    throw new Error("El almacén permanente no está listo en este deploy.");
   }
+  await driver.set(key, raw);
 }
 
 export async function updateDoc<T>(
