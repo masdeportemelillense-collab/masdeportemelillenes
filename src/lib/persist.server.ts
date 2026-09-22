@@ -1,10 +1,5 @@
 /**
  * Durable JSON documents for admin overrides and the porra.
- *
- * Priority:
- *  1. Neon / Postgres when DATABASE_URL or Netlify Database is available
- *  2. Netlify Blobs (survives deploys and cold starts)
- *  3. /tmp + memory (last resort — one isolate only)
  */
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
@@ -57,15 +52,21 @@ function fileDriver(): Driver {
   };
 }
 
+async function dynImport(mod: string): Promise<any | null> {
+  try {
+    return await (Function("m", "return import(m)") as (m: string) => Promise<any>)(mod);
+  } catch {
+    return null;
+  }
+}
+
 async function netlifySqlUrl(): Promise<string | undefined> {
   const direct = process.env.DATABASE_URL?.trim();
   if (direct) return direct;
+  const mod = await dynImport("@netlify/database");
   try {
-    const mod = (await import("@netlify/database").catch(() => null)) as
-      | { getConnectionString?: () => string | Promise<string> }
-      | null;
     const url = await mod?.getConnectionString?.();
-    return url?.trim() || undefined;
+    return typeof url === "string" && url.trim() ? url.trim() : undefined;
   } catch {
     return undefined;
   }
@@ -75,10 +76,8 @@ async function sqlDriver(): Promise<Driver | null> {
   const url = await netlifySqlUrl();
   if (!url) return null;
   try {
-    const { getSql } = await import("@/lib/db");
-    // getSql() only uses DATABASE_URL; if only Netlify Database is present,
-    // talk to pg directly with that connection string.
     if (process.env.DATABASE_URL?.trim()) {
+      const { getSql } = await import("@/lib/db");
       const sql = await getSql();
       await sql.query(
         `create table if not exists app_kv (
@@ -133,18 +132,10 @@ async function sqlDriver(): Promise<Driver | null> {
 }
 
 async function officialBlobsDriver(): Promise<Driver | null> {
+  const mod = await dynImport("@netlify/blobs");
+  if (!mod?.getStore) return null;
   try {
-    const mod = (await import("@netlify/blobs").catch(() => null)) as
-      | {
-          getStore?: (opts: { name: string; consistency?: string }) => {
-            get: (key: string, opts?: { type: string }) => Promise<string | null>;
-            set: (key: string, value: string) => Promise<void>;
-          };
-        }
-      | null;
-    if (!mod?.getStore) return null;
     const store = mod.getStore({ name: "mdm-persist", consistency: "strong" });
-    // Probe: a missing key must resolve, not throw.
     await store.get("__probe__", { type: "text" });
     return {
       name: "blobs",
@@ -157,7 +148,7 @@ async function officialBlobsDriver(): Promise<Driver | null> {
       },
     };
   } catch (err) {
-    console.error("[persist] netlify blobs package unavailable", err);
+    console.error("[persist] netlify blobs unavailable", err);
     return null;
   }
 }
@@ -169,7 +160,7 @@ async function resolveDriver(): Promise<Driver> {
       if (sql) return sql;
       const blobs = await officialBlobsDriver();
       if (blobs) return blobs;
-      console.warn("[persist] using ephemeral file store — edits will not survive another function instance");
+      console.warn("[persist] ephemeral file store");
       return fileDriver();
     })().catch((err) => {
       g.__mdmPersistDriver = undefined;
@@ -209,7 +200,6 @@ export async function writeDoc<T>(key: string, value: T): Promise<void> {
   mem().set(key, raw);
   const driver = await resolveDriver();
   await driver.set(key, raw);
-  // Mirror to /tmp so the same isolate can recover if the remote read is slow.
   if (driver.name !== "file") {
     try {
       await fileDriver().set(key, raw);
@@ -231,10 +221,7 @@ export async function updateDoc<T>(
   const hold = new Promise<void>((resolve) => {
     release = resolve;
   });
-  locks.set(
-    key,
-    prev.then(() => hold),
-  );
+  locks.set(key, prev.then(() => hold));
   await prev.catch(() => undefined);
   try {
     const current = await readDoc(key, fallback);
