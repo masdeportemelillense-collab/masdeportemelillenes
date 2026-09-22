@@ -6,6 +6,7 @@ import { SportMark } from "@/components/sport-mark";
 import { StandingsTable } from "@/components/standings-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { leagueById } from "@/data/leagues";
+import { getSquad, groupSquad } from "@/data/squads";
 import { getTeam } from "@/data/teams";
 import { useFeed } from "@/lib/api/feed";
 import { useFavorite } from "@/lib/favorites";
@@ -31,6 +32,7 @@ function TeamPage() {
   const table = feed.standings(team.leagueId);
   const pos = table.find((r) => r.teamId === team.id);
   const { fav, toggle } = useFavorite(team.id);
+  const squad = getSquad(team.id);
 
   const groupedCalendar = groupByDay(calendar.map((m) => ({ ...m, sort: m.kickoff })));
 
@@ -84,6 +86,7 @@ function TeamPage() {
           <TabsTrigger value="resultados">Resultados</TabsTrigger>
           <TabsTrigger value="calendario">Calendario</TabsTrigger>
           <TabsTrigger value="clasificacion">Clasificación</TabsTrigger>
+          {squad ? <TabsTrigger value="plantilla">Plantilla</TabsTrigger> : null}
         </TabsList>
         <TabsContent value="resultados">
           {results.length === 0 ? (
@@ -130,6 +133,11 @@ function TeamPage() {
             <Empty text="Clasificación no disponible." />
           )}
         </TabsContent>
+        {squad ? (
+          <TabsContent value="plantilla">
+            <SquadPanel squad={squad} />
+          </TabsContent>
+        ) : null}
       </Tabs>
 
       <p className="text-xs text-subtle">
@@ -137,6 +145,54 @@ function TeamPage() {
           Ver todo {sportLabel[team.sport].toLowerCase()}
         </Link>
       </p>
+    </div>
+  );
+}
+
+function SquadPanel({ squad }: { squad: NonNullable<ReturnType<typeof getSquad>> }) {
+  const groups = groupSquad(squad);
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted">Temporada {squad.season}</p>
+          <h2 className="font-display text-2xl">Plantilla</h2>
+        </div>
+        <a
+          href={squad.source.href}
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs text-accent hover:underline"
+        >
+          Fuente: {squad.source.label}
+        </a>
+      </div>
+      {squad.note ? <p className="text-xs text-subtle">{squad.note}</p> : null}
+      {groups.map((g) => (
+        <section key={g.pos}>
+          <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">{g.label}</h3>
+          <ul className="overflow-hidden rounded-xl bg-surface shadow-[var(--shadow-border)]">
+            {g.players.map((p, i) => (
+              <li
+                key={`${p.num ?? "x"}-${p.name}`}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-2.5",
+                  i > 0 && "border-t border-border",
+                )}
+              >
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-surface-2 text-sm font-semibold tabular-nums">
+                  {p.num ?? "—"}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{p.name}</p>
+                  {p.role ? <p className="text-xs text-muted">{p.role}</p> : null}
+                </div>
+                <span className="text-[11px] uppercase tracking-wider text-subtle">{g.pos}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 }
