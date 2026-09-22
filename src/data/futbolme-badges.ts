@@ -1,9 +1,13 @@
-/** Escudos oficiales de futbolme.com para el Grupo 9 y Copa RFEF. */
+/** Escudos oficiales de futbolme.com para el Grupo 9, Copa RFEF y juveniles. */
 const FM = "https://futbolme.com/static/img/club";
 
 const BY_KEY: Record<string, string> = {
   "ud-melilla": `${FM}/escudo117.png`,
   udmelilla: `${FM}/escudo117.png`,
+  "atletico-melilla-dh": `${FM}/escudo7785.png`,
+  atleticomelilla: `${FM}/escudo7785.png`,
+  atleticomelillacf: `${FM}/escudo7785.png`,
+  atmj: `${FM}/escudo7785.png`,
   "udc torredonjimeno": `${FM}/escudo5232.png`,
   udctorredonjimeno: `${FM}/escudo5232.png`,
   torredonjimeno: `${FM}/escudo5232.png`,
