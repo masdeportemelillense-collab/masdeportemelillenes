@@ -61,9 +61,12 @@ function PorraPage() {
 
 function AccountBar({ name, onLogout }: { name: string; onLogout: () => void }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3 shadow-[var(--shadow-border)]">
-      <p className="text-sm">Juegas como <span className="font-medium text-accent">{name}</span></p>
-      <button type="button" onClick={onLogout} className="text-xs uppercase tracking-wider text-muted hover:text-fg">Salir</button>
+    <div className="rounded-xl bg-surface px-4 py-3 shadow-[var(--shadow-border)]">
+      <p className="text-sm font-medium text-accent">Ya estás registrado.</p>
+      <div className="mt-1 flex items-center justify-between gap-3">
+        <p className="text-sm text-muted">Juegas como <span className="font-medium text-fg">{name}</span></p>
+        <button type="button" onClick={onLogout} className="text-xs uppercase tracking-wider text-muted hover:text-fg">Salir</button>
+      </div>
     </div>
   );
 }
