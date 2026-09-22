@@ -2,11 +2,13 @@ import { udmMatches } from "@/data/matches-udm";
 import { basketAMatches } from "@/data/matches-basket-a";
 import { restoMatches } from "@/data/matches-resto";
 import { juvMatches } from "@/data/matches-juv";
+import { atmMatches } from "@/data/matches-atm";
 import type { Match } from "@/lib/types";
 
 export const matches: Match[] = [
   ...udmMatches,
   ...juvMatches,
+  ...atmMatches,
   ...basketAMatches,
   ...restoMatches,
 ];
