@@ -8,6 +8,7 @@ import {
   porraSavePicks,
   porraState,
 } from "@/lib/porra/actions";
+import { scoreSlate, scoreUser } from "@/lib/porra/score";
 import { formatMadrid, isLocked } from "@/lib/porra/time";
 import type { PorraPick, PorraPublicState, PorraSlate, Quiniela } from "@/lib/porra/types";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,15 @@ function PorraPage() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["porra-state"], queryFn: () => porraState() });
   const state = q.data;
+  const ordered = useMemo(() => {
+    if (!state) return [];
+    return [...state.slates].sort((a, b) => {
+      const aOpen = !isLocked(a.lockAt, state.now);
+      const bOpen = !isLocked(b.lockAt, state.now);
+      if (aOpen !== bOpen) return aOpen ? -1 : 1;
+      return b.createdAt - a.createdAt;
+    });
+  }, [state]);
   if (q.isLoading || !state) return <p className="text-sm text-muted">Cargando la porra…</p>;
   return (
     <div className="space-y-8">
@@ -29,7 +39,7 @@ function PorraPage() {
           <p className="mt-4 max-w-xl text-sm text-muted sm:text-base">
             Pronostica los partidos que publique el administrador. Cada acierto suma 1 punto.
             Los pronósticos se cierran el <strong className="text-fg">viernes a las 17:00</strong> (hora española).
-            Hay que registrarse para participar.
+            Si estás registrado puedes revisar tus aciertos de todas las jornadas, aunque haya pasado un mes.
           </p>
         </div>
       </section>
@@ -40,12 +50,13 @@ function PorraPage() {
           ) : (
             <AuthCard onDone={(next) => qc.setQueryData(["porra-state"], next)} />
           )}
-          {state.slates.length === 0 ? (
+          {state.user ? <MyHits slates={ordered} picks={state.myPicks} userId={state.user.id} /> : null}
+          {ordered.length === 0 ? (
             <p className="rounded-xl bg-surface p-5 text-sm text-muted shadow-[var(--shadow-border)]">
               Todavía no hay jornada publicada. El administrador carga los partidos desde <Link to="/admin" className="text-accent hover:underline">/admin</Link>.
             </p>
           ) : (
-            state.slates.map((slate) => (
+            ordered.map((slate) => (
               <SlateCard key={slate.id} slate={slate} now={state.now} user={state.user} picks={state.myPicks.filter((p) => p.slateId === slate.id)} onSaved={(next) => qc.setQueryData(["porra-state"], next)} />
             ))
           )}
@@ -68,6 +79,45 @@ function AccountBar({ name, onLogout }: { name: string; onLogout: () => void }) 
         <button type="button" onClick={onLogout} className="text-xs uppercase tracking-wider text-muted hover:text-fg">Salir</button>
       </div>
     </div>
+  );
+}
+
+function MyHits({ slates, picks, userId }: { slates: PorraSlate[]; picks: PorraPick[]; userId: string }) {
+  const total = scoreUser(userId, slates, picks);
+  return (
+    <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="font-display text-3xl leading-none">Tus aciertos</h2>
+          <p className="mt-1 text-sm text-muted">Todas las jornadas publicadas, también las de hace semanas o meses.</p>
+        </div>
+        <p className="text-sm font-medium text-accent">{total.correct} acierto{total.correct === 1 ? "" : "s"} · {total.points} pts</p>
+      </div>
+      {slates.length === 0 ? (
+        <p className="mt-3 text-sm text-muted">Aún no hay jornadas para consultar.</p>
+      ) : (
+        <ul className="mt-4 divide-y divide-border">
+          {slates.map((slate) => {
+            const row = scoreSlate(userId, slate, picks);
+            return (
+              <li key={slate.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                <div>
+                  <p className="text-sm font-medium">{slate.title}</p>
+                  <p className="text-xs text-muted">{row.resolved ? `${row.resolved} resueltos` : "Pendiente de resultados"} · {slate.matches.length} partidos</p>
+                </div>
+                <p className="text-sm tabular-nums">
+                  {row.resolved ? (
+                    <span className="font-medium text-accent">{row.correct}/{row.resolved}</span>
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -106,6 +156,7 @@ function SlateCard({ slate, now, user, picks, onSaved }: { slate: PorraSlate; no
     onSuccess: (res) => { if (res.ok) { onSaved(res.state); setMsg("Pronóstico guardado."); } else setMsg(res.error); },
   });
   const filled = slate.matches.filter((m) => draft[m.id]).length;
+  const mine = user ? scoreSlate(user.id, slate, picks) : null;
   return (
     <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
       <div className="flex flex-wrap items-end justify-between gap-2">
@@ -113,22 +164,35 @@ function SlateCard({ slate, now, user, picks, onSaved }: { slate: PorraSlate; no
           <h2 className="font-display text-3xl leading-none">{slate.title}</h2>
           <p className="mt-1 text-xs uppercase tracking-wider text-muted">{locked ? "Cerrada" : "Abierta"} · cierra {formatMadrid(slate.lockAt)}</p>
         </div>
-        <p className="text-xs text-muted">{filled}/{slate.matches.length} pronosticados</p>
+        <div className="text-right">
+          {mine && mine.resolved ? <p className="text-sm font-medium text-accent">{mine.correct}/{mine.resolved} aciertos</p> : null}
+          <p className="text-xs text-muted">{filled}/{slate.matches.length} pronosticados</p>
+        </div>
       </div>
       <div className="mt-4 space-y-2">
-        {slate.matches.map((m) => (
-          <div key={m.id} className="grid items-center gap-2 rounded-xl bg-surface-2 px-3 py-3 sm:grid-cols-[1fr_auto] sm:px-4">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{m.home} <span className="text-muted">–</span> {m.away}</p>
-              {m.result ? <p className="mt-1 text-xs text-accent">Resultado: {labelPick(m.result)}{draft[m.id] ? (draft[m.id] === m.result ? " · acierto +1" : " · fallado") : " · sin pronóstico"}</p> : null}
+        {slate.matches.map((m) => {
+          const pick = draft[m.id];
+          const ok = m.result && pick ? pick === m.result : null;
+          return (
+            <div key={m.id} className="grid items-center gap-2 rounded-xl bg-surface-2 px-3 py-3 sm:grid-cols-[1fr_auto] sm:px-4">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{m.home} <span className="text-muted">–</span> {m.away}</p>
+                {m.result ? (
+                  <p className={cn("mt-1 text-xs", ok === true ? "text-accent" : ok === false ? "text-loss" : "text-muted")}>
+                    Resultado {m.result}{pick ? ` · tu ${pick}` : " · sin pronóstico"}{ok === true ? " · acierto +1" : ok === false ? " · fallado" : ""}
+                  </p>
+                ) : pick ? (
+                  <p className="mt-1 text-xs text-muted">Tu pronóstico: {pick}</p>
+                ) : null}
+              </div>
+              <PickTriple value={pick} disabled={!user || locked} onChange={(next) => setDraft((prev) => ({ ...prev, [m.id]: next }))} />
             </div>
-            <PickTriple value={draft[m.id]} disabled={!user || locked} onChange={(pick) => setDraft((prev) => ({ ...prev, [m.id]: pick }))} />
-          </div>
-        ))}
+          );
+        })}
       </div>
       {user && !locked ? <button type="button" disabled={save.isPending || filled === 0} onClick={() => { setMsg(""); save.mutate(); }} className="mt-4 h-11 w-full rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-60">{save.isPending ? "Guardando…" : "Guardar pronósticos"}</button> : null}
       {!user ? <p className="mt-3 text-xs text-muted">Regístrate arriba para enviar tu 1-X-2.</p> : null}
-      {locked && user ? <p className="mt-3 text-xs text-muted">Jornada cerrada. Ya no se pueden cambiar los pronósticos.</p> : null}
+      {locked && user ? <p className="mt-3 text-xs text-muted">Jornada cerrada. Puedes consultar tus aciertos, pero ya no se cambian los pronósticos.</p> : null}
       {msg ? <p className="mt-2 text-sm text-muted">{msg}</p> : null}
     </section>
   );
@@ -142,12 +206,6 @@ function PickTriple({ value, disabled, onChange }: { value?: Quiniela; disabled?
       ))}
     </div>
   );
-}
-
-function labelPick(p: Quiniela): string {
-  if (p === "1") return "1 (local)";
-  if (p === "2") return "2 (visitante)";
-  return "X (empate)";
 }
 
 function Leaderboard({ board, me }: { board: PorraPublicState["board"]; me?: string }) {
