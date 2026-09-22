@@ -67,6 +67,18 @@ function firstInt(html: string): number {
   return m ? Number(m[0]) : 0;
 }
 
+function uniqueByName(rows: StandingRow[]): StandingRow[] {
+  const seen = new Set<string>();
+  const out: StandingRow[] = [];
+  for (const row of rows) {
+    const key = row.teamId || norm(row.name);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+  }
+  return out;
+}
+
 export function parseFutbolmeTable(html: string): StandingRow[] {
   const start = html.search(/id=["']latabla["']/i);
   if (start < 0) return [];
@@ -96,7 +108,7 @@ export function parseFutbolmeTable(html: string): StandingRow[] {
       form: [],
     });
   }
-  return out.sort((a, b) => a.pos - b.pos);
+  return uniqueByName(out).sort((a, b) => a.pos - b.pos);
 }
 
 async function getText(url: string): Promise<string> {

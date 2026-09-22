@@ -163,18 +163,109 @@ export function forTeam(list: ResolvedMatch[], teamId: string): ResolvedMatch[] 
     .sort((a, b) => Date.parse(a.kickoff) - Date.parse(b.kickoff));
 }
 
+const NAME_ALIASES: Record<string, string[]> = {
+  "ud-melilla": ["melilla", "udmelilla", "uniondeportivamelilla"],
+  huetorvega: ["huetorvega", "cdhuetorvega"],
+  torredelmar: ["torredelmar", "udtorredelmar"],
+  malagajuniors: ["malagajuniors", "malagacfjuvenil", "malagacf", "atleticomalagueno", "malagueno"],
+  torredonjimeno: ["torredonjimeno", "udctorredonjimeno", "ciudaddetorredonjimeno"],
+  motril: ["motril", "cfmotril"],
+  arenasdearmilla: ["armilla", "arenasdearmilla", "arenasarmilla"],
+  marbelli: ["marbelli", "fcmarbelli", "marbella"],
+  almeriab: ["almeriab", "udalmeriab", "almeria"],
+  alhaurino: ["alhaurino", "cdalhaurino"],
+  porcuna: ["porcuna", "atleticoporcuna"],
+  manchareal: ["manchareal", "atleticomanchareal"],
+  recreativogranada: ["recreativogranada", "granadab", "granadacf"],
+  sanpedro: ["sanpedro", "udsanpedro"],
+  churriana: ["churriana", "churrianadelavega", "cdchurriana"],
+  marbella: ["marbella", "atleticodemarbella", "atleticomarbella"],
+  cantoria: ["cantoria", "cantoria2017"],
+};
+
+function tokens(name: string): string {
+  return normName(name);
+}
+
+function sameClub(a: string, b: string): boolean {
+  const na = tokens(a);
+  const nb = tokens(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  if (na.includes(nb) || nb.includes(na)) return na.length >= 5 && nb.length >= 5;
+  for (const aliases of Object.values(NAME_ALIASES)) {
+    const hitA = aliases.some((x) => na.includes(x) || x.includes(na));
+    const hitB = aliases.some((x) => nb.includes(x) || x.includes(nb));
+    if (hitA && hitB) return true;
+  }
+  return false;
+}
+
+function rowKey(row: StandingRow): string {
+  if (row.teamId) return `id:${row.teamId}`;
+  return `n:${tokens(row.name)}`;
+}
+
+function attachLocal(leagueId: string, row: StandingRow): StandingRow {
+  const league = leagueById[leagueId];
+  if (!league) return row;
+  if (row.teamId && league.teams.some((t) => t.id === row.teamId)) {
+    const t = league.teams.find((x) => x.id === row.teamId)!;
+    return { ...row, teamId: t.id, name: t.name, short: t.short };
+  }
+  const hit = league.teams.find((t) => sameClub(t.name, row.name) || (t.id && sameClub(t.id, row.name)));
+  if (!hit) return row;
+  return { ...row, teamId: hit.id, name: hit.name, short: hit.short };
+}
+
+function dedupeRows(rows: StandingRow[]): StandingRow[] {
+  const byKey = new Map<string, StandingRow>();
+  for (const row of rows) {
+    const key = rowKey(row);
+    const prev = byKey.get(key);
+    if (!prev) {
+      byKey.set(key, row);
+      continue;
+    }
+    const prevEmpty = prev.pj === 0 && prev.pts === 0;
+    const nextEmpty = row.pj === 0 && row.pts === 0;
+    if (prevEmpty && !nextEmpty) byKey.set(key, row);
+  }
+  const out = [...byKey.values()];
+  const collapsed: StandingRow[] = [];
+  for (const row of out) {
+    const twin = collapsed.find((o) => sameClub(o.name, row.name));
+    if (!twin) {
+      collapsed.push(row);
+      continue;
+    }
+    if (twin.pj === 0 && row.pj > 0) {
+      collapsed.splice(collapsed.indexOf(twin), 1, row);
+    }
+  }
+  return collapsed;
+}
+
 export function mergeOfficialTable(leagueId: string, official: StandingRow[]): StandingRow[] {
   const league = leagueById[leagueId];
-  if (!league) return official;
-  const byNorm = new Map(official.map((r) => [normName(r.name), r]));
-  const seen = new Set<string>();
-  const merged: StandingRow[] = league.teams.map((t) => {
-    const hit = byNorm.get(normName(t.name));
-    if (hit) {
-      seen.add(normName(t.name));
-      return { ...hit, teamId: t.id, name: t.name, short: t.short };
-    }
-    return {
+  const cleaned = dedupeRows(official.map((r) => attachLocal(leagueId, r)));
+  if (!league) {
+    return cleaned
+      .sort(sortRows)
+      .map((r, i) => ({ ...r, pos: i + 1 }));
+  }
+
+  // Tabla oficial = fuente. No rellenar con el catálogo local (eso duplicaba equipos).
+  if (cleaned.length >= Math.max(8, Math.floor(league.teams.length * 0.6))) {
+    return cleaned.sort(sortRows).map((r, i) => ({ ...r, pos: i + 1 }));
+  }
+
+  const seen = new Set(cleaned.map(rowKey));
+  const extras: StandingRow[] = [];
+  for (const t of league.teams) {
+    const key = t.id ? `id:${t.id}` : `n:${tokens(t.name)}`;
+    if (seen.has(key) || cleaned.some((r) => sameClub(r.name, t.name))) continue;
+    extras.push({
       pos: 0,
       teamId: t.id,
       name: t.name,
@@ -187,21 +278,21 @@ export function mergeOfficialTable(leagueId: string, official: StandingRow[]): S
       gc: 0,
       pts: 0,
       form: [],
-    };
-  });
-  for (const row of official) {
-    if (!seen.has(normName(row.name))) merged.push(row);
+    });
   }
-  merged.sort((a, b) => {
-    if (b.pts !== a.pts) return b.pts - a.pts;
-    const dgA = a.gf - a.gc;
-    const dgB = b.gf - b.gc;
-    if (dgB !== dgA) return dgB - dgA;
-    if (b.gf !== a.gf) return b.gf - a.gf;
-    if (b.pj !== a.pj) return b.pj - a.pj;
-    return a.name.localeCompare(b.name, "es");
-  });
-  return merged.map((r, i) => ({ ...r, pos: i + 1 }));
+  return dedupeRows([...cleaned, ...extras])
+    .sort(sortRows)
+    .map((r, i) => ({ ...r, pos: i + 1 }));
+}
+
+function sortRows(a: StandingRow, b: StandingRow): number {
+  if (b.pts !== a.pts) return b.pts - a.pts;
+  const dgA = a.gf - a.gc;
+  const dgB = b.gf - b.gc;
+  if (dgB !== dgA) return dgB - dgA;
+  if (b.gf !== a.gf) return b.gf - a.gf;
+  if (b.pj !== a.pj) return b.pj - a.pj;
+  return a.name.localeCompare(b.name, "es");
 }
 
 export function standingsOf(
