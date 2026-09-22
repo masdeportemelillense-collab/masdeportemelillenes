@@ -1,5 +1,5 @@
 [build]
-  command = "node scripts/with-app-env.mjs vite build && node scripts/netlify-publish.mjs"
+  command = "npm install --no-save @netlify/blobs@11.1.0 @netlify/database@2.0.1 && node scripts/with-app-env.mjs vite build && node scripts/netlify-publish.mjs"
   publish = "dist"
 
 [build.environment]
