@@ -10,15 +10,16 @@ function cleanName(raw: string): string {
   return raw.trim().replace(/\s+/g, " ");
 }
 
-async function publicState(): Promise<PorraPublicState> {
+async function publicState(userOverride?: { id: string; name: string } | null): Promise<PorraPublicState> {
   const { currentPorraUser } = await import("./session.server");
   const store = await import("./store.server");
-  const [me, users, slates, picks] = await Promise.all([
-    currentPorraUser(),
+  const [cookieUser, users, slates, picks] = await Promise.all([
+    userOverride === undefined ? currentPorraUser() : Promise.resolve(userOverride),
     store.listUsers(),
     store.listSlates(),
     store.listPicks(),
   ]);
+  const me = userOverride === undefined ? cookieUser : userOverride;
   const visible = slates.filter((s) => s.published);
   return {
     now: Date.now(),
@@ -56,8 +57,9 @@ export const porraRegister = createServerFn({ method: "POST" })
       }
       const user = await store.createUser(name, password);
       const session = await import("./session.server");
-      await session.writePorraCookie(await session.issueUserToken(user.id, user.name));
-      return { ok: true as const, state: await publicState() };
+      const me = { id: user.id, name: user.name };
+      await session.writePorraCookie(await session.issueUserToken(me.id, me.name));
+      return { ok: true as const, state: await publicState(me) };
     } catch (err) {
       console.error("[porra] register", err);
       return { ok: false as const, error: "No se pudo registrar. Prueba de nuevo." };
@@ -74,8 +76,9 @@ export const porraLogin = createServerFn({ method: "POST" })
         return { ok: false as const, error: "Alias o contraseña incorrectos." };
       }
       const session = await import("./session.server");
-      await session.writePorraCookie(await session.issueUserToken(user.id, user.name));
-      return { ok: true as const, state: await publicState() };
+      const me = { id: user.id, name: user.name };
+      await session.writePorraCookie(await session.issueUserToken(me.id, me.name));
+      return { ok: true as const, state: await publicState(me) };
     } catch (err) {
       console.error("[porra] login", err);
       return { ok: false as const, error: "No se pudo entrar. Prueba de nuevo." };
@@ -85,7 +88,7 @@ export const porraLogin = createServerFn({ method: "POST" })
 export const porraLogout = createServerFn({ method: "POST" }).handler(async () => {
   const session = await import("./session.server");
   await session.clearPorraCookie();
-  return { ok: true as const, state: await publicState() };
+  return { ok: true as const, state: await publicState(null) };
 });
 
 export const porraSavePicks = createServerFn({ method: "POST" })
