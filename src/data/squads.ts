@@ -5,16 +5,26 @@ export type SquadPlayer = {
   name: string;
   pos: SquadPos;
   role?: string;
+  photo?: string;
+  age?: number;
+  height?: number;
+  pj?: number;
+  goals?: number;
+  assists?: number;
+  yellow?: number;
 };
 
 export type TeamSquad = {
+  teamId: string;
   season: string;
   source: { label: string; href: string };
   note?: string;
+  fetchedAt?: number;
+  live?: boolean;
   players: SquadPlayer[];
 };
 
-const POS_ORDER: SquadPos[] = ["POR", "DEF", "MED", "DEL", "STAFF"];
+export const POS_ORDER: SquadPos[] = ["POR", "DEF", "MED", "DEL", "STAFF"];
 
 export const POS_LABEL: Record<SquadPos, string> = {
   POR: "Porteros",
@@ -24,15 +34,15 @@ export const POS_LABEL: Record<SquadPos, string> = {
   STAFF: "Cuerpo técnico",
 };
 
-/** Plantilla 2026/27 (oficial UD Melilla). Estilo listado BeSoccer. */
+/** Reserva local si el scrape falla. */
 export const SQUADS: Record<string, TeamSquad> = {
   "ud-melilla": {
+    teamId: "ud-melilla",
     season: "2026/27",
     source: {
       label: "UD Melilla · BeSoccer",
       href: "https://es.besoccer.com/equipo/plantilla/melilla",
     },
-    note: "Plantilla 2026/27 publicada por el club. BeSoccer aún muestra sobre todo la temporada anterior.",
     players: [
       { num: 1, name: "Miguel De la Osa", pos: "POR" },
       { num: 13, name: "Óscar", pos: "POR" },

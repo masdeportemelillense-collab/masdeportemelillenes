@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { MapPin, Star } from "lucide-react";
 import { Crest } from "@/components/crest";
 import { formatDay, MatchCard } from "@/components/match-card";
@@ -6,9 +7,10 @@ import { SportMark } from "@/components/sport-mark";
 import { StandingsTable } from "@/components/standings-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { leagueById } from "@/data/leagues";
-import { getSquad, groupSquad } from "@/data/squads";
+import { getSquad, groupSquad, type TeamSquad } from "@/data/squads";
 import { getTeam } from "@/data/teams";
 import { useFeed } from "@/lib/api/feed";
+import { getTeamSquad } from "@/lib/api/squad";
 import { useFavorite } from "@/lib/favorites";
 import { GENDER_LABEL, sportLabel } from "@/lib/sports";
 import { cn } from "@/lib/utils";
@@ -32,7 +34,15 @@ function TeamPage() {
   const table = feed.standings(team.leagueId);
   const pos = table.find((r) => r.teamId === team.id);
   const { fav, toggle } = useFavorite(team.id);
-  const squad = getSquad(team.id);
+  const local = getSquad(team.id);
+  const remote = useQuery({
+    queryKey: ["squad", team.id],
+    queryFn: () => getTeamSquad({ data: { teamId: team.id } }),
+    enabled: Boolean(local),
+    staleTime: 30 * 60_000,
+    refetchInterval: 6 * 60 * 60_000,
+  });
+  const squad = (remote.data as TeamSquad | null) ?? local;
 
   const groupedCalendar = groupByDay(calendar.map((m) => ({ ...m, sort: m.kickoff })));
 
@@ -135,7 +145,7 @@ function TeamPage() {
         </TabsContent>
         {squad ? (
           <TabsContent value="plantilla">
-            <SquadPanel squad={squad} />
+            <SquadPanel squad={squad} loading={remote.isFetching} />
           </TabsContent>
         ) : null}
       </Tabs>
@@ -149,8 +159,11 @@ function TeamPage() {
   );
 }
 
-function SquadPanel({ squad }: { squad: NonNullable<ReturnType<typeof getSquad>> }) {
+function SquadPanel({ squad, loading }: { squad: TeamSquad; loading?: boolean }) {
   const groups = groupSquad(squad);
+  const updated = squad.fetchedAt
+    ? new Date(squad.fetchedAt).toLocaleString("es-ES", { timeZone: "Europe/Madrid" })
+    : null;
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-2">
@@ -167,7 +180,11 @@ function SquadPanel({ squad }: { squad: NonNullable<ReturnType<typeof getSquad>>
           Fuente: {squad.source.label}
         </a>
       </div>
-      {squad.note ? <p className="text-xs text-subtle">{squad.note}</p> : null}
+      <p className="text-xs text-subtle">
+        {squad.note ?? "Se actualiza sola al entrar en la ficha (máximo cada 6 horas)."}
+        {updated ? ` Última lectura: ${updated}.` : null}
+        {loading ? " Actualizando…" : null}
+      </p>
       {groups.map((g) => (
         <section key={g.pos}>
           <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">{g.label}</h3>
@@ -175,19 +192,31 @@ function SquadPanel({ squad }: { squad: NonNullable<ReturnType<typeof getSquad>>
             {g.players.map((p, i) => (
               <li
                 key={`${p.num ?? "x"}-${p.name}`}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-2.5",
-                  i > 0 && "border-t border-border",
-                )}
+                className={cn("flex items-center gap-3 px-4 py-2.5", i > 0 && "border-t border-border")}
               >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-surface-2 text-sm font-semibold tabular-nums">
-                  {p.num ?? "—"}
-                </span>
+                {p.photo ? (
+                  <img src={p.photo} alt="" className="size-10 rounded-md object-cover bg-surface-2" />
+                ) : (
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-surface-2 text-sm font-semibold tabular-nums">
+                    {p.num ?? "—"}
+                  </span>
+                )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{p.name}</p>
-                  {p.role ? <p className="text-xs text-muted">{p.role}</p> : null}
+                  <p className="truncate text-sm font-medium">
+                    {p.num ? <span className="mr-1.5 text-muted tabular-nums">{p.num}</span> : null}
+                    {p.name}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {[p.role, p.age ? `${p.age} años` : null, p.height ? `${p.height} cm` : null]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
                 </div>
-                <span className="text-[11px] uppercase tracking-wider text-subtle">{g.pos}</span>
+                <div className="hidden shrink-0 text-right text-[11px] uppercase tracking-wider text-subtle sm:block">
+                  {p.pj != null ? <p>PJ {p.pj}</p> : null}
+                  {p.goals != null ? <p>Goles {p.goals}</p> : null}
+                  {p.assists != null ? <p>Ast {p.assists}</p> : null}
+                </div>
               </li>
             ))}
           </ul>
