@@ -163,129 +163,80 @@ export function forTeam(list: ResolvedMatch[], teamId: string): ResolvedMatch[] 
     .sort((a, b) => Date.parse(a.kickoff) - Date.parse(b.kickoff));
 }
 
-const NAME_ALIASES: Record<string, string[]> = {
-  "ud-melilla": ["melilla", "udmelilla", "uniondeportivamelilla"],
-  huetorvega: ["huetorvega", "cdhuetorvega"],
-  torredelmar: ["torredelmar", "udtorredelmar"],
-  malagajuniors: ["malagajuniors", "malagacfjuvenil", "malagacf", "atleticomalagueno", "malagueno"],
-  torredonjimeno: ["torredonjimeno", "udctorredonjimeno", "ciudaddetorredonjimeno"],
-  motril: ["motril", "cfmotril"],
-  arenasdearmilla: ["armilla", "arenasdearmilla", "arenasarmilla"],
-  marbelli: ["marbelli", "fcmarbelli", "marbella"],
-  almeriab: ["almeriab", "udalmeriab", "almeria"],
-  alhaurino: ["alhaurino", "cdalhaurino"],
-  porcuna: ["porcuna", "atleticoporcuna"],
-  manchareal: ["manchareal", "atleticomanchareal"],
-  recreativogranada: ["recreativogranada", "granadab", "granadacf"],
-  sanpedro: ["sanpedro", "udsanpedro"],
-  churriana: ["churriana", "churrianadelavega", "cdchurriana"],
-  marbella: ["marbella", "atleticodemarbella", "atleticomarbella"],
-  cantoria: ["cantoria", "cantoria2017"],
-};
+/** Solo variantes del MISMO club. Marbellí ≠ Marbella. Juniors ≠ Malagueño. */
+const NAME_ALIASES: Array<string[]> = [
+  ["melilla", "udmelilla", "uniondeportivamelilla"],
+  ["huetorvega", "cdhuetorvega"],
+  ["torredelmar", "udtorredelmar"],
+  ["malagajuniors", "cdmalagajuniors", "malagacity", "fcmalagacity"],
+  ["atleticomalagueno", "malagueno", "malagab", "malagacfb"],
+  ["torredonjimeno", "udctorredonjimeno", "ciudaddetorredonjimeno"],
+  ["motril", "cfmotril"],
+  ["armilla", "arenasdearmilla", "arenasarmilla"],
+  ["marbelli", "fcmarbelli", "atcomarbelli"],
+  ["almeriab", "udalmeriab"],
+  ["alhaurino", "cdalhaurino"],
+  ["porcuna", "atleticoporcuna"],
+  ["manchareal", "atleticomanchareal"],
+  ["recreativogranada", "granadab"],
+  ["sanpedro", "udsanpedro"],
+  ["churriana", "churrianadelavega", "cdchurriana", "churrianacf"],
+  ["atleticodemarbella", "atleticomarbella", "cdatleticodemarbella"],
+  ["cantoria", "cantoria2017"],
+];
 
-function tokens(name: string): string {
+function keyName(name: string): string {
   return normName(name);
 }
 
-function sameClub(a: string, b: string): boolean {
-  const na = tokens(a);
-  const nb = tokens(b);
-  if (!na || !nb) return false;
-  if (na === nb) return true;
-  if (na.includes(nb) || nb.includes(na)) return na.length >= 5 && nb.length >= 5;
-  for (const aliases of Object.values(NAME_ALIASES)) {
-    const hitA = aliases.some((x) => na.includes(x) || x.includes(na));
-    const hitB = aliases.some((x) => nb.includes(x) || x.includes(nb));
-    if (hitA && hitB) return true;
-  }
-  return false;
+function aliasGroup(name: string): string[] | undefined {
+  const n = keyName(name);
+  return NAME_ALIASES.find((g) => g.includes(n) || g.some((a) => a === n));
 }
 
-function rowKey(row: StandingRow): string {
-  if (row.teamId) return `id:${row.teamId}`;
-  return `n:${tokens(row.name)}`;
+function sameClub(a: string, b: string): boolean {
+  const na = keyName(a);
+  const nb = keyName(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  const ga = aliasGroup(a);
+  const gb = aliasGroup(b);
+  return Boolean(ga && gb && ga === gb);
 }
 
 function attachLocal(leagueId: string, row: StandingRow): StandingRow {
   const league = leagueById[leagueId];
   if (!league) return row;
-  if (row.teamId && league.teams.some((t) => t.id === row.teamId)) {
-    const t = league.teams.find((x) => x.id === row.teamId)!;
-    return { ...row, teamId: t.id, name: t.name, short: t.short };
-  }
-  const hit = league.teams.find((t) => sameClub(t.name, row.name) || (t.id && sameClub(t.id, row.name)));
-  if (!hit) return row;
+  const hit = league.teams.find((t) => sameClub(t.name, row.name) || (t.id && sameClub(t.id.replace(/-/g, ""), row.name)));
+  if (!hit) return { ...row, teamId: row.teamId };
   return { ...row, teamId: hit.id, name: hit.name, short: hit.short };
 }
 
-function dedupeRows(rows: StandingRow[]): StandingRow[] {
-  const byKey = new Map<string, StandingRow>();
+function exactDedupe(rows: StandingRow[]): StandingRow[] {
+  const seen = new Set<string>();
+  const out: StandingRow[] = [];
   for (const row of rows) {
-    const key = rowKey(row);
-    const prev = byKey.get(key);
-    if (!prev) {
-      byKey.set(key, row);
+    const k = `${keyName(row.name)}|${row.teamId ?? ""}`;
+    if (seen.has(k)) continue;
+    // solo quitar la misma fila repetida, no clubes distintos
+    if (out.some((o) => sameClub(o.name, row.name) && o.pj === row.pj && o.pts === row.pts && o.gf === row.gf)) {
       continue;
     }
-    const prevEmpty = prev.pj === 0 && prev.pts === 0;
-    const nextEmpty = row.pj === 0 && row.pts === 0;
-    if (prevEmpty && !nextEmpty) byKey.set(key, row);
+    seen.add(k);
+    out.push(row);
   }
-  const out = [...byKey.values()];
-  const collapsed: StandingRow[] = [];
-  for (const row of out) {
-    const twin = collapsed.find((o) => sameClub(o.name, row.name));
-    if (!twin) {
-      collapsed.push(row);
-      continue;
-    }
-    if (twin.pj === 0 && row.pj > 0) {
-      collapsed.splice(collapsed.indexOf(twin), 1, row);
-    }
-  }
-  return collapsed;
+  return out;
 }
 
 export function mergeOfficialTable(leagueId: string, official: StandingRow[]): StandingRow[] {
-  const league = leagueById[leagueId];
-  const cleaned = dedupeRows(official.map((r) => attachLocal(leagueId, r)));
-  if (!league) {
-    return cleaned
-      .sort(sortRows)
-      .map((r, i) => ({ ...r, pos: i + 1 }));
-  }
-
-  // Tabla oficial = fuente. No rellenar con el catálogo local (eso duplicaba equipos).
-  if (cleaned.length >= Math.max(8, Math.floor(league.teams.length * 0.6))) {
-    return cleaned.sort(sortRows).map((r, i) => ({ ...r, pos: i + 1 }));
-  }
-
-  const seen = new Set(cleaned.map(rowKey));
-  const extras: StandingRow[] = [];
-  for (const t of league.teams) {
-    const key = t.id ? `id:${t.id}` : `n:${tokens(t.name)}`;
-    if (seen.has(key) || cleaned.some((r) => sameClub(r.name, t.name))) continue;
-    extras.push({
-      pos: 0,
-      teamId: t.id,
-      name: t.name,
-      short: t.short,
-      pj: 0,
-      g: 0,
-      e: 0,
-      p: 0,
-      gf: 0,
-      gc: 0,
-      pts: 0,
-      form: [],
-    });
-  }
-  return dedupeRows([...cleaned, ...extras])
-    .sort(sortRows)
-    .map((r, i) => ({ ...r, pos: i + 1 }));
+  const cleaned = exactDedupe(official.map((r) => attachLocal(leagueId, r)));
+  return cleaned.sort(sortRows).map((r, i) => ({ ...r, pos: i + 1 }));
 }
 
 function sortRows(a: StandingRow, b: StandingRow): number {
+  if (a.pos && b.pos && a.pts === b.pts && a.pj === b.pj && a.gf === b.gf) {
+    return a.pos - b.pos;
+  }
   if (b.pts !== a.pts) return b.pts - a.pts;
   const dgA = a.gf - a.gc;
   const dgB = b.gf - b.gc;
