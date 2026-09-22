@@ -36,19 +36,29 @@ export const adminListOverrides = createServerFn({ method: "GET" }).handler(asyn
 export const adminSaveOverride = createServerFn({ method: "POST" })
   .inputValidator((d: AdminOverride) => d)
   .handler(async ({ data }) => {
-    const { requireAdmin } = await import("./session.server");
-    if (!(await requireAdmin())) return { ok: false as const, error: "Sesión caducada." };
-    const { upsertOverride } = await import("./store.server");
-    const saved = await upsertOverride(data);
-    return { ok: true as const, override: saved };
+    try {
+      const { requireAdmin } = await import("./session.server");
+      if (!(await requireAdmin())) return { ok: false as const, error: "Sesión caducada." };
+      const { upsertOverride } = await import("./store.server");
+      const saved = await upsertOverride(data);
+      return { ok: true as const, override: saved };
+    } catch (err) {
+      console.error("[admin] save override", err);
+      return { ok: false as const, error: "No se pudo guardar. Prueba otra vez en unos segundos." };
+    }
   });
 
 export const adminDeleteOverride = createServerFn({ method: "POST" })
   .inputValidator((d: { matchId: string }) => d)
   .handler(async ({ data }) => {
-    const { requireAdmin } = await import("./session.server");
-    if (!(await requireAdmin())) return { ok: false as const, error: "Sesión caducada." };
-    const { removeOverride } = await import("./store.server");
-    await removeOverride(data.matchId);
-    return { ok: true as const };
+    try {
+      const { requireAdmin } = await import("./session.server");
+      if (!(await requireAdmin())) return { ok: false as const, error: "Sesión caducada." };
+      const { removeOverride } = await import("./store.server");
+      await removeOverride(data.matchId);
+      return { ok: true as const };
+    } catch (err) {
+      console.error("[admin] delete override", err);
+      return { ok: false as const, error: "No se pudo borrar el cambio." };
+    }
   });
