@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#8b1e1e"/>
-      <stop offset="1" stop-color="#8b1e1e" stop-opacity="0.84"/>
+    <linearGradient id="atm-red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b4232a"/>
+      <stop offset="1" stop-color="#6e1218"/>
     </linearGradient>
   </defs>
-  <path d="M64 6 L116 24 V64 C116 96 92 116 64 122 C36 116 12 96 12 64 V24 Z" fill="url(#g)" stroke="#f0ebe3" stroke-width="5"/>
-  <path d="M64 16 L104 30 V62 C104 86 86 104 64 109 C42 104 24 86 24 62 V30 Z" fill="none" stroke="#f0ebe3" stroke-opacity="0.3" stroke-width="2"/>
-  <path d="M64 6 L64 122" stroke="#f0ebe3" stroke-opacity="0.12" stroke-width="10"/>
-  <circle cx="64" cy="34" r="5" fill="#f0ebe3"/>
-  <text x="64" y="78" text-anchor="middle" fill="#f0ebe3" font-family="Georgia, 'Times New Roman', serif" font-size="20" font-weight="700">ATMJ</text>
+  <path d="M64 4 L118 22 V66 C118 98 92 118 64 124 C36 118 10 98 10 66 V22 Z" fill="#f4efe6"/>
+  <path d="M64 8 L112 24 V65 C112 94 89 113 64 118 C39 113 16 94 16 65 V24 Z" fill="url(#atm-red)"/>
+  <path d="M64 8 L112 24 V40 L64 28 L16 24 V40 L64 28 Z" fill="#f4efe6" opacity="0.18"/>
+  <rect x="40" y="44" width="48" height="36" rx="3" fill="#f4efe6"/>
+  <path d="M44 80 V56 H52 V64 H60 V56 H68 V64 H76 V56 H84 V80 Z" fill="#6e1218"/>
+  <path d="M52 56 L64 46 L76 56 Z" fill="#6e1218"/>
+  <circle cx="64" cy="30" r="6" fill="#f4efe6"/>
+  <text x="64" y="108" text-anchor="middle" fill="#f4efe6" font-family="Georgia, 'Times New Roman', serif" font-size="11" font-weight="700" letter-spacing="1">ATM</text>
 </svg>
