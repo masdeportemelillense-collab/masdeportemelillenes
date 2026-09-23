@@ -10,7 +10,12 @@ function cleanName(raw: string): string {
   return raw.trim().replace(/\s+/g, " ");
 }
 
-async function publicState(userOverride?: { id: string; name: string } | null): Promise<PorraPublicState> {
+function asPublic(u?: { id: string; name: string; avatar?: string } | null) {
+  if (!u) return null;
+  return { id: u.id, name: u.name, avatar: u.avatar };
+}
+
+async function publicState(userOverride?: { id: string; name: string; avatar?: string } | null): Promise<PorraPublicState> {
   const { currentPorraUser } = await import("./session.server");
   const store = await import("./store.server");
   const [cookieUser, users, slates, picks] = await Promise.all([
@@ -19,7 +24,9 @@ async function publicState(userOverride?: { id: string; name: string } | null): 
     store.listSlates(),
     store.listPicks(),
   ]);
-  const me = userOverride === undefined ? cookieUser : userOverride;
+  const raw = userOverride === undefined ? cookieUser : userOverride;
+  const stored = raw ? users.find((u) => u.id === raw.id) : undefined;
+  const me = asPublic(stored ?? raw);
   const visible = slates.filter((s) => s.published);
   return {
     now: Date.now(),
@@ -40,7 +47,7 @@ export const porraState = createServerFn({ method: "GET" }).handler(async () => 
 });
 
 export const porraRegister = createServerFn({ method: "POST" })
-  .inputValidator((d: { name: string; password: string }) => d)
+  .inputValidator((d: { name: string; password: string; avatar?: string }) => d)
   .handler(async ({ data }) => {
     try {
       const name = cleanName(data.name ?? "");
@@ -55,9 +62,11 @@ export const porraRegister = createServerFn({ method: "POST" })
       if (await store.findUserByName(name)) {
         return { ok: false as const, error: "Ese alias ya está en uso." };
       }
-      const user = await store.createUser(name, password);
+      const { isPorraAvatar } = await import("./avatars");
+      const avatar = isPorraAvatar(data.avatar) ? data.avatar : undefined;
+      const user = await store.createUser(name, password, avatar);
       const session = await import("./session.server");
-      const me = { id: user.id, name: user.name };
+      const me = { id: user.id, name: user.name, avatar: user.avatar };
       await session.writePorraCookie(await session.issueUserToken(me.id, me.name));
       return { ok: true as const, state: await publicState(me) };
     } catch (err) {
@@ -76,7 +85,7 @@ export const porraLogin = createServerFn({ method: "POST" })
         return { ok: false as const, error: "Alias o contraseña incorrectos." };
       }
       const session = await import("./session.server");
-      const me = { id: user.id, name: user.name };
+      const me = { id: user.id, name: user.name, avatar: user.avatar };
       await session.writePorraCookie(await session.issueUserToken(me.id, me.name));
       return { ok: true as const, state: await publicState(me) };
     } catch (err) {
@@ -90,6 +99,24 @@ export const porraLogout = createServerFn({ method: "POST" }).handler(async () =
   await session.clearPorraCookie();
   return { ok: true as const, state: await publicState(null) };
 });
+
+export const porraSetAvatar = createServerFn({ method: "POST" })
+  .inputValidator((d: { avatar?: string }) => d)
+  .handler(async ({ data }) => {
+    try {
+      const session = await import("./session.server");
+      const me = await session.currentPorraUser();
+      if (!me) return { ok: false as const, error: "Entra para elegir avatar." };
+      const { isPorraAvatar } = await import("./avatars");
+      const avatar = isPorraAvatar(data.avatar) ? data.avatar : undefined;
+      const store = await import("./store.server");
+      const user = await store.setUserAvatar(me.id, avatar);
+      return { ok: true as const, state: await publicState(user ? { id: user.id, name: user.name, avatar: user.avatar } : me) };
+    } catch (err) {
+      console.error("[porra] avatar", err);
+      return { ok: false as const, error: "No se pudo guardar el escudo." };
+    }
+  });
 
 export const porraSavePicks = createServerFn({ method: "POST" })
   .inputValidator((d: { slateId: string; picks: Array<{ matchId: string; pick: Quiniela }> }) => d)
