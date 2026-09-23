@@ -42,7 +42,7 @@ export function leaderboard(users: PorraUser[], slates: PorraSlate[], picks: Por
   return users
     .map((u) => {
       const s = scoreUser(u.id, slates, picks);
-      return { userId: u.id, name: u.name, ...s };
+      return { userId: u.id, name: u.name, avatar: u.avatar, ...s };
     })
     .sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;

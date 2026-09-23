@@ -21,6 +21,8 @@ export type PorraSlate = {
 export type PorraUserPublic = {
   id: string;
   name: string;
+  /** Team id used as crest avatar. */
+  avatar?: string;
 };
 
 export type PorraUser = PorraUserPublic & {
@@ -39,6 +41,7 @@ export type PorraPick = {
 export type PorraBoardRow = {
   userId: string;
   name: string;
+  avatar?: string;
   points: number;
   played: number;
   correct: number;

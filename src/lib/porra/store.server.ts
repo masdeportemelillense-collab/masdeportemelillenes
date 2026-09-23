@@ -73,12 +73,13 @@ export async function checkPass(password: string, stored: string): Promise<boole
   return timingSafeEqual(buf, expected);
 }
 
-export async function createUser(name: string, password: string): Promise<PorraUser> {
+export async function createUser(name: string, password: string, avatar?: string): Promise<PorraUser> {
   const user: PorraUser = {
     id: randomBytes(8).toString("hex"),
     name: name.trim(),
     pass: await hashPass(password),
     createdAt: Date.now(),
+    avatar,
   };
   return mutate((data) => {
     data.users.push(user);
@@ -115,4 +116,13 @@ export async function savePick(pick: PorraPick): Promise<PorraPick> {
 
 export async function picksForUser(userId: string): Promise<PorraPick[]> {
   return (await load()).picks.filter((p) => p.userId === userId);
+}
+
+export async function setUserAvatar(userId: string, avatar?: string): Promise<PorraUser | undefined> {
+  return mutate((data) => {
+    const user = data.users.find((u) => u.id === userId);
+    if (!user) return undefined;
+    user.avatar = avatar;
+    return user;
+  });
 }
