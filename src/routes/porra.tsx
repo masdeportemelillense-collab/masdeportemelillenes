@@ -6,8 +6,10 @@ import {
   porraLogout,
   porraRegister,
   porraSavePicks,
+  porraSetAvatar,
   porraState,
 } from "@/lib/porra/actions";
+import { porraAvatarOptions } from "@/lib/porra/avatars";
 import { scoreSlate, scoreUser } from "@/lib/porra/score";
 import { formatMadrid, isLocked } from "@/lib/porra/time";
 import type { PorraPick, PorraPublicState, PorraSlate, Quiniela } from "@/lib/porra/types";
@@ -46,7 +48,7 @@ function PorraPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
         <div className="space-y-6">
           {state.user ? (
-            <AccountBar name={state.user.name} onLogout={async () => { await porraLogout(); await qc.invalidateQueries({ queryKey: ["porra-state"] }); }} />
+            <AccountBar user={state.user} onLogout={async () => { await porraLogout(); await qc.invalidateQueries({ queryKey: ["porra-state"] }); }} onSaved={(next) => qc.setQueryData(["porra-state"], next)} />
           ) : (
             <AuthCard onDone={(next) => qc.setQueryData(["porra-state"], next)} />
           )}
@@ -70,14 +72,70 @@ function PorraPage() {
   );
 }
 
-function AccountBar({ name, onLogout }: { name: string; onLogout: () => void }) {
+function AvatarMark({ teamId, size = 28 }: { teamId?: string; size?: number }) {
+  const opt = porraAvatarOptions().find((t) => t.id === teamId);
+  if (opt?.src) {
+    return <img src={opt.src} alt="" width={size} height={size} className="shrink-0 rounded-md bg-surface-2 object-contain p-0.5" />;
+  }
+  return <span className="flex shrink-0 items-center justify-center rounded-md bg-surface-2 text-[10px] font-semibold" style={{ width: size, height: size }}>?</span>;
+}
+
+function AvatarPicker({ value, onChange }: { value?: string; onChange: (id: string) => void }) {
+  const options = useMemo(() => porraAvatarOptions(), []);
+  return (
+    <div className="sm:col-span-2">
+      <p className="mb-2 text-xs uppercase tracking-wider text-muted">Escudo / avatar</p>
+      <div className="grid grid-cols-5 gap-2 sm:grid-cols-7">
+        {options.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            title={t.name}
+            onClick={() => onChange(t.id)}
+            className={cn(
+              "flex flex-col items-center gap-1 rounded-lg p-1.5 ring-1",
+              value === t.id ? "bg-accent/15 ring-accent" : "bg-surface-2 ring-border hover:ring-accent/50",
+            )}
+          >
+            {t.src ? (
+              <img src={t.src} alt="" className="size-8 object-contain" />
+            ) : (
+              <span className="flex size-8 items-center justify-center text-[9px] font-semibold">{t.short}</span>
+            )}
+            <span className="w-full truncate text-center text-[9px] leading-tight text-muted">{t.short}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AccountBar({ user, onLogout, onSaved }: { user: NonNullable<PorraPublicState["user"]>; onLogout: () => void; onSaved: (state: PorraPublicState) => void }) {
+  const [open, setOpen] = useState(false);
+  const [avatar, setAvatar] = useState(user.avatar ?? "");
+  const save = useMutation({
+    mutationFn: () => porraSetAvatar({ data: { avatar } }),
+    onSuccess: (res) => { if (res.ok) { onSaved(res.state); setOpen(false); } },
+  });
   return (
     <div className="rounded-xl bg-surface px-4 py-3 shadow-[var(--shadow-border)]">
       <p className="text-sm font-medium text-accent">Ya estás registrado.</p>
       <div className="mt-1 flex items-center justify-between gap-3">
-        <p className="text-sm text-muted">Juegas como <span className="font-medium text-fg">{name}</span></p>
-        <button type="button" onClick={onLogout} className="text-xs uppercase tracking-wider text-muted hover:text-fg">Salir</button>
+        <div className="flex min-w-0 items-center gap-2">
+          <AvatarMark teamId={user.avatar} size={32} />
+          <p className="truncate text-sm text-muted">Juegas como <span className="font-medium text-fg">{user.name}</span></p>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <button type="button" onClick={() => setOpen((v) => !v)} className="text-xs uppercase tracking-wider text-accent hover:underline">Cambiar escudo</button>
+          <button type="button" onClick={onLogout} className="text-xs uppercase tracking-wider text-muted hover:text-fg">Salir</button>
+        </div>
       </div>
+      {open ? (
+        <div className="mt-3 space-y-3">
+          <AvatarPicker value={avatar} onChange={setAvatar} />
+          <button type="button" disabled={save.isPending || !avatar} onClick={() => save.mutate()} className="h-10 w-full rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-60">{save.isPending ? "Guardando…" : "Guardar escudo"}</button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -125,9 +183,10 @@ function AuthCard({ onDone }: { onDone: (state: PorraPublicState) => void }) {
   const [mode, setMode] = useState<"register" | "login">("register");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const [avatar, setAvatar] = useState("");
   const [error, setError] = useState("");
   const act = useMutation({
-    mutationFn: () => mode === "register" ? porraRegister({ data: { name, password } }) : porraLogin({ data: { name, password } }),
+    mutationFn: () => mode === "register" ? porraRegister({ data: { name, password, avatar } }) : porraLogin({ data: { name, password } }),
     onSuccess: (res) => { if (res.ok) onDone(res.state); else setError(res.error); },
   });
   return (
@@ -140,6 +199,7 @@ function AuthCard({ onDone }: { onDone: (state: PorraPublicState) => void }) {
       <form className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); setError(""); act.mutate(); }}>
         <label className="block text-xs uppercase tracking-wider text-muted">Alias<input value={name} onChange={(e) => setName(e.target.value)} autoComplete="username" className="mt-1 h-11 w-full rounded-md bg-surface-2 px-3 text-sm text-fg outline-none ring-1 ring-border focus:ring-accent/60" /></label>
         <label className="block text-xs uppercase tracking-wider text-muted">Contraseña<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "register" ? "new-password" : "current-password"} className="mt-1 h-11 w-full rounded-md bg-surface-2 px-3 text-sm text-fg outline-none ring-1 ring-border focus:ring-accent/60" /></label>
+        {mode === "register" ? <AvatarPicker value={avatar} onChange={setAvatar} /> : null}
         {error ? <p className="text-sm text-loss sm:col-span-2">{error}</p> : null}
         <button type="submit" disabled={act.isPending} className="h-11 rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-60 sm:col-span-2">{act.isPending ? "Enviando…" : mode === "register" ? "Crear cuenta y jugar" : "Entrar a la porra"}</button>
       </form>
@@ -219,7 +279,12 @@ function Leaderboard({ board, me }: { board: PorraPublicState["board"]; me?: str
           {rows.map((row, i) => (
             <tr key={row.userId} className={cn("border-b border-border last:border-0", me === row.userId && "bg-accent/10")}>
               <td className="px-3 py-2 tabular-nums text-muted">{i + 1}</td>
-              <td className={cn("px-2 py-2", me === row.userId && "font-medium text-accent")}>{row.name}</td>
+              <td className={cn("px-2 py-2", me === row.userId && "font-medium text-accent")}>
+                <span className="inline-flex items-center gap-2">
+                  <AvatarMark teamId={row.avatar} size={22} />
+                  {row.name}
+                </span>
+              </td>
               <td className="px-3 py-2 text-right font-medium tabular-nums">{row.points}</td>
             </tr>
           ))}
