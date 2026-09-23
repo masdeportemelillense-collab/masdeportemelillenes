@@ -5,6 +5,10 @@ const BY_KEY: Record<string, string> = {
   melillabaloncesto:
     "https://upload.wikimedia.org/wikipedia/en/5/51/Mellila_Baloncesto_logo.png",
   melb: "https://upload.wikimedia.org/wikipedia/en/5/51/Mellila_Baloncesto_logo.png",
+  "enrique-soler": "https://api.clupik.com/clubs/7669/images/splash.png",
+  enriquesoler: "https://api.clupik.com/clubs/7669/images/splash.png",
+  soler: "https://api.clupik.com/clubs/7669/images/splash.png",
+  camenriquesoler: "https://api.clupik.com/clubs/7669/images/splash.png",
 };
 
 function norm(value: string): string {
@@ -12,7 +16,7 @@ function norm(value: string): string {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .replace(/\b(ud|cd|cf|fc|bm|cv|cb|fs|fsf|club|de|del|la|el|las|los|real|sporting)\b/g, "")
+    .replace(/\b(ud|cd|cf|fc|bm|cv|cb|fs|fsf|club|de|del|la|el|las|los|real|sporting|cam)\b/g, "")
     .replace(/[^a-z0-9]+/g, "");
 }
 
