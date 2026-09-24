@@ -16,10 +16,10 @@ function asPublic(u?: { id: string; name: string; avatar?: string } | null) {
 }
 
 async function publicState(userOverride?: { id: string; name: string; avatar?: string } | null): Promise<PorraPublicState> {
-  const { currentPorraUser } = await import("./session.server");
+  const session = await import("./session.server");
   const store = await import("./store.server");
   const [cookieUser, users, slates, picks] = await Promise.all([
-    userOverride === undefined ? currentPorraUser() : Promise.resolve(userOverride),
+    userOverride === undefined ? session.currentPorraUser() : Promise.resolve(userOverride),
     store.listUsers(),
     store.listSlates(),
     store.listPicks(),
@@ -27,6 +27,9 @@ async function publicState(userOverride?: { id: string; name: string; avatar?: s
   const raw = userOverride === undefined ? cookieUser : userOverride;
   const stored = raw ? users.find((u) => u.id === raw.id) : undefined;
   const me = asPublic(stored ?? raw);
+  if (me && userOverride === undefined) {
+    await session.touchPorraSession({ id: me.id, name: me.name });
+  }
   const visible = slates.filter((s) => s.published);
   return {
     now: Date.now(),
