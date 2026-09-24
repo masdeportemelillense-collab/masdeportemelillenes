@@ -139,7 +139,9 @@ export const porraSavePicks = createServerFn({ method: "POST" })
       const allowed = new Set(slate.matches.map((m) => m.id));
       for (const row of data.picks ?? []) {
         if (!allowed.has(row.matchId)) continue;
-        if (row.pick !== "1" && row.pick !== "X" && row.pick !== "2") continue;
+        const match = slate.matches.find((mm) => mm.id === row.matchId);
+        if (!match) continue;
+        if (row.pick !== "1" && row.pick !== "2" && !(match.allowDraw !== false && row.pick === "X")) continue;
         await store.savePick({
           userId: me.id,
           slateId: slate.id,
@@ -169,7 +171,7 @@ export const porraAdminSaveSlate = createServerFn({ method: "POST" })
       title: string;
       lockAt?: string;
       published?: boolean;
-      matches: Array<{ id?: string; home: string; away: string; kickoff?: string; result?: Quiniela | null }>;
+      matches: Array<{ id?: string; home: string; away: string; kickoff?: string; result?: Quiniela | null; allowDraw?: boolean }>;
     }) => d,
   )
   .handler(async ({ data }) => {
@@ -179,13 +181,18 @@ export const porraAdminSaveSlate = createServerFn({ method: "POST" })
       const title = String(data.title ?? "").trim();
       if (title.length < 3) return { ok: false as const, error: "Pon un nombre a la jornada." };
       const matches: PorraMatch[] = (data.matches ?? [])
-        .map((m) => ({
-          id: m.id?.trim() || randomBytes(5).toString("hex"),
-          home: String(m.home ?? "").trim(),
-          away: String(m.away ?? "").trim(),
-          kickoff: m.kickoff?.trim() || undefined,
-          result: m.result === "1" || m.result === "X" || m.result === "2" ? m.result : null,
-        }))
+        .map((m) => {
+          const allowDraw = m.allowDraw !== false;
+          const result = m.result === "1" || m.result === "2" || (allowDraw && m.result === "X") ? m.result : null;
+          return {
+            id: m.id?.trim() || randomBytes(5).toString("hex"),
+            home: String(m.home ?? "").trim(),
+            away: String(m.away ?? "").trim(),
+            kickoff: m.kickoff?.trim() || undefined,
+            result,
+            allowDraw,
+          };
+        })
         .filter((m) => m.home && m.away);
       if (!matches.length) return { ok: false as const, error: "Añade al menos un partido." };
       const store = await import("./store.server");
