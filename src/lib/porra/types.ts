@@ -6,6 +6,8 @@ export type PorraMatch = {
   away: string;
   kickoff?: string;
   result?: Quiniela | null;
+  /** Si es false, solo se pronostica 1 o 2 (baloncesto, voleibol...). */
+  allowDraw?: boolean;
 };
 
 export type PorraSlate = {
@@ -21,7 +23,6 @@ export type PorraSlate = {
 export type PorraUserPublic = {
   id: string;
   name: string;
-  /** Team id used as crest avatar. */
   avatar?: string;
 };
 
