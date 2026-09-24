@@ -1,4 +1,4 @@
-import type { PorraBoardRow, PorraPick, PorraSlate, PorraUser } from "./types";
+import type { PorraBoardRow, PorraJornadaSummary, PorraPick, PorraSlate, PorraUser } from "./types";
 
 export function scoreUser(userId: string, slates: PorraSlate[], picks: PorraPick[]): {
   points: number;
@@ -49,5 +49,29 @@ export function leaderboard(users: PorraUser[], slates: PorraSlate[], picks: Por
       if (b.correct !== a.correct) return b.correct - a.correct;
       if (a.played !== b.played) return a.played - b.played;
       return a.name.localeCompare(b.name, "es");
+    });
+}
+
+export function jornadaSummaries(users: PorraUser[], slates: PorraSlate[], picks: PorraPick[]): PorraJornadaSummary[] {
+  return slates
+    .slice()
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .map((slate) => {
+      const board = leaderboard(users, [slate], picks);
+      const resolved = slate.matches.filter((m) => m.result === "1" || m.result === "X" || m.result === "2").length;
+      const total = slate.matches.length;
+      const finished = total > 0 && resolved === total;
+      const top = board[0]?.points ?? 0;
+      const winners = finished ? board.filter((r) => r.points === top) : [];
+      return {
+        slateId: slate.id,
+        title: slate.title,
+        createdAt: slate.createdAt,
+        resolved,
+        total,
+        finished,
+        board,
+        winners,
+      };
     });
 }

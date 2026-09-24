@@ -47,10 +47,22 @@ export type PorraBoardRow = {
   correct: number;
 };
 
+export type PorraJornadaSummary = {
+  slateId: string;
+  title: string;
+  createdAt: number;
+  resolved: number;
+  total: number;
+  finished: boolean;
+  board: PorraBoardRow[];
+  winners: PorraBoardRow[];
+};
+
 export type PorraPublicState = {
   now: number;
   user: PorraUserPublic | null;
   slates: PorraSlate[];
   myPicks: PorraPick[];
   board: PorraBoardRow[];
+  jornadas: PorraJornadaSummary[];
 };
