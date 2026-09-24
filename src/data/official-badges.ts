@@ -16,6 +16,13 @@ const BY_KEY: Record<string, string> = {
   virgendevictoria:
     "https://pbs.twimg.com/profile_images/1501476638860718085/vpVJWE8C.jpg",
   vdv: "https://pbs.twimg.com/profile_images/1501476638860718085/vpVJWE8C.jpg",
+  maritimo:
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Logo_Club_MEJORADO.png",
+  rcmmelilla:
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Logo_Club_MEJORADO.png",
+  rcmm: "https://commons.wikimedia.org/wiki/Special:FilePath/Logo_Club_MEJORADO.png",
+  maritimomelilla:
+    "https://commons.wikimedia.org/wiki/Special:FilePath/Logo_Club_MEJORADO.png",
 };
 
 function norm(value: string): string {
