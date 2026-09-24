@@ -9,6 +9,13 @@ const BY_KEY: Record<string, string> = {
   enriquesoler: "https://api.clupik.com/clubs/7669/images/splash.png",
   soler: "https://api.clupik.com/clubs/7669/images/splash.png",
   camenriquesoler: "https://api.clupik.com/clubs/7669/images/splash.png",
+  "virgen-victoria":
+    "https://pbs.twimg.com/profile_images/1501476638860718085/vpVJWE8C.jpg",
+  virgenvictoria:
+    "https://pbs.twimg.com/profile_images/1501476638860718085/vpVJWE8C.jpg",
+  virgendevictoria:
+    "https://pbs.twimg.com/profile_images/1501476638860718085/vpVJWE8C.jpg",
+  vdv: "https://pbs.twimg.com/profile_images/1501476638860718085/vpVJWE8C.jpg",
 };
 
 function norm(value: string): string {
