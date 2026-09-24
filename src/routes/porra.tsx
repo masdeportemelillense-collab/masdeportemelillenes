@@ -226,7 +226,7 @@ function SlateCard({ slate, now, user, picks, onSaved }: { slate: PorraSlate; no
                   </p>
                 ) : pick ? <p className="mt-1 text-xs text-muted">Tu pronóstico: {pick}</p> : null}
               </div>
-              <PickTriple value={pick} disabled={!user || locked} onChange={(next) => setDraft((prev) => ({ ...prev, [m.id]: next }))} />
+              <PickTriple value={pick} disabled={!user || locked} allowDraw={m.allowDraw !== false} onChange={(next) => setDraft((prev) => ({ ...prev, [m.id]: next }))} />
             </div>
           );
         })}
@@ -239,10 +239,11 @@ function SlateCard({ slate, now, user, picks, onSaved }: { slate: PorraSlate; no
   );
 }
 
-function PickTriple({ value, disabled, onChange }: { value?: Quiniela; disabled?: boolean; onChange: (pick: Quiniela) => void }) {
+function PickTriple({ value, disabled, onChange, allowDraw = true }: { value?: Quiniela; disabled?: boolean; allowDraw?: boolean; onChange: (pick: Quiniela) => void }) {
+  const keys = (allowDraw ? ["1", "X", "2"] : ["1", "2"]) as Quiniela[];
   return (
     <div className="flex gap-1">
-      {(["1", "X", "2"] as const).map((key) => (
+      {keys.map((key) => (
         <button key={key} type="button" disabled={disabled} onClick={() => onChange(key)} className={cn("h-10 w-10 rounded-md text-sm font-semibold tabular-nums", value === key ? "bg-accent text-bg" : "bg-surface text-fg ring-1 ring-border", disabled && "opacity-60")}>{key}</button>
       ))}
     </div>
