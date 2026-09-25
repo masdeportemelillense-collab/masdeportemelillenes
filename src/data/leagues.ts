@@ -2,7 +2,7 @@ import type { League } from "@/lib/types";
 
 const t = (name: string, short: string, id?: string) => ({ name, short, id });
 
-export const CUP_LEAGUE_IDS = new Set(["copa-federacion", "copa-espana-bsk"]);
+export const CUP_LEAGUE_IDS = new Set(["copa-federacion", "copa-espana-bsk", "copa-del-rey"]);
 
 export const leagues: League[] = [
   {
@@ -40,6 +40,18 @@ export const leagues: League[] = [
     scoring: "football",
     format: "cup",
     teams: [t("UD Melilla", "UDM", "ud-melilla"), t("Conil CF", "CON")],
+  },
+  {
+    id: "copa-del-rey",
+    name: "Copa del Rey",
+    shortName: "Copa del Rey",
+    sport: "futbol",
+    scoring: "football",
+    format: "cup",
+    teams: [
+      t("Atlético Melilla", "ATMSR", "atletico-melilla-sr"),
+      t("UD Pinatar", "PIN"),
+    ],
   },
   {
     id: "segunda-rfef-g4",
@@ -97,7 +109,7 @@ export const leagues: League[] = [
       t("CD Vázquez Cultural", "VAZ"),
       t("CF Alhendín Balompié", "ALH"),
       t("UD La Mosca", "MOS"),
-      t("UD Pavía", "PAV"),
+      t("UD Pavia", "PAV"),
       t("CD Juventud Torremolinos", "TOR"),
     ],
   },
@@ -112,7 +124,7 @@ export const leagues: League[] = [
       t("Málaga CF SAD", "MLG"),
       t("Real Jaén CF SAD", "JAE"),
       t("CF Femenino MVRGI", "MVR"),
-      t("UDC Pavía", "PAV"),
+      t("UDC Pavia", "PAV"),
       t("Granada CF SAD", "GRA"),
       t("CF Motril", "MOT"),
       t("Pablo Picasso AS DVA", "PIC"),
