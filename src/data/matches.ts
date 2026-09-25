@@ -3,6 +3,7 @@ import { basketAMatches } from "@/data/matches-basket-a";
 import { restoMatches } from "@/data/matches-resto";
 import { juvMatches } from "@/data/matches-juv";
 import { atmMatches } from "@/data/matches-atm";
+import { atmSrMatches } from "@/data/matches-atm-sr";
 import { copaBskMatches } from "@/data/matches-copa-bsk";
 import type { Match } from "@/lib/types";
 
@@ -10,6 +11,7 @@ export const matches: Match[] = [
   ...udmMatches,
   ...juvMatches,
   ...atmMatches,
+  ...atmSrMatches,
   ...basketAMatches,
   ...copaBskMatches,
   ...restoMatches,
