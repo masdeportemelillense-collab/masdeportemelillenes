@@ -159,9 +159,26 @@ export const porraSavePicks = createServerFn({ method: "POST" })
 
 export const porraAdminList = createServerFn({ method: "GET" }).handler(async () => {
   const { requireAdmin } = await import("@/lib/admin/session.server");
-  if (!(await requireAdmin())) return { ok: false as const, slates: [] as PorraSlate[] };
+  if (!(await requireAdmin())) return { ok: false as const, slates: [] as PorraSlate[], users: 0, stats: [] as Array<{ slateId: string; predicted: number; complete: number; matches: number }> };
   const store = await import("./store.server");
-  return { ok: true as const, slates: await store.listSlates() };
+  const [slates, picks, users] = await Promise.all([store.listSlates(), store.listPicks(), store.listUsers()]);
+  const stats = slates.map((slate) => {
+    const mine = picks.filter((p) => p.slateId === slate.id);
+    const byUser = new Map<string, Set<string>>();
+    for (const p of mine) {
+      const set = byUser.get(p.userId) ?? new Set<string>();
+      set.add(p.matchId);
+      byUser.set(p.userId, set);
+    }
+    const totalMatches = slate.matches.length;
+    return {
+      slateId: slate.id,
+      predicted: byUser.size,
+      complete: [...byUser.values()].filter((set) => set.size >= totalMatches && totalMatches > 0).length,
+      matches: totalMatches,
+    };
+  });
+  return { ok: true as const, slates, users: users.length, stats };
 });
 
 export const porraAdminSaveSlate = createServerFn({ method: "POST" })
