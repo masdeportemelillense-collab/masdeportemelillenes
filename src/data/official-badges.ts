@@ -1,5 +1,10 @@
 /** Escudos oficiales con URL pública (Wikipedia / club). Prioridad sobre el mapa local. */
+const UD = "/badges/ud-melilla.svg";
+
 const BY_KEY: Record<string, string> = {
+  "ud-melilla": UD,
+  udmelilla: UD,
+  udm: UD,
   "melilla-baloncesto":
     "https://upload.wikimedia.org/wikipedia/en/5/51/Mellila_Baloncesto_logo.png",
   melillabaloncesto:
