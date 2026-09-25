@@ -1,11 +1,11 @@
-/** Escudos oficiales con URL pública (Wikipedia / club). Prioridad sobre el mapa local. */
-const UD = "/badges/ud-melilla.svg";
+/** Escudos oficiales. Prioridad sobre el mapa local. */
+import { UD_MELILLA_CREST } from "./ud-melilla-crest-data";
 
 const BY_KEY: Record<string, string> = {
-  "ud-melilla": UD,
-  udmelilla: UD,
-  udm: UD,
-  melilla: UD,
+  "ud-melilla": UD_MELILLA_CREST,
+  udmelilla: UD_MELILLA_CREST,
+  udm: UD_MELILLA_CREST,
+  melilla: UD_MELILLA_CREST,
   "melilla-baloncesto":
     "https://upload.wikimedia.org/wikipedia/en/5/51/Mellila_Baloncesto_logo.png",
   melillabaloncesto:
