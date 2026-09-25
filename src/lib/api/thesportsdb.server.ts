@@ -86,20 +86,7 @@ function kickoffIso(ev: TsdbEvent): string {
 }
 
 const LIVE_STATUS = new Set([
-  "1H",
-  "2H",
-  "HT",
-  "ET",
-  "P",
-  "PEN",
-  "LIVE",
-  "Q1",
-  "Q2",
-  "Q3",
-  "Q4",
-  "OT",
-  "BT",
-  "INT",
+  "1H", "2H", "HT", "ET", "P", "PEN", "LIVE", "Q1", "Q2", "Q3", "Q4", "OT", "BT", "INT",
 ]);
 const DONE_STATUS = new Set(["FT", "AET", "AWARDED", "WO", "ABD"]);
 
@@ -121,7 +108,6 @@ function clockOf(sport: ApiEvent["sport"], ev: TsdbEvent, status: MatchStatus): 
   const progress = String(ev.strProgress ?? "").trim();
   if (status === "finished") return { minute: 90, displayClock: "Fin", period: "Finalizado" };
   if (status === "scheduled") return { minute: 0, displayClock: "", period: "Previsto" };
-
   if (s === "HT" || progress === "HT") return { minute: 45, displayClock: "DT", period: "Descanso" };
   if (s === "1H") {
     const minute = num(progress) || 1;
@@ -153,7 +139,6 @@ function mapEvent(ev: TsdbEvent): ApiEvent | null {
   const homeName = ev.strHomeTeam?.trim();
   const awayName = ev.strAwayTeam?.trim();
   if (!homeName || !awayName) return null;
-
   const homeId = slugForTsdbTeam(ev.idHomeTeam, homeName);
   const awayId = slugForTsdbTeam(ev.idAwayTeam, awayName);
   const sport = sportFor(ev.strSport);
@@ -162,12 +147,10 @@ function mapEvent(ev: TsdbEvent): ApiEvent | null {
   const kickoff = kickoffIso(ev);
   const age = Date.now() - Date.parse(kickoff);
   if (Number.isFinite(age) && age > MAX_AGE_MS && status === "finished") return null;
-
   const { minute, displayClock, period } = clockOf(sport, ev, status);
   const round = num(ev.intRound);
   const home = homeId ? getTeam(homeId) : undefined;
   const away = awayId ? getTeam(awayId) : undefined;
-
   return {
     externalId,
     sport,
@@ -258,6 +241,7 @@ async function pullSnapshot(): Promise<LiveSnapshot> {
 
   const byId = new Map<string, ApiEvent>();
   for (const ev of cache?.data.events ?? []) {
+    if (ev.sport === "futsal") continue;
     byId.set(ev.externalId, ev);
   }
   for (const ev of raw) {
@@ -272,7 +256,6 @@ async function pullSnapshot(): Promise<LiveSnapshot> {
 
   const ok = settled.some((s) => s.status === "fulfilled");
   const firstErr = settled.find((s) => s.status === "rejected") as PromiseRejectedResult | undefined;
-
   const tableRows = take<{ table?: TsdbTableRow[] }>(6)?.table ?? [];
 
   return {
@@ -284,18 +267,29 @@ async function pullSnapshot(): Promise<LiveSnapshot> {
   };
 }
 
-async function mergeSolo(base: LiveSnapshot): Promise<LiveSnapshot> {
+async function mergeFutsal(base: LiveSnapshot): Promise<LiveSnapshot> {
+  try {
+    const { fetchLaPreferenteFutsal } = await import("./lapreferente.server");
+    const lp = await fetchLaPreferenteFutsal();
+    if (lp.events.length || Object.keys(lp.tables).length) {
+      const kept = base.events.filter((e) => e.sport !== "futsal" && !e.externalId.startsWith("sfs-"));
+      return {
+        ...base,
+        ok: true,
+        events: [...kept, ...lp.events],
+        tables: { ...base.tables, ...lp.tables },
+      };
+    }
+  } catch {
+    /* fallback Solo-Futsal */
+  }
   try {
     const { fetchSoloFutsalEvents } = await import("./solofutsal.server");
     const extra = await fetchSoloFutsalEvents();
-    if (!extra.length) return { ...base, ok: base.ok || false };
+    if (!extra.length) return base;
     const byId = new Map(base.events.map((e) => [e.externalId, e]));
     for (const ev of extra) byId.set(ev.externalId, ev);
-    return {
-      ...base,
-      ok: true,
-      events: [...byId.values()],
-    };
+    return { ...base, ok: true, events: [...byId.values()] };
   } catch {
     return base;
   }
@@ -306,11 +300,7 @@ async function mergeFutbolme(base: LiveSnapshot): Promise<LiveSnapshot> {
     const { fetchFutbolmeTables } = await import("./futbolme.server");
     const official = await fetchFutbolmeTables();
     if (!Object.keys(official).length) return base;
-    return {
-      ...base,
-      ok: true,
-      tables: { ...base.tables, ...official },
-    };
+    return { ...base, ok: true, tables: { ...base.tables, ...official } };
   } catch {
     return base;
   }
@@ -321,7 +311,7 @@ export async function fetchLiveSnapshot(): Promise<LiveSnapshot> {
   if (cache && now - cache.at < TTL_MS) return cache.data;
   if (inflight) return inflight;
   inflight = pullSnapshot()
-    .then((data) => mergeSolo(data))
+    .then((data) => mergeFutsal(data))
     .then((data) => mergeFutbolme(data))
     .then((data) => {
       cache = { at: Date.now(), data };
