@@ -3,9 +3,9 @@ import type { Spec } from "@/data/match-builder";
 import type { Match } from "@/lib/types";
 const IMB = "Javier Imbroda Ortiz";
 const rows: Spec[] = [
-{id:"mls-j1", league:"fs-segunda-m", sport:"futsal", at:"2026-09-19T19:00:00+02:00", venue:IMB, jornada:1, home:"melistar", away:"Zambu CFS Pinatar|PIN"},
+{id:"mls-j1", league:"fs-segunda-m", sport:"futsal", at:"2026-09-19T19:00:00+02:00", venue:IMB, jornada:1, home:"melistar", away:"Zambu CFS Pinatar|PIN", events:[[40,"A","gol","Final","*1-3"]]},
 {id:"mls-j2", league:"fs-segunda-m", sport:"futsal", at:"2026-09-26T19:00:00+02:00", venue:"Pabellón Municipal Mataró", jornada:2, home:"C.E.F. Gestoria Luis Mataró|MAT", away:"melistar"},
-{id:"mls-j3", league:"fs-segunda-m", sport:"futsal", at:"2026-10-03T19:00:00+02:00", venue:"Pabellón Municipal Entrerríos", jornada:3, home:"Entrerríos Automatización|ENT", away:"melistar"},
+{id:"mls-j3", league:"fs-segunda-m", sport:"futsal", at:"2026-10-03T19:00:00+02:00", venue:"Pabellón Municipal Entrerrios", jornada:3, home:"Entrerrios Automatización|ENT", away:"melistar"},
 {id:"mls-j4", league:"fs-segunda-m", sport:"futsal", at:"2026-10-10T19:00:00+02:00", venue:"Ciudad Deportiva La Fortuna", jornada:4, home:"C.D. Leganés F.S.|LEG", away:"melistar"},
 {id:"mls-j5", league:"fs-segunda-m", sport:"futsal", at:"2026-10-17T19:00:00+02:00", venue:"Pabellón Municipal Martorell", jornada:5, home:"Sala 5 Martorell MCD Grup|S5M", away:"melistar"},
 {id:"mls-j6", league:"fs-segunda-m", sport:"futsal", at:"2026-10-24T19:00:00+02:00", venue:IMB, jornada:6, home:"melistar", away:"Xerez Toyota Nimauto|XER"},
@@ -30,7 +30,7 @@ const rows: Spec[] = [
 {id:"mls-j25", league:"fs-segunda-m", sport:"futsal", at:"2027-04-03T19:00:00+02:00", venue:"Pabellón Municipal Alzira", jornada:25, home:"Family Cash Alzira F.S.|ALZ", away:"melistar"},
 {id:"mls-j26", league:"fs-segunda-m", sport:"futsal", at:"2027-04-10T19:00:00+02:00", venue:IMB, jornada:26, home:"melistar", away:"MRB - FS Móstoles|MOS"},
 {id:"mls-j27", league:"fs-segunda-m", sport:"futsal", at:"2027-04-17T19:00:00+02:00", venue:"Ciudad Deportiva Joan Gamper", jornada:27, home:"Barça Atlètic|BAR", away:"melistar"},
-{id:"mls-j28", league:"fs-segunda-m", sport:"futsal", at:"2027-04-24T19:00:00+02:00", venue:IMB, jornada:28, home:"melistar", away:"Entrerríos Automatización|ENT"},
+{id:"mls-j28", league:"fs-segunda-m", sport:"futsal", at:"2027-04-24T19:00:00+02:00", venue:IMB, jornada:28, home:"melistar", away:"Entrerrios Automatización|ENT"},
 {id:"mls-j29", league:"fs-segunda-m", sport:"futsal", at:"2027-05-01T19:00:00+02:00", venue:"Pabellón La Salobreja", jornada:29, home:"C.D. Avanza Jaén Paraíso Interior|JAE", away:"melistar"},
 {id:"mls-j30", league:"fs-segunda-m", sport:"futsal", at:"2027-05-08T19:00:00+02:00", venue:IMB, jornada:30, home:"melistar", away:"Sala 5 Martorell MCD Grup|S5M"},
 ];
