@@ -1,9 +1,10 @@
 import { randomBytes, scrypt as scryptCb, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
-import { readDoc, updateDoc } from "@/lib/persist.server";
+import { readDoc, updateDoc, writeDoc } from "@/lib/persist.server";
 import type { PorraPick, PorraSlate, PorraUser } from "./types";
 
 const KEY = "porra";
+const TRASH = "porra-trash";
 const scrypt = promisify(scryptCb);
 
 type Box = {
@@ -12,7 +13,13 @@ type Box = {
   picks: PorraPick[];
 };
 
+type TrashBox = {
+  slates: PorraSlate[];
+  picks: PorraPick[];
+};
+
 const empty = (): Box => ({ users: [], slates: [], picks: [] });
+const emptyTrash = (): TrashBox => ({ slates: [], picks: [] });
 
 function normalize(raw: Partial<Box> | null | undefined): Box {
   return {
@@ -97,10 +104,43 @@ export async function upsertSlate(slate: PorraSlate): Promise<PorraSlate> {
 }
 
 export async function removeSlate(id: string): Promise<void> {
+  const current = await load();
+  const slate = current.slates.find((s) => s.id === id);
+  const picks = current.picks.filter((p) => p.slateId === id);
+  if (slate) {
+    const trash = await readDoc<TrashBox>(TRASH, emptyTrash());
+    trash.slates = [slate, ...trash.slates.filter((s) => s.id !== id)].slice(0, 20);
+    trash.picks = [...picks, ...trash.picks.filter((p) => p.slateId !== id)].slice(0, 5000);
+    await writeDoc(TRASH, trash);
+  }
   await mutate((data) => {
     data.slates = data.slates.filter((s) => s.id !== id);
-    data.picks = data.picks.filter((p) => p.slateId !== id);
+    // Los pronósticos se conservan por si se restaura la misma jornada.
   });
+}
+
+export async function restoreSlate(id: string): Promise<PorraSlate | undefined> {
+  const trash = await readDoc<TrashBox>(TRASH, emptyTrash());
+  const slate = trash.slates.find((s) => s.id === id);
+  if (!slate) return undefined;
+  const picks = trash.picks.filter((p) => p.slateId === id);
+  await mutate((data) => {
+    if (!data.slates.some((s) => s.id === slate.id)) data.slates.push(slate);
+    for (const pick of picks) {
+      const i = data.picks.findIndex(
+        (p) => p.userId === pick.userId && p.slateId === pick.slateId && p.matchId === pick.matchId,
+      );
+      if (i < 0) data.picks.push(pick);
+    }
+  });
+  trash.slates = trash.slates.filter((s) => s.id !== id);
+  trash.picks = trash.picks.filter((p) => p.slateId !== id);
+  await writeDoc(TRASH, trash);
+  return slate;
+}
+
+export async function listTrash(): Promise<PorraSlate[]> {
+  return (await readDoc<TrashBox>(TRASH, emptyTrash())).slates;
 }
 
 export async function savePick(pick: PorraPick): Promise<PorraPick> {
