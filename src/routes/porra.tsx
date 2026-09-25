@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   porraLogin,
   porraLogout,
@@ -20,7 +20,11 @@ export const Route = createFileRoute("/porra")({ component: PorraPage });
 
 function PorraPage() {
   const qc = useQueryClient();
-  const q = useQuery({ queryKey: ["porra-state"], queryFn: () => porraState() });
+  const q = useQuery({
+    queryKey: ["porra-state"],
+    queryFn: () => porraState(),
+    staleTime: 15_000,
+  });
   const state = q.data;
   const ordered = useMemo(() => {
     if (!state) return [];
@@ -31,6 +35,9 @@ function PorraPage() {
       return b.createdAt - a.createdAt;
     });
   }, [state]);
+  function applyState(next: PorraPublicState) {
+    qc.setQueryData(["porra-state"], next);
+  }
   if (q.isLoading || !state) return <p className="text-sm text-muted">Cargando la porra…</p>;
   return (
     <div className="space-y-8">
@@ -50,9 +57,9 @@ function PorraPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
         <div className="space-y-6">
           {state.user ? (
-            <AccountBar user={state.user} onLogout={async () => { await porraLogout(); await qc.invalidateQueries({ queryKey: ["porra-state"] }); }} onSaved={(next) => qc.setQueryData(["porra-state"], next)} />
+            <AccountBar user={state.user} onLogout={async () => { await porraLogout(); await qc.invalidateQueries({ queryKey: ["porra-state"] }); }} onSaved={applyState} />
           ) : (
-            <AuthCard onDone={(next) => qc.setQueryData(["porra-state"], next)} />
+            <AuthCard onDone={applyState} />
           )}
           {state.user ? <MyHits slates={ordered} picks={state.myPicks} userId={state.user.id} /> : null}
           {ordered.length === 0 ? (
@@ -61,7 +68,7 @@ function PorraPage() {
             </p>
           ) : (
             ordered.map((slate) => (
-              <SlateCard key={slate.id} slate={slate} now={state.now} user={state.user} picks={state.myPicks.filter((p) => p.slateId === slate.id)} onSaved={(next) => qc.setQueryData(["porra-state"], next)} />
+              <SlateCard key={`${slate.id}-${state.user?.id ?? "anon"}`} slate={slate} now={state.now} user={state.user} picks={state.myPicks.filter((p) => p.slateId === slate.id)} onSaved={applyState} />
             ))
           )}
         </div>
@@ -194,6 +201,16 @@ function SlateCard({ slate, now, user, picks, onSaved }: { slate: PorraSlate; no
   const locked = isLocked(slate.lockAt, now);
   const [draft, setDraft] = useState<Record<string, Quiniela>>(() => Object.fromEntries(picks.map((p) => [p.matchId, p.pick])));
   const [msg, setMsg] = useState("");
+  useEffect(() => {
+    setDraft((prev) => {
+      const fromServer = Object.fromEntries(picks.map((p) => [p.matchId, p.pick]));
+      if (!Object.keys(fromServer).length) return prev;
+      if (!Object.keys(prev).length) return fromServer;
+      const next = { ...fromServer };
+      for (const [id, pick] of Object.entries(prev)) next[id] = pick;
+      return next;
+    });
+  }, [picks]);
   const save = useMutation({
     mutationFn: () => porraSavePicks({ data: { slateId: slate.id, picks: Object.entries(draft).map(([matchId, pick]) => ({ matchId, pick })) } }),
     onSuccess: (res) => { if (res.ok) { onSaved(res.state); setMsg("Pronóstico guardado."); } else setMsg(res.error); },
