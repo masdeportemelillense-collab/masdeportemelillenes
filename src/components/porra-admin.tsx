@@ -15,6 +15,8 @@ export function PorraAdmin() {
   const [editing, setEditing] = useState<string | null>(null);
   const [matches, setMatches] = useState<DraftMatch[]>([emptyMatch(), emptyMatch()]);
   const [error, setError] = useState("");
+  const users = list.data && "users" in list.data ? list.data.users ?? 0 : 0;
+  const stats = list.data && "stats" in list.data ? list.data.stats ?? [] : [];
 
   const save = useMutation({
     mutationFn: () =>
@@ -64,6 +66,10 @@ export function PorraAdmin() {
         <h2 className="font-display text-3xl leading-none">{editing ? "Editar jornada" : "Nueva jornada"}</h2>
         <p className="mt-1 text-sm text-muted">Añade los partidos a pronosticar. En baloncesto o voleibol marca «Sin empate» para quitar la X. El cierre por defecto es el viernes a las 17:00 (hora española).</p>
       </div>
+      <div className="rounded-xl bg-accent/10 px-4 py-3 text-sm">
+        <p className="font-medium">{users} jugadores registrados</p>
+        <p className="text-xs text-muted">Cada vez que alguien guarda un pronóstico se actualiza el contador de esa jornada.</p>
+      </div>
       <div className="space-y-3 rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
         <label className="block text-xs uppercase tracking-wider text-muted">Nombre de la jornada<input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Jornada 4 · Tercera Federación" className="mt-1 h-11 w-full rounded-md bg-surface-2 px-3 text-sm outline-none ring-1 ring-border focus:ring-accent/60" /></label>
         <label className="block text-xs uppercase tracking-wider text-muted">Cierre de pronósticos<input value={lockAt} onChange={(e) => setLockAt(e.target.value)} className="mt-1 h-11 w-full rounded-md bg-surface-2 px-3 text-sm outline-none ring-1 ring-border focus:ring-accent/60" /></label>
@@ -79,7 +85,7 @@ export function PorraAdmin() {
                     <button key={key} type="button" onClick={() => setMatches((rows) => rows.map((r, j) => (j === i ? { ...r, result: r.result === key ? "" : key } : r)))} className={`h-10 w-9 rounded-md text-sm font-semibold ${m.result === key ? "bg-accent text-bg" : "bg-surface ring-1 ring-border"}`}>{key}</button>
                   ))}
                   <label className="ml-1 flex items-center gap-1 text-[11px] text-muted">
-                    <input type="checkbox" checked={!m.allowDraw} onChange={(e) => setMatches((rows) => rows.map((r, j) => (j === i ? { ...r, allowDraw: !e.target.checked, result: !e.target.checked === false && r.result === "X" ? "" : r.result } : r)))} />
+                    <input type="checkbox" checked={!m.allowDraw} onChange={(e) => setMatches((rows) => rows.map((r, j) => (j === i ? { ...r, allowDraw: !e.target.checked, result: e.target.checked && r.result === "X" ? "" : r.result } : r)))} />
                     Sin empate
                   </label>
                 </div>
@@ -97,18 +103,25 @@ export function PorraAdmin() {
       </div>
       <div className="space-y-2">
         <h3 className="text-xs uppercase tracking-wider text-muted">Jornadas publicadas</h3>
-        {(list.data?.slates ?? []).map((s) => (
-          <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface px-4 py-3 shadow-[var(--shadow-border)]">
-            <div>
-              <p className="font-medium">{s.title}</p>
-              <p className="text-xs text-muted">{s.matches.length} partidos · cierra {s.lockAt}</p>
+        {(list.data?.slates ?? []).map((s) => {
+          const st = stats.find((row) => row.slateId === s.id);
+          return (
+            <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface px-4 py-3 shadow-[var(--shadow-border)]">
+              <div>
+                <p className="font-medium">{s.title}</p>
+                <p className="text-xs text-muted">{s.matches.length} partidos · cierra {s.lockAt}</p>
+                <p className="mt-1 text-sm font-medium text-accent">
+                  {st ? `${st.predicted} de ${users} han pronosticado` : "Sin datos aún"}
+                  {st ? ` · ${st.complete} completos` : ""}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => load(s)} className="h-9 rounded-md bg-surface-2 px-3 text-xs">Editar / resultados</button>
+                <button type="button" onClick={() => del.mutate(s.id)} className="h-9 rounded-md px-3 text-xs text-loss">Borrar</button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => load(s)} className="h-9 rounded-md bg-surface-2 px-3 text-xs">Editar / resultados</button>
-              <button type="button" onClick={() => del.mutate(s.id)} className="h-9 rounded-md px-3 text-xs text-loss">Borrar</button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
