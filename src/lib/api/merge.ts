@@ -21,7 +21,18 @@ function stripFakeLive(match: Match): Match {
   return rest;
 }
 
-function shouldDropCatalog(match: Match): boolean {
+function lpCovers(match: Match, events: ApiEvent[]): boolean {
+  if (match.sport !== "futsal" || !involvesTracked(match)) return false;
+  return events.some(
+    (ev) =>
+      ev.externalId.startsWith("lp-") &&
+      ((match.homeId && (ev.homeId === match.homeId || ev.awayId === match.homeId)) ||
+        (match.awayId && (ev.homeId === match.awayId || ev.awayId === match.awayId))),
+  );
+}
+
+function shouldDropCatalog(match: Match, events: ApiEvent[]): boolean {
+  if (lpCovers(match, events)) return true;
   return involvesTracked(match) && match.liveElapsed != null;
 }
 
@@ -110,7 +121,7 @@ export function buildResolvedFeed(now: number, snapshot?: LiveSnapshot | null): 
   const out: ResolvedMatch[] = [];
 
   for (const raw of matches) {
-    if (shouldDropCatalog(raw)) continue;
+    if (shouldDropCatalog(raw, api)) continue;
     const overlay = findOverlay(raw, api);
     if (overlay) {
       used.add(overlay.externalId);
@@ -163,7 +174,6 @@ export function forTeam(list: ResolvedMatch[], teamId: string): ResolvedMatch[] 
     .sort((a, b) => Date.parse(a.kickoff) - Date.parse(b.kickoff));
 }
 
-/** Solo variantes del MISMO club. Marbellí ≠ Marbella. Juniors ≠ Malagueño. */
 const NAME_ALIASES: Array<string[]> = [
   ["melilla", "udmelilla", "uniondeportivamelilla"],
   ["huetorvega", "cdhuetorvega"],
@@ -218,7 +228,6 @@ function exactDedupe(rows: StandingRow[]): StandingRow[] {
   for (const row of rows) {
     const k = `${keyName(row.name)}|${row.teamId ?? ""}`;
     if (seen.has(k)) continue;
-    // solo quitar la misma fila repetida, no clubes distintos
     if (out.some((o) => sameClub(o.name, row.name) && o.pj === row.pj && o.pts === row.pts && o.gf === row.gf)) {
       continue;
     }
