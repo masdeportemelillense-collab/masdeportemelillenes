@@ -1,11 +1,17 @@
 /** Escudos oficiales. Prioridad sobre el mapa local. */
 import { UD_MELILLA_CREST } from "./ud-melilla-crest-data";
 
+const CV = "/badges/cv-melilla-tw.png";
+
 const BY_KEY: Record<string, string> = {
   "ud-melilla": UD_MELILLA_CREST,
   udmelilla: UD_MELILLA_CREST,
   udm: UD_MELILLA_CREST,
-  melilla: UD_MELILLA_CREST,
+  "cv-melilla-m": CV,
+  "cv-melilla-f": CV,
+  cvmelilla: CV,
+  cvmelillam: CV,
+  cvmelillaf: CV,
   "melilla-baloncesto":
     "https://upload.wikimedia.org/wikipedia/en/5/51/Mellila_Baloncesto_logo.png",
   melillabaloncesto:
