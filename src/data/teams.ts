@@ -19,11 +19,11 @@ export const teams: Team[] = [
   },
   {
     id: "atletico-melilla-sr",
-    name: "Atlético Melilla",
+    name: "Atlético Melilla Senior",
     short: "ATMSR",
     sport: "futbol",
     gender: "m",
-    category: "Senior",
+    category: "Copa del Rey",
     leagueId: "copa-del-rey",
     venue: "Campo Federativo La Espiguera",
     founded: 2015,
@@ -35,7 +35,7 @@ export const teams: Team[] = [
   },
   {
     id: "atletico-melilla-dh",
-    name: "Atlético Melilla",
+    name: "Atlético Melilla Juvenil",
     short: "ATMJ",
     sport: "futbol",
     gender: "m",
