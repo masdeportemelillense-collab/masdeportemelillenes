@@ -18,6 +18,22 @@ export const teams: Team[] = [
       "El decano del fútbol melillense. Tras el descenso de 2025-26, los unionistas arrancan en el Grupo 9 de Tercera Federación con el Álvarez Claro como fortín.",
   },
   {
+    id: "atletico-melilla-sr",
+    name: "Atlético Melilla",
+    short: "ATMSR",
+    sport: "futbol",
+    gender: "m",
+    category: "Senior",
+    leagueId: "copa-del-rey",
+    venue: "Campo Federativo La Espiguera",
+    founded: 2015,
+    primary: "#8b1e1e",
+    secondary: "#f0ebe3",
+    nickname: "Rojillos",
+    summary:
+      "El Atlético Melilla CF senior disputa la Copa del Rey 2026-27. Eliminatoria previa a ida y vuelta ante la UD Pinatar (26 de septiembre en San Pedro del Pinatar y 4 de octubre en La Espiguera).",
+  },
+  {
     id: "atletico-melilla-dh",
     name: "Atlético Melilla",
     short: "ATMJ",
