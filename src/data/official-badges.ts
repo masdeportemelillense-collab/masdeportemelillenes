@@ -5,6 +5,7 @@ const BY_KEY: Record<string, string> = {
   "ud-melilla": UD,
   udmelilla: UD,
   udm: UD,
+  melilla: UD,
   "melilla-baloncesto":
     "https://upload.wikimedia.org/wikipedia/en/5/51/Mellila_Baloncesto_logo.png",
   melillabaloncesto:
