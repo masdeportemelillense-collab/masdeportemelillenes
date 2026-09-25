@@ -2,11 +2,16 @@
 import { UD_MELILLA_CREST } from "./ud-melilla-crest-data";
 
 const CV = "/badges/cv-melilla-tw.png";
+const ATM = "https://futbolme.com/static/img/club/escudo7785.png";
 
 const BY_KEY: Record<string, string> = {
   "ud-melilla": UD_MELILLA_CREST,
   udmelilla: UD_MELILLA_CREST,
   udm: UD_MELILLA_CREST,
+  "atletico-melilla-sr": ATM,
+  "atletico-melilla-dh": ATM,
+  atleticomelilla: ATM,
+  atleticomelillacf: ATM,
   "cv-melilla-m": CV,
   "cv-melilla-f": CV,
   cvmelilla: CV,
