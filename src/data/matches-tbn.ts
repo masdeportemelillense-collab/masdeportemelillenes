@@ -7,8 +7,8 @@ const IMB = "Javier Imbroda Ortiz";
 const rows: Spec[] = [
   {id:"tbn-j1", league:"fs-primera-f", sport:"futsal", at:"2026-09-04T18:00:00+02:00", venue:IMB, jornada:1, home:"torreblanca", away:"Nueces de Ronda Atl. Torcal|TOR", events:[[40,"H","gol","Final","*6-3"]]},
   {id:"tbn-j2", league:"fs-primera-f", sport:"futsal", at:"2026-09-12T18:00:00+02:00", venue:"Pabellón Les Corts", jornada:2, home:"A.E.F. Les Corts UBAE|LCO", away:"torreblanca", events:[[40,"A","gol","Final","*0-1"]]},
-  {id:"tbn-j3", league:"fs-primera-f", sport:"futsal", at:"2026-09-19T12:30:00+02:00", venue:IMB, jornada:3, home:"torreblanca", away:"MRB F.S.F. Móstoles|MOS"},
-  {id:"tbn-j4", league:"fs-primera-f", sport:"futsal", at:"2026-10-17T18:00:00+02:00", venue:"Pabellón Municipal Poio", jornada:4, home:"Poio Pescamar F.S.F.|POI", away:"torreblanca"},
+  {id:"tbn-j3", league:"fs-primera-f", sport:"futsal", at:"2026-09-19T12:30:00+02:00", venue:IMB, jornada:3, home:"torreblanca", away:"MRB F.S.F. Móstoles|MOS", events:[[40,"H","gol","Final","*4-0"]]},
+  {id:"tbn-j4", league:"fs-primera-f", sport:"futsal", at:"2026-10-17T16:00:00+02:00", venue:"Pabellón Municipal Poio", jornada:4, home:"Poio Pescamar F.S.F.|POI", away:"torreblanca"},
   {id:"tbn-j5", league:"fs-primera-f", sport:"futsal", at:"2026-10-24T18:00:00+02:00", venue:"Pabellón Municipal Alcorcón", jornada:5, home:"ARRIVA A.D. Alcorcón F.S.F.|ALC", away:"torreblanca"},
   {id:"tbn-j6", league:"fs-primera-f", sport:"futsal", at:"2026-10-31T18:00:00+01:00", venue:IMB, jornada:6, home:"torreblanca", away:"Estrela Revoltosa Verín F.S.F.|VER"},
   {id:"tbn-j7", league:"fs-primera-f", sport:"futsal", at:"2026-11-07T18:00:00+01:00", venue:"Pabellón InterSala 10", jornada:7, home:"Wanapix Aldelis InterSala10|INT", away:"torreblanca"},
