@@ -72,6 +72,13 @@ export async function writeDoc<T>(key: string, value: T): Promise<void> {
   const raw = JSON.stringify(value);
   mem().set(key, raw);
   await kvSet(key, raw);
+  if (key === "porra") {
+    try {
+      await kvSet("porra-backup", raw);
+    } catch (err) {
+      console.error("[persist] backup", err);
+    }
+  }
 }
 
 export async function updateDoc<T>(
