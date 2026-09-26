@@ -16,8 +16,8 @@ import type { LiveSnapshot } from "@/lib/api/types";
 import { useNow } from "@/lib/live";
 import type { ResolvedMatch, StandingRow } from "@/lib/types";
 
-/** Official scoreboard cadence — one pull per minute. */
-export const POLL_MS = 60_000;
+/** Cadencia del marcador en directo. */
+export const POLL_MS = 12_000;
 
 export type Feed = {
   now: number;
@@ -89,7 +89,7 @@ export function LiveFeedProvider({
     queryFn: () => getLiveSnapshot(),
     initialData: initial ?? undefined,
     initialDataUpdatedAt: initial?.fetchedAt,
-    staleTime: POLL_MS - 5_000,
+    staleTime: 4_000,
     refetchInterval: POLL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
