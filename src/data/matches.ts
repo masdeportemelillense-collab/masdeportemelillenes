@@ -5,6 +5,7 @@ import { juvMatches } from "@/data/matches-juv";
 import { atmMatches } from "@/data/matches-atm";
 import { atmSrMatches } from "@/data/matches-atm-sr";
 import { copaBskMatches } from "@/data/matches-copa-bsk";
+import { boomerangMatches } from "@/data/matches-boomerang";
 import type { Match } from "@/lib/types";
 
 export const matches: Match[] = [
@@ -14,6 +15,7 @@ export const matches: Match[] = [
   ...atmSrMatches,
   ...basketAMatches,
   ...copaBskMatches,
+  ...boomerangMatches,
   ...restoMatches,
 ];
 
