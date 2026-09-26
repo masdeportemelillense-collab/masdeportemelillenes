@@ -274,6 +274,22 @@ export const teams: Team[] = [
       "El CD Melistar, con Ramón Martínez en el banquillo, milita en Segunda División masculina de fútbol sala. Proyecto remodelado para 2026-27.",
   },
   {
+    id: "cd-boomerang",
+    name: "CD Boomerang",
+    short: "BOOM",
+    sport: "futsal",
+    gender: "m",
+    category: "Senior",
+    leagueId: "copa-rey-fs",
+    venue: "Pabellón Lázaro Fernández",
+    founded: 2010,
+    primary: "#1e3a2f",
+    secondary: "#e8e2d4",
+    nickname: "Boomerang",
+    summary:
+      "El CD Boomerang representa a Melilla en la Copa del Rey de Fútbol Sala 2026-27. Primera ronda en el Lázaro Fernández ante el Sima Granada FS.",
+  },
+  {
     id: "nueva-era",
     name: "Nueva Era Melilla",
     short: "NERA",
@@ -287,7 +303,7 @@ export const teams: Team[] = [
     secondary: "#e8e6dc",
     nickname: "Nueva Era",
     summary:
-      "Nueva Era Melilla FS compite en el Grupo 5 de Segunda División B. Club joven con ambición de crecer en el fútbol sala nacional.",
+      "Nueva Era Melilla FS compite en el Grupo 5 de Segunda División B. Club joven con ambión de crecer en el fútbol sala nacional.",
   },
   {
     id: "rusadir-fs-dh",
