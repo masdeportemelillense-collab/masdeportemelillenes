@@ -4,6 +4,7 @@ import { adminSaveOverride } from "@/lib/admin/actions";
 import {
   clockFromOverride,
   defaultPeriod,
+  isBreakPeriod,
   kickoffAnchor,
   LIVE_PERIODS,
   periodBaseMinute,
@@ -52,7 +53,7 @@ export function LiveDesk({
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted">
-        Elige el periodo y, si quieres, activa el reloj. El marcador se actualiza con +1 / −1.
+        Elige el periodo y, si quieres, activa el reloj. En Descanso el reloj se para.
       </p>
       {list.map((match) => (
         <LiveRow
@@ -83,12 +84,14 @@ function LiveRow({
   const period = saved?.periodLabel || match.periodLabel || defaultPeriod(match.sport);
   const clockEnabled = Boolean(saved?.showClock);
   const canClock = usesFootballClock(match.sport);
+  const onBreak = isBreakPeriod(period);
   const clock = clockFromOverride(
     {
       clockAnchorAt: saved?.clockAnchorAt,
       clockBaseMinute: saved?.clockBaseMinute,
       minute: saved?.minute ?? match.minute,
       periodLabel: period,
+      showClock: clockEnabled,
     },
     now || Date.now(),
   );
@@ -135,12 +138,22 @@ function LiveRow({
       status: "live",
       periodLabel: period || defaultPeriod(match.sport),
       showClock: clockEnabled,
-      clockAnchorAt: clockEnabled ? kickoffAnchor(kickoff) : saved?.clockAnchorAt,
+      clockAnchorAt: clockEnabled && !isBreakPeriod(period) ? kickoffAnchor(kickoff) : undefined,
       clockBaseMinute: clockEnabled ? periodBaseMinute(period || defaultPeriod(match.sport)) : saved?.clockBaseMinute,
     });
   }
 
   function changePeriod(next: string) {
+    if (isBreakPeriod(next)) {
+      persist({
+        status: status === "scheduled" ? "live" : status,
+        periodLabel: next,
+        minute: clock.minute,
+        clockBaseMinute: clock.minute,
+        clockAnchorAt: undefined,
+      });
+      return;
+    }
     persist({
       status: status === "scheduled" ? "live" : status,
       periodLabel: next,
@@ -154,8 +167,8 @@ function LiveRow({
     persist({
       status: status === "scheduled" && on ? "live" : status,
       showClock: on,
-      clockAnchorAt: on ? kickoffAnchor(kickoff) : undefined,
-      clockBaseMinute: on ? periodBaseMinute(period) : 0,
+      clockAnchorAt: on && !onBreak ? kickoffAnchor(kickoff) : undefined,
+      clockBaseMinute: on ? (onBreak ? clock.minute : periodBaseMinute(period)) : 0,
     });
   }
 
@@ -174,7 +187,7 @@ function LiveRow({
         {status === "live" ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-live/15 px-2 py-0.5 text-[11px] uppercase text-live">
             <span className="pulse-live size-1.5 rounded-full bg-live" />
-            Directo
+            {onBreak ? "Descanso" : "Directo"}
           </span>
         ) : null}
       </div>
@@ -202,7 +215,9 @@ function LiveRow({
           {clockEnabled && canClock ? (
             <>
               <p className="mt-2 font-display text-3xl tabular-nums leading-none text-live">{status === "live" ? clock.display : "00:00"}</p>
-              <p className="mt-1 text-[11px] text-muted">Arranca con la hora de inicio del partido</p>
+              <p className="mt-1 text-[11px] text-muted">
+                {onBreak ? "Reloj en pausa. En la web aparece Descanso." : "Arranca con la hora de inicio del partido"}
+              </p>
             </>
           ) : (
             <p className="mt-1 text-[11px] text-muted">
