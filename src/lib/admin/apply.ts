@@ -1,5 +1,5 @@
 import type { AdminOverride } from "@/lib/admin/types";
-import { clockFromOverride } from "./clock";
+import { clockFromOverride, isBreakPeriod } from "./clock";
 import type { EventKind, MatchEvent, ResolvedMatch, Side } from "@/lib/types";
 
 function isScoreEvent(kind: EventKind): boolean {
@@ -54,9 +54,17 @@ export function applyAdminOverrides(
     const homeScore = status === "scheduled" ? 0 : (hit.homeScore ?? fromEvents?.home ?? match.homeScore);
     const awayScore = status === "scheduled" ? 0 : (hit.awayScore ?? fromEvents?.away ?? match.awayScore);
     const clockOn = Boolean(hit.showClock);
-    const clock = status === "live" && clockOn ? clockFromOverride(hit, now) : null;
+    const onBreak = isBreakPeriod(hit.periodLabel);
+    const clock = status === "live" && clockOn && !onBreak ? clockFromOverride(hit, now) : null;
     const minute = clock?.minute ?? hit.minute ?? fromEvents?.minute ?? match.minute;
-    const period = hit.periodLabel || (status === "live" ? "En directo" : status === "finished" ? "Finalizado" : "Previsto");
+    const period =
+      hit.periodLabel || (status === "live" ? "En directo" : status === "finished" ? "Finalizado" : "Previsto");
+
+    let displayClock = match.displayClock;
+    if (status === "finished") displayClock = "Fin";
+    else if (status === "live" && onBreak) displayClock = "Descanso";
+    else if (status === "live" && clockOn) displayClock = clock?.display ?? (minute ? `${minute}'` : "LIVE");
+    else if (status === "live") displayClock = hit.periodLabel || "LIVE";
 
     out.push({
       ...match,
@@ -70,14 +78,7 @@ export function applyAdminOverrides(
       awayScore,
       minute,
       periodLabel: hit.periodLabel || match.periodLabel,
-      displayClock:
-        status === "live"
-          ? clockOn
-            ? clock?.display ?? (minute ? `${minute}'` : "LIVE")
-            : hit.periodLabel || "LIVE"
-          : status === "finished"
-            ? "Fin"
-            : match.displayClock,
+      displayClock,
       period,
       events,
       happened: events,

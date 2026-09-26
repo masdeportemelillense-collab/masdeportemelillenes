@@ -3,6 +3,7 @@ import type { Sport } from "@/lib/types";
 
 export const LIVE_PERIODS = [
   "1ª Parte",
+  "Descanso",
   "2ª Parte",
   "1er Cuarto",
   "2º Cuarto",
@@ -28,6 +29,10 @@ export function usesFootballClock(sport: Sport): boolean {
   return sport === "futbol" || sport === "futsal" || sport === "balonmano";
 }
 
+export function isBreakPeriod(label?: string): boolean {
+  return label === "Descanso";
+}
+
 export function periodBaseMinute(label: string): number {
   if (label === "2ª Parte") return 45;
   if (label === "Prórroga") return 90;
@@ -39,19 +44,23 @@ function pad(n: number): string {
 }
 
 export function clockFromOverride(
-  hit: Pick<AdminOverride, "clockAnchorAt" | "clockBaseMinute" | "minute" | "periodLabel">,
+  hit: Pick<AdminOverride, "clockAnchorAt" | "clockBaseMinute" | "minute" | "periodLabel" | "showClock">,
   now = Date.now(),
-): { minute: number; seconds: number; display: string } {
+): { minute: number; seconds: number; display: string; paused: boolean } {
+  if (isBreakPeriod(hit.periodLabel)) {
+    const minute = hit.clockBaseMinute ?? hit.minute ?? 0;
+    return { minute, seconds: 0, display: "Descanso", paused: true };
+  }
   const base = hit.clockBaseMinute ?? 0;
   if (hit.clockAnchorAt && Number.isFinite(hit.clockAnchorAt)) {
     const elapsed = Math.max(0, now - hit.clockAnchorAt);
     const totalSec = Math.floor(elapsed / 1000) + base * 60;
     const minute = Math.floor(totalSec / 60);
     const seconds = totalSec % 60;
-    return { minute, seconds, display: `${pad(minute)}:${pad(seconds)}` };
+    return { minute, seconds, display: `${pad(minute)}:${pad(seconds)}`, paused: false };
   }
   const minute = hit.minute ?? 0;
-  return { minute, seconds: 0, display: `${pad(minute)}:00` };
+  return { minute, seconds: 0, display: `${pad(minute)}:00`, paused: false };
 }
 
 export function kickoffAnchor(kickoff?: string, now = Date.now()): number {
