@@ -1,8 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { adminSaveOverride } from "@/lib/admin/actions";
+import {
+  clockFromOverride,
+  defaultPeriod,
+  kickoffAnchor,
+  LIVE_PERIODS,
+  periodBaseMinute,
+  usesFootballClock,
+} from "@/lib/admin/clock";
 import type { AdminOverride } from "@/lib/admin/types";
 import { useFeed } from "@/lib/api/feed";
+import { useNow } from "@/lib/live";
 import type { MatchStatus, ResolvedMatch } from "@/lib/types";
 
 function todayKey(iso: string) {
@@ -43,7 +52,7 @@ export function LiveDesk({
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted">
-        Pon el partido en directo y pulsa +1 / −1. El marcador sale al momento en la cinta de la web y en la ficha del partido.
+        Elige el periodo, pon el partido en directo y pulsa +1 / −1. En fútbol el reloj arranca con la hora de inicio.
       </p>
       {list.map((match) => (
         <LiveRow
@@ -66,10 +75,22 @@ function LiveRow({
   saved?: AdminOverride;
   onSaved: () => void;
 }) {
+  const now = useNow();
   const qc = useQueryClient();
   const home = saved?.homeScore ?? match.homeScore ?? 0;
   const away = saved?.awayScore ?? match.awayScore ?? 0;
   const status = saved?.status ?? match.status;
+  const period = saved?.periodLabel || match.periodLabel || defaultPeriod(match.sport);
+  const showClock = usesFootballClock(match.sport);
+  const clock = clockFromOverride(
+    {
+      clockAnchorAt: saved?.clockAnchorAt,
+      clockBaseMinute: saved?.clockBaseMinute,
+      minute: saved?.minute ?? match.minute,
+      periodLabel: period,
+    },
+    now || Date.now(),
+  );
 
   const save = useMutation({
     mutationFn: (patch: Partial<AdminOverride> & { status: MatchStatus; homeScore: number; awayScore: number }) =>
@@ -79,6 +100,9 @@ function LiveRow({
           venue: saved?.venue ?? match.venue,
           kickoff: saved?.kickoff ?? match.kickoff,
           events: saved?.events ?? match.happened,
+          periodLabel: saved?.periodLabel ?? period,
+          clockAnchorAt: saved?.clockAnchorAt,
+          clockBaseMinute: saved?.clockBaseMinute,
           minute: patch.minute ?? saved?.minute ?? match.minute ?? 0,
           updatedAt: Date.now(),
           ...patch,
@@ -93,12 +117,32 @@ function LiveRow({
     },
   });
 
-  function setScore(nextHome: number, nextAway: number, nextStatus: MatchStatus = "live") {
+  function persist(patch: Partial<AdminOverride> & { status?: MatchStatus }) {
+    const nextStatus = patch.status ?? status;
     save.mutate({
-      homeScore: Math.max(0, nextHome),
-      awayScore: Math.max(0, nextAway),
+      homeScore: Math.max(0, patch.homeScore ?? home),
+      awayScore: Math.max(0, patch.awayScore ?? away),
       status: nextStatus,
-      minute: nextStatus === "live" ? saved?.minute ?? match.minute ?? 1 : saved?.minute ?? match.minute,
+      ...patch,
+    });
+  }
+
+  function goLive() {
+    const kickoff = saved?.kickoff ?? match.kickoff;
+    persist({
+      status: "live",
+      periodLabel: period || defaultPeriod(match.sport),
+      clockAnchorAt: kickoffAnchor(kickoff),
+      clockBaseMinute: periodBaseMinute(period || defaultPeriod(match.sport)),
+    });
+  }
+
+  function changePeriod(next: string) {
+    persist({
+      status: status === "scheduled" ? "live" : status,
+      periodLabel: next,
+      clockBaseMinute: periodBaseMinute(next),
+      clockAnchorAt: Date.now(),
     });
   }
 
@@ -122,13 +166,42 @@ function LiveRow({
         ) : null}
       </div>
 
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <label className="text-xs text-muted">
+          Periodo
+          <select
+            value={LIVE_PERIODS.includes(period as (typeof LIVE_PERIODS)[number]) ? period : defaultPeriod(match.sport)}
+            onChange={(e) => changePeriod(e.target.value)}
+            className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm text-fg"
+          >
+            {LIVE_PERIODS.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </label>
+        {showClock ? (
+          <div className="rounded-md bg-surface-2 px-3 py-2">
+            <p className="text-[11px] uppercase tracking-wider text-muted">Reloj</p>
+            <p className="font-display text-3xl tabular-nums leading-none text-live">{status === "live" ? clock.display : "00:00"}</p>
+            <p className="mt-1 text-[11px] text-muted">Arranca con la hora de inicio del partido</p>
+          </div>
+        ) : (
+          <div className="rounded-md bg-surface-2 px-3 py-2">
+            <p className="text-[11px] uppercase tracking-wider text-muted">Periodo en web</p>
+            <p className="mt-1 text-sm text-fg">{period}</p>
+          </div>
+        )}
+      </div>
+
       <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
         <ScorePad
           label={match.homeShort || match.homeName}
           value={home}
           disabled={save.isPending}
-          onMinus={() => setScore(home - 1, away, status === "scheduled" ? "live" : status)}
-          onPlus={() => setScore(home + 1, away, status === "scheduled" ? "live" : status)}
+          onMinus={() => persist({ homeScore: home - 1, awayScore: away, status: status === "scheduled" ? "live" : status })}
+          onPlus={() => persist({ homeScore: home + 1, awayScore: away, status: status === "scheduled" ? "live" : status })}
         />
         <p className="font-display text-4xl tabular-nums text-live">
           {home}
@@ -139,38 +212,23 @@ function LiveRow({
           label={match.awayShort || match.awayName}
           value={away}
           disabled={save.isPending}
-          onMinus={() => setScore(home, away - 1, status === "scheduled" ? "live" : status)}
-          onPlus={() => setScore(home, away + 1, status === "scheduled" ? "live" : status)}
+          onMinus={() => persist({ homeScore: home, awayScore: away - 1, status: status === "scheduled" ? "live" : status })}
+          onPlus={() => persist({ homeScore: home, awayScore: away + 1, status: status === "scheduled" ? "live" : status })}
         />
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {status !== "live" ? (
-          <button
-            type="button"
-            disabled={save.isPending}
-            onClick={() => setScore(home, away, "live")}
-            className="h-10 rounded-md bg-live px-3 text-sm font-medium text-bg"
-          >
+          <button type="button" disabled={save.isPending} onClick={goLive} className="h-10 rounded-md bg-live px-3 text-sm font-medium text-bg">
             Poner en directo
           </button>
         ) : (
-          <button
-            type="button"
-            disabled={save.isPending}
-            onClick={() => setScore(home, away, "finished")}
-            className="h-10 rounded-md bg-accent px-3 text-sm font-medium text-bg"
-          >
+          <button type="button" disabled={save.isPending} onClick={() => persist({ status: "finished", minute: clock.minute })} className="h-10 rounded-md bg-accent px-3 text-sm font-medium text-bg">
             Finalizar partido
           </button>
         )}
         {status !== "scheduled" ? (
-          <button
-            type="button"
-            disabled={save.isPending}
-            onClick={() => setScore(0, 0, "scheduled")}
-            className="h-10 rounded-md bg-surface-2 px-3 text-sm text-muted"
-          >
+          <button type="button" disabled={save.isPending} onClick={() => persist({ status: "scheduled", homeScore: 0, awayScore: 0, clockAnchorAt: undefined, clockBaseMinute: 0 })} className="h-10 rounded-md bg-surface-2 px-3 text-sm text-muted">
             Quitar directo
           </button>
         ) : null}

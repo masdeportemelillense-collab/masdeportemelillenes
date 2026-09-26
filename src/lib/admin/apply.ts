@@ -1,4 +1,5 @@
 import type { AdminOverride } from "@/lib/admin/types";
+import { clockFromOverride } from "./clock";
 import type { EventKind, MatchEvent, ResolvedMatch, Side } from "@/lib/types";
 
 function isScoreEvent(kind: EventKind): boolean {
@@ -34,6 +35,7 @@ export function scoreFromEvents(events: MatchEvent[]): { home: number; away: num
 export function applyAdminOverrides(
   list: ResolvedMatch[],
   overrides: AdminOverride[] | undefined,
+  now = Date.now(),
 ): ResolvedMatch[] {
   if (!overrides?.length) return list;
   const byId = new Map(overrides.map((o) => [o.matchId, o]));
@@ -51,7 +53,9 @@ export function applyAdminOverrides(
     const fromEvents = events.length ? scoreFromEvents(events) : null;
     const homeScore = status === "scheduled" ? 0 : (hit.homeScore ?? fromEvents?.home ?? match.homeScore);
     const awayScore = status === "scheduled" ? 0 : (hit.awayScore ?? fromEvents?.away ?? match.awayScore);
-    const minute = hit.minute ?? fromEvents?.minute ?? match.minute;
+    const clock = status === "live" ? clockFromOverride(hit, now) : null;
+    const minute = clock?.minute ?? hit.minute ?? fromEvents?.minute ?? match.minute;
+    const period = hit.periodLabel || (status === "live" ? "En directo" : status === "finished" ? "Finalizado" : "Previsto");
 
     out.push({
       ...match,
@@ -64,9 +68,14 @@ export function applyAdminOverrides(
       homeScore,
       awayScore,
       minute,
+      periodLabel: hit.periodLabel || match.periodLabel,
       displayClock:
-        status === "live" ? (minute ? `${minute}'` : "LIVE") : status === "finished" ? "Fin" : match.displayClock,
-      period: status === "live" ? "En directo" : status === "finished" ? "Finalizado" : "Previsto",
+        status === "live"
+          ? clock?.display ?? (minute ? `${minute}'` : "LIVE")
+          : status === "finished"
+            ? "Fin"
+            : match.displayClock,
+      period,
       events,
       happened: events,
       source: match.source ?? "catalog",
