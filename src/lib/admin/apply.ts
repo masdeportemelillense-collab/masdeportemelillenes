@@ -64,7 +64,8 @@ export function applyAdminOverrides(
       homeScore,
       awayScore,
       minute,
-      displayClock: status === "live" ? "LIVE" : status === "finished" ? "Fin" : match.displayClock,
+      displayClock:
+        status === "live" ? (minute ? `${minute}'` : "LIVE") : status === "finished" ? "Fin" : match.displayClock,
       period: status === "live" ? "En directo" : status === "finished" ? "Finalizado" : "Previsto",
       events,
       happened: events,
