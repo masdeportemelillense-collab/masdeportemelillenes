@@ -1,7 +1,8 @@
 import { randomBytes, scrypt as scryptCb, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { readDoc, updateDoc, writeDoc } from "@/lib/persist.server";
-import type { PorraPick, PorraSlate, PorraUser } from "./types";
+import { isLocked } from "./time";
+import type { PorraPick, PorraSlate, PorraUser, Quiniela } from "./types";
 
 const KEY = "porra";
 const TRASH = "porra-trash";
@@ -11,6 +12,8 @@ type Box = {
   users: PorraUser[];
   slates: PorraSlate[];
   picks: PorraPick[];
+  jornada1AutofillAt?: number;
+  jornada1AutofillSlateId?: string;
 };
 
 type TrashBox = {
@@ -26,6 +29,8 @@ function normalize(raw: Partial<Box> | null | undefined): Box {
     users: Array.isArray(raw?.users) ? raw.users : [],
     slates: Array.isArray(raw?.slates) ? raw.slates : [],
     picks: Array.isArray(raw?.picks) ? raw.picks : [],
+    jornada1AutofillAt: raw?.jornada1AutofillAt,
+    jornada1AutofillSlateId: raw?.jornada1AutofillSlateId,
   };
 }
 
@@ -164,5 +169,62 @@ export async function setUserAvatar(userId: string, avatar?: string): Promise<Po
     if (!user) return undefined;
     user.avatar = avatar;
     return user;
+  });
+}
+
+function firstJornada(slates: PorraSlate[]): PorraSlate | undefined {
+  const published = slates.filter((s) => s.published);
+  const named = published.find((s) => /jornada\s*1\b/i.test(s.title));
+  if (named) return named;
+  return published.slice().sort((a, b) => a.createdAt - b.createdAt)[0];
+}
+
+function hash32(input: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function randomQuiniela(userId: string, matchId: string, allowDraw: boolean): Quiniela {
+  const opts: Quiniela[] = allowDraw ? ["1", "X", "2"] : ["1", "2"];
+  const n = hash32(`${userId}:${matchId}:j1-autofill`);
+  return opts[n % opts.length]!;
+}
+
+/** Solo jornada 1: al cerrar, rellena pronósticos aleatorios distintos a quien no jugó. */
+export async function autofillFirstJornadaIfLocked(): Promise<number> {
+  return mutate((data) => {
+    const slate = firstJornada(data.slates);
+    if (!slate || !slate.matches.length || !isLocked(slate.lockAt)) return 0;
+    if (data.jornada1AutofillSlateId === slate.id && data.jornada1AutofillAt) return 0;
+
+    const lockMs = Date.parse(slate.lockAt);
+    const lockCut = Number.isFinite(lockMs) ? lockMs : Date.now();
+    const usersWithPicks = new Set(
+      data.picks.filter((p) => p.slateId === slate.id).map((p) => p.userId),
+    );
+
+    let added = 0;
+    const now = Date.now();
+    for (const user of data.users) {
+      if (user.createdAt > lockCut) continue;
+      if (usersWithPicks.has(user.id)) continue;
+      for (const match of slate.matches) {
+        data.picks.push({
+          userId: user.id,
+          slateId: slate.id,
+          matchId: match.id,
+          pick: randomQuiniela(user.id, match.id, match.allowDraw !== false),
+          updatedAt: now,
+        });
+        added += 1;
+      }
+    }
+    data.jornada1AutofillAt = now;
+    data.jornada1AutofillSlateId = slate.id;
+    return added;
   });
 }

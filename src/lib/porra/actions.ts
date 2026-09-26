@@ -18,6 +18,11 @@ function asPublic(u?: { id: string; name: string; avatar?: string } | null) {
 async function publicState(userOverride?: { id: string; name: string; avatar?: string } | null): Promise<PorraPublicState> {
   const session = await import("./session.server");
   const store = await import("./store.server");
+  try {
+    await store.autofillFirstJornadaIfLocked();
+  } catch (err) {
+    console.error("[porra] jornada1 autofill", err);
+  }
   const [cookieUser, users, slates, picks] = await Promise.all([
     userOverride === undefined ? session.currentPorraUser() : Promise.resolve(userOverride),
     store.listUsers(),
@@ -161,6 +166,11 @@ export const porraAdminList = createServerFn({ method: "GET" }).handler(async ()
   const { requireAdmin } = await import("@/lib/admin/session.server");
   if (!(await requireAdmin())) return { ok: false as const, slates: [] as PorraSlate[], users: 0, stats: [] as Array<{ slateId: string; predicted: number; complete: number; matches: number }> };
   const store = await import("./store.server");
+  try {
+    await store.autofillFirstJornadaIfLocked();
+  } catch (err) {
+    console.error("[porra] jornada1 autofill admin", err);
+  }
   const [slates, picks, users] = await Promise.all([store.listSlates(), store.listPicks(), store.listUsers()]);
   const stats = slates.map((slate) => {
     const mine = picks.filter((p) => p.slateId === slate.id);
