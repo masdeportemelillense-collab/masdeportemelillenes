@@ -2,6 +2,9 @@
 
 const TZ = "Europe/Madrid";
 
+/** Cierre excepcional de la primera jornada (sábado 26/09/2026 12:00 Madrid). */
+export const JORNADA1_LOCK_AT = "2026-09-26T12:00:00+02:00";
+
 export function madridParts(ms = Date.now()): {
   year: number;
   month: number;
@@ -96,4 +99,8 @@ export function formatMadrid(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+export function looksLikeJornada1(title: string): boolean {
+  return /jornada\s*1\b/i.test(title);
 }

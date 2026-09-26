@@ -1,7 +1,7 @@
 import { randomBytes, scrypt as scryptCb, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { readDoc, updateDoc, writeDoc } from "@/lib/persist.server";
-import { isLocked } from "./time";
+import { isLocked, JORNADA1_LOCK_AT, looksLikeJornada1 } from "./time";
 import type { PorraPick, PorraSlate, PorraUser, Quiniela } from "./types";
 
 const KEY = "porra";
@@ -48,12 +48,25 @@ async function mutate<T>(fn: (data: Box) => T): Promise<T> {
   return out;
 }
 
+function firstJornada(slates: PorraSlate[]): PorraSlate | undefined {
+  const published = slates.filter((s) => s.published);
+  const named = published.find((s) => looksLikeJornada1(s.title));
+  if (named) return named;
+  return published.slice().sort((a, b) => a.createdAt - b.createdAt)[0];
+}
+
+function withJ1Lock(slates: PorraSlate[]): PorraSlate[] {
+  const first = firstJornada(slates);
+  if (!first) return slates;
+  return slates.map((s) => (s.id === first.id ? { ...s, lockAt: JORNADA1_LOCK_AT } : s));
+}
+
 export async function listUsers(): Promise<PorraUser[]> {
   return (await load()).users;
 }
 
 export async function listSlates(): Promise<PorraSlate[]> {
-  return (await load()).slates.slice().sort((a, b) => b.createdAt - a.createdAt);
+  return withJ1Lock((await load()).slates).slice().sort((a, b) => b.createdAt - a.createdAt);
 }
 
 export async function listPicks(): Promise<PorraPick[]> {
@@ -101,10 +114,11 @@ export async function createUser(name: string, password: string, avatar?: string
 
 export async function upsertSlate(slate: PorraSlate): Promise<PorraSlate> {
   return mutate((data) => {
-    const i = data.slates.findIndex((s) => s.id === slate.id);
-    if (i >= 0) data.slates[i] = slate;
-    else data.slates.push(slate);
-    return slate;
+    const next = looksLikeJornada1(slate.title) ? { ...slate, lockAt: JORNADA1_LOCK_AT } : slate;
+    const i = data.slates.findIndex((s) => s.id === next.id);
+    if (i >= 0) data.slates[i] = next;
+    else data.slates.push(next);
+    return next;
   });
 }
 
@@ -120,7 +134,6 @@ export async function removeSlate(id: string): Promise<void> {
   }
   await mutate((data) => {
     data.slates = data.slates.filter((s) => s.id !== id);
-    // Los pronósticos se conservan por si se restaura la misma jornada.
   });
 }
 
@@ -172,13 +185,6 @@ export async function setUserAvatar(userId: string, avatar?: string): Promise<Po
   });
 }
 
-function firstJornada(slates: PorraSlate[]): PorraSlate | undefined {
-  const published = slates.filter((s) => s.published);
-  const named = published.find((s) => /jornada\s*1\b/i.test(s.title));
-  if (named) return named;
-  return published.slice().sort((a, b) => a.createdAt - b.createdAt)[0];
-}
-
 function hash32(input: string): number {
   let h = 2166136261;
   for (let i = 0; i < input.length; i++) {
@@ -194,15 +200,16 @@ function randomQuiniela(userId: string, matchId: string, allowDraw: boolean): Qu
   return opts[n % opts.length]!;
 }
 
-/** Solo jornada 1: al cerrar, rellena pronósticos aleatorios distintos a quien no jugó. */
+/** Solo jornada 1: a las 12:00 Madrid del 26/09 rellena a quien no jugó. */
 export async function autofillFirstJornadaIfLocked(): Promise<number> {
   return mutate((data) => {
     const slate = firstJornada(data.slates);
-    if (!slate || !slate.matches.length || !isLocked(slate.lockAt)) return 0;
+    if (!slate || !slate.matches.length) return 0;
+    slate.lockAt = JORNADA1_LOCK_AT;
+    if (!isLocked(JORNADA1_LOCK_AT)) return 0;
     if (data.jornada1AutofillSlateId === slate.id && data.jornada1AutofillAt) return 0;
 
-    const lockMs = Date.parse(slate.lockAt);
-    const lockCut = Number.isFinite(lockMs) ? lockMs : Date.now();
+    const lockCut = Date.parse(JORNADA1_LOCK_AT);
     const usersWithPicks = new Set(
       data.picks.filter((p) => p.slateId === slate.id).map((p) => p.userId),
     );
