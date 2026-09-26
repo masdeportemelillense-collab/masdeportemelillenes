@@ -52,7 +52,7 @@ export function LiveDesk({
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted">
-        Elige el periodo, pon el partido en directo y pulsa +1 / −1. En fútbol el reloj arranca con la hora de inicio.
+        Elige el periodo y, si quieres, activa el reloj. El marcador se actualiza con +1 / −1.
       </p>
       {list.map((match) => (
         <LiveRow
@@ -81,7 +81,8 @@ function LiveRow({
   const away = saved?.awayScore ?? match.awayScore ?? 0;
   const status = saved?.status ?? match.status;
   const period = saved?.periodLabel || match.periodLabel || defaultPeriod(match.sport);
-  const showClock = usesFootballClock(match.sport);
+  const clockEnabled = Boolean(saved?.showClock);
+  const canClock = usesFootballClock(match.sport);
   const clock = clockFromOverride(
     {
       clockAnchorAt: saved?.clockAnchorAt,
@@ -101,6 +102,7 @@ function LiveRow({
           kickoff: saved?.kickoff ?? match.kickoff,
           events: saved?.events ?? match.happened,
           periodLabel: saved?.periodLabel ?? period,
+          showClock: saved?.showClock ?? false,
           clockAnchorAt: saved?.clockAnchorAt,
           clockBaseMinute: saved?.clockBaseMinute,
           minute: patch.minute ?? saved?.minute ?? match.minute ?? 0,
@@ -132,8 +134,9 @@ function LiveRow({
     persist({
       status: "live",
       periodLabel: period || defaultPeriod(match.sport),
-      clockAnchorAt: kickoffAnchor(kickoff),
-      clockBaseMinute: periodBaseMinute(period || defaultPeriod(match.sport)),
+      showClock: clockEnabled,
+      clockAnchorAt: clockEnabled ? kickoffAnchor(kickoff) : saved?.clockAnchorAt,
+      clockBaseMinute: clockEnabled ? periodBaseMinute(period || defaultPeriod(match.sport)) : saved?.clockBaseMinute,
     });
   }
 
@@ -141,8 +144,18 @@ function LiveRow({
     persist({
       status: status === "scheduled" ? "live" : status,
       periodLabel: next,
-      clockBaseMinute: periodBaseMinute(next),
-      clockAnchorAt: Date.now(),
+      clockBaseMinute: clockEnabled ? periodBaseMinute(next) : saved?.clockBaseMinute,
+      clockAnchorAt: clockEnabled ? Date.now() : saved?.clockAnchorAt,
+    });
+  }
+
+  function toggleClock(on: boolean) {
+    const kickoff = saved?.kickoff ?? match.kickoff;
+    persist({
+      status: status === "scheduled" && on ? "live" : status,
+      showClock: on,
+      clockAnchorAt: on ? kickoffAnchor(kickoff) : undefined,
+      clockBaseMinute: on ? periodBaseMinute(period) : 0,
     });
   }
 
@@ -181,18 +194,22 @@ function LiveRow({
             ))}
           </select>
         </label>
-        {showClock ? (
-          <div className="rounded-md bg-surface-2 px-3 py-2">
-            <p className="text-[11px] uppercase tracking-wider text-muted">Reloj</p>
-            <p className="font-display text-3xl tabular-nums leading-none text-live">{status === "live" ? clock.display : "00:00"}</p>
-            <p className="mt-1 text-[11px] text-muted">Arranca con la hora de inicio del partido</p>
-          </div>
-        ) : (
-          <div className="rounded-md bg-surface-2 px-3 py-2">
-            <p className="text-[11px] uppercase tracking-wider text-muted">Periodo en web</p>
-            <p className="mt-1 text-sm text-fg">{period}</p>
-          </div>
-        )}
+        <div className="rounded-md bg-surface-2 px-3 py-2">
+          <label className="flex items-center gap-2 text-sm text-fg">
+            <input type="checkbox" checked={clockEnabled} disabled={!canClock} onChange={(e) => toggleClock(e.target.checked)} />
+            Mostrar reloj
+          </label>
+          {clockEnabled && canClock ? (
+            <>
+              <p className="mt-2 font-display text-3xl tabular-nums leading-none text-live">{status === "live" ? clock.display : "00:00"}</p>
+              <p className="mt-1 text-[11px] text-muted">Arranca con la hora de inicio del partido</p>
+            </>
+          ) : (
+            <p className="mt-1 text-[11px] text-muted">
+              {canClock ? "Sin reloj: en la web solo se ve el periodo." : "Este deporte no usa minutaje de fútbol."}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
@@ -228,7 +245,7 @@ function LiveRow({
           </button>
         )}
         {status !== "scheduled" ? (
-          <button type="button" disabled={save.isPending} onClick={() => persist({ status: "scheduled", homeScore: 0, awayScore: 0, clockAnchorAt: undefined, clockBaseMinute: 0 })} className="h-10 rounded-md bg-surface-2 px-3 text-sm text-muted">
+          <button type="button" disabled={save.isPending} onClick={() => persist({ status: "scheduled", homeScore: 0, awayScore: 0, showClock: false, clockAnchorAt: undefined, clockBaseMinute: 0 })} className="h-10 rounded-md bg-surface-2 px-3 text-sm text-muted">
             Quitar directo
           </button>
         ) : null}

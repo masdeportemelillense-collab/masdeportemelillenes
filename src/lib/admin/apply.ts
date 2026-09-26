@@ -53,7 +53,8 @@ export function applyAdminOverrides(
     const fromEvents = events.length ? scoreFromEvents(events) : null;
     const homeScore = status === "scheduled" ? 0 : (hit.homeScore ?? fromEvents?.home ?? match.homeScore);
     const awayScore = status === "scheduled" ? 0 : (hit.awayScore ?? fromEvents?.away ?? match.awayScore);
-    const clock = status === "live" ? clockFromOverride(hit, now) : null;
+    const clockOn = Boolean(hit.showClock);
+    const clock = status === "live" && clockOn ? clockFromOverride(hit, now) : null;
     const minute = clock?.minute ?? hit.minute ?? fromEvents?.minute ?? match.minute;
     const period = hit.periodLabel || (status === "live" ? "En directo" : status === "finished" ? "Finalizado" : "Previsto");
 
@@ -71,7 +72,9 @@ export function applyAdminOverrides(
       periodLabel: hit.periodLabel || match.periodLabel,
       displayClock:
         status === "live"
-          ? clock?.display ?? (minute ? `${minute}'` : "LIVE")
+          ? clockOn
+            ? clock?.display ?? (minute ? `${minute}'` : "LIVE")
+            : hit.periodLabel || "LIVE"
           : status === "finished"
             ? "Fin"
             : match.displayClock,

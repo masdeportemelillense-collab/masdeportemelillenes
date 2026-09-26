@@ -12,6 +12,8 @@ export type AdminOverride = {
   awayName?: string;
   minute?: number;
   periodLabel?: string;
+  /** If true, the public site shows a running MM:SS clock. */
+  showClock?: boolean;
   /** Epoch ms when the current period clock started. */
   clockAnchorAt?: number;
   /** Minutes already on the clock when the current period started. */
