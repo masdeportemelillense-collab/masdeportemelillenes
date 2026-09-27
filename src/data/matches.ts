@@ -6,6 +6,8 @@ import { atmMatches } from "@/data/matches-atm";
 import { atmSrMatches } from "@/data/matches-atm-sr";
 import { copaBskMatches } from "@/data/matches-copa-bsk";
 import { boomerangMatches } from "@/data/matches-boomerang";
+import { salleBMatches } from "@/data/matches-salle-b";
+import { vdvMatches } from "@/data/matches-vdv";
 import type { Match } from "@/lib/types";
 
 export const matches: Match[] = [
@@ -16,6 +18,8 @@ export const matches: Match[] = [
   ...basketAMatches,
   ...copaBskMatches,
   ...boomerangMatches,
+  ...salleBMatches,
+  ...vdvMatches,
   ...restoMatches,
 ];
 
