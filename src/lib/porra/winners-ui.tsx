@@ -39,7 +39,7 @@ export function JornadaWinners({ jornadas, me }: { jornadas?: PorraJornadaSummar
   if (!list.length) return null;
   return (
     <div className="rounded-xl bg-surface p-4 shadow-[var(--shadow-border)]">
-      <p className="text-xs font-medium uppercase tracking-wider text-muted">Ganador por jornada</p>
+      <p className="text-xs font-medium uppercase tracking-wider text-muted">Clasificación por jornada</p>
       <select value={current?.slateId || ""} onChange={(e) => setId(e.target.value)} className="mt-2 h-10 w-full rounded-md bg-surface-2 px-2 text-sm outline-none ring-1 ring-border">
         {list.map((j) => (
           <option key={j.slateId} value={j.slateId}>{j.title}{j.finished ? "" : " · en curso"}</option>
@@ -63,11 +63,11 @@ export function JornadaWinners({ jornadas, me }: { jornadas?: PorraJornadaSummar
         </ul>
       )}
       {current?.finished && current.board.length ? (
-        <ul className="mt-3 divide-y divide-border">
-          {current.board.slice(0, 12).map((row, i) => (
+        <ul className="mt-3 max-h-[28rem] overflow-y-auto divide-y divide-border">
+          {current.board.map((row, i) => (
             <li key={row.userId} className={cn("flex items-center justify-between gap-2 py-1.5 text-sm", me === row.userId && "text-accent")}>
               <span className="inline-flex min-w-0 items-center gap-2">
-                <span className="w-4 tabular-nums text-muted">{i + 1}</span>
+                <span className="w-5 tabular-nums text-muted">{i + 1}</span>
                 <Mark teamId={row.avatar} size={18} />
                 <span className="truncate">{row.name}</span>
               </span>
