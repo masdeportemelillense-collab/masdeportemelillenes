@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { porraAdminDeleteSlate, porraAdminList, porraAdminSaveSlate } from "@/lib/porra/actions";
+import { porraAdminDeleteSlate, porraAdminList, porraAdminSaveSlate, porraAdminSetPassword } from "@/lib/porra/actions";
 import { nextFridayLockIso } from "@/lib/porra/time";
-import type { PorraSlate, Quiniela } from "@/lib/porra/types";
+import type { PorraAccountRow, PorraSlate, Quiniela } from "@/lib/porra/types";
 
 type DraftMatch = { id?: string; home: string; away: string; kickoff: string; result: "" | Quiniela; allowDraw: boolean };
 const emptyMatch = (): DraftMatch => ({ home: "", away: "", kickoff: "", result: "", allowDraw: true });
@@ -17,6 +17,7 @@ export function PorraAdmin() {
   const [error, setError] = useState("");
   const users = list.data && "users" in list.data ? list.data.users ?? 0 : 0;
   const stats = list.data && "stats" in list.data ? list.data.stats ?? [] : [];
+  const accounts = list.data && "accounts" in list.data ? list.data.accounts ?? [] : [];
 
   const save = useMutation({
     mutationFn: () =>
@@ -37,8 +38,15 @@ export function PorraAdmin() {
         },
       }),
     onSuccess: (res) => {
-      if (!res.ok) { setError(res.error); return; }
-      setError(""); setEditing(null); setTitle(""); setLockAt(nextFridayLockIso()); setMatches([emptyMatch(), emptyMatch()]);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      setError("");
+      setEditing(null);
+      setTitle("");
+      setLockAt(nextFridayLockIso());
+      setMatches([emptyMatch(), emptyMatch()]);
       void qc.invalidateQueries({ queryKey: ["porra-admin"] });
       void qc.invalidateQueries({ queryKey: ["porra-state"] });
     },
@@ -71,8 +79,14 @@ export function PorraAdmin() {
         <p className="text-xs text-muted">Cada vez que alguien guarda un pronóstico se actualiza el contador de esa jornada.</p>
       </div>
       <div className="space-y-3 rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
-        <label className="block text-xs uppercase tracking-wider text-muted">Nombre de la jornada<input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Jornada 4 · Tercera Federación" className="mt-1 h-11 w-full rounded-md bg-surface-2 px-3 text-sm outline-none ring-1 ring-border focus:ring-accent/60" /></label>
-        <label className="block text-xs uppercase tracking-wider text-muted">Cierre de pronósticos<input value={lockAt} onChange={(e) => setLockAt(e.target.value)} className="mt-1 h-11 w-full rounded-md bg-surface-2 px-3 text-sm outline-none ring-1 ring-border focus:ring-accent/60" /></label>
+        <label className="block text-xs uppercase tracking-wider text-muted">
+          Nombre de la jornada
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Jornada 4 · Tercera Federación" className="mt-1 h-11 w-full rounded-md bg-surface-2 px-3 text-sm outline-none ring-1 ring-border focus:ring-accent/60" />
+        </label>
+        <label className="block text-xs uppercase tracking-wider text-muted">
+          Cierre de pronósticos
+          <input value={lockAt} onChange={(e) => setLockAt(e.target.value)} className="mt-1 h-11 w-full rounded-md bg-surface-2 px-3 text-sm outline-none ring-1 ring-border focus:ring-accent/60" />
+        </label>
         <div className="space-y-2">
           {matches.map((m, i) => {
             const keys = (m.allowDraw ? ["1", "X", "2"] : ["1", "2"]) as Quiniela[];
@@ -82,23 +96,35 @@ export function PorraAdmin() {
                 <input value={m.away} onChange={(e) => setMatches((rows) => rows.map((r, j) => (j === i ? { ...r, away: e.target.value } : r)))} placeholder="Visitante" className="h-10 rounded-md bg-surface px-3 text-sm outline-none ring-1 ring-border focus:ring-accent/60" />
                 <div className="flex flex-wrap items-center gap-1">
                   {keys.map((key) => (
-                    <button key={key} type="button" onClick={() => setMatches((rows) => rows.map((r, j) => (j === i ? { ...r, result: r.result === key ? "" : key } : r)))} className={`h-10 w-9 rounded-md text-sm font-semibold ${m.result === key ? "bg-accent text-bg" : "bg-surface ring-1 ring-border"}`}>{key}</button>
+                    <button key={key} type="button" onClick={() => setMatches((rows) => rows.map((r, j) => (j === i ? { ...r, result: r.result === key ? "" : key } : r)))} className={`h-10 w-9 rounded-md text-sm font-semibold ${m.result === key ? "bg-accent text-bg" : "bg-surface ring-1 ring-border"}`}>
+                      {key}
+                    </button>
                   ))}
                   <label className="ml-1 flex items-center gap-1 text-[11px] text-muted">
                     <input type="checkbox" checked={!m.allowDraw} onChange={(e) => setMatches((rows) => rows.map((r, j) => (j === i ? { ...r, allowDraw: !e.target.checked, result: e.target.checked && r.result === "X" ? "" : r.result } : r)))} />
                     Sin empate
                   </label>
                 </div>
-                <button type="button" onClick={() => setMatches((rows) => rows.filter((_, j) => j !== i))} className="h-10 rounded-md px-3 text-xs text-muted hover:text-loss">Quitar</button>
+                <button type="button" onClick={() => setMatches((rows) => rows.filter((_, j) => j !== i))} className="h-10 rounded-md px-3 text-xs text-muted hover:text-loss">
+                  Quitar
+                </button>
               </div>
             );
           })}
         </div>
-        <button type="button" onClick={() => setMatches((rows) => [...rows, emptyMatch()])} className="h-10 rounded-md bg-surface-2 px-3 text-sm text-muted hover:text-fg">+ Añadir partido</button>
+        <button type="button" onClick={() => setMatches((rows) => [...rows, emptyMatch()])} className="h-10 rounded-md bg-surface-2 px-3 text-sm text-muted hover:text-fg">
+          + Añadir partido
+        </button>
         {error ? <p className="text-sm text-loss">{error}</p> : null}
         <div className="flex flex-wrap gap-2">
-          <button type="button" disabled={save.isPending} onClick={() => save.mutate()} className="h-11 rounded-md bg-accent px-5 text-sm font-medium text-bg disabled:opacity-60">{save.isPending ? "Guardando…" : editing ? "Actualizar jornada" : "Publicar jornada"}</button>
-          {editing ? <button type="button" onClick={() => { setEditing(null); setTitle(""); setMatches([emptyMatch(), emptyMatch()]); }} className="h-11 rounded-md px-4 text-sm text-muted">Cancelar</button> : null}
+          <button type="button" disabled={save.isPending} onClick={() => save.mutate()} className="h-11 rounded-md bg-accent px-5 text-sm font-medium text-bg disabled:opacity-60">
+            {save.isPending ? "Guardando…" : editing ? "Actualizar jornada" : "Publicar jornada"}
+          </button>
+          {editing ? (
+            <button type="button" onClick={() => { setEditing(null); setTitle(""); setMatches([emptyMatch(), emptyMatch()]); }} className="h-11 rounded-md px-4 text-sm text-muted">
+              Cancelar
+            </button>
+          ) : null}
         </div>
       </div>
       <div className="space-y-2">
@@ -109,19 +135,94 @@ export function PorraAdmin() {
             <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface px-4 py-3 shadow-[var(--shadow-border)]">
               <div>
                 <p className="font-medium">{s.title}</p>
-                <p className="text-xs text-muted">{s.matches.length} partidos · cierra {s.lockAt}</p>
+                <p className="text-xs text-muted">
+                  {s.matches.length} partidos · cierra {s.lockAt}
+                </p>
                 <p className="mt-1 text-sm font-medium text-accent">
                   {st ? `${st.predicted} de ${users} han pronosticado` : "Sin datos aún"}
                   {st ? ` · ${st.complete} completos` : ""}
                 </p>
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={() => load(s)} className="h-9 rounded-md bg-surface-2 px-3 text-xs">Editar / resultados</button>
-                <button type="button" onClick={() => del.mutate(s.id)} className="h-9 rounded-md px-3 text-xs text-loss">Borrar</button>
+                <button type="button" onClick={() => load(s)} className="h-9 rounded-md bg-surface-2 px-3 text-xs">
+                  Editar / resultados
+                </button>
+                <button type="button" onClick={() => del.mutate(s.id)} className="h-9 rounded-md px-3 text-xs text-loss">
+                  Borrar
+                </button>
               </div>
             </div>
           );
         })}
+      </div>
+      <AccountsPanel accounts={accounts} />
+    </div>
+  );
+}
+
+function AccountsPanel({ accounts }: { accounts: PorraAccountRow[] }) {
+  const qc = useQueryClient();
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [msg, setMsg] = useState("");
+  const setPass = useMutation({
+    mutationFn: (row: { userId: string; password: string }) => porraAdminSetPassword({ data: row }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        setMsg(res.error);
+        return;
+      }
+      setMsg(`Nueva clave de ${res.name}: ${res.password}`);
+      setDrafts((d) => ({ ...d, [res.name]: "" }));
+      void qc.invalidateQueries({ queryKey: ["porra-admin"] });
+    },
+  });
+  return (
+    <div className="space-y-2">
+      <h3 className="text-xs uppercase tracking-wider text-muted">Jugadores y contraseñas</h3>
+      <p className="text-xs text-muted">
+        Si alguien pierde la clave, mírala aquí o asígnale una nueva y dásela. Las cuentas antiguas aparecen cuando el jugador vuelve a entrar.
+      </p>
+      {msg ? <p className="text-sm text-accent">{msg}</p> : null}
+      <div className="overflow-hidden rounded-xl bg-surface shadow-[var(--shadow-border)]">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-left text-[11px] uppercase tracking-wider text-muted">
+              <th className="px-3 py-2 font-medium">Alias</th>
+              <th className="px-3 py-2 font-medium">Contraseña</th>
+              <th className="px-3 py-2 font-medium">Nueva</th>
+            </tr>
+          </thead>
+          <tbody>
+            {accounts.map((row) => (
+              <tr key={row.id} className="border-b border-border last:border-0">
+                <td className="px-3 py-2 font-medium">{row.name}</td>
+                <td className="px-3 py-2 font-mono text-xs">{row.password ?? "— entra de nuevo o asigna una"}</td>
+                <td className="px-3 py-2">
+                  <form
+                    className="flex gap-1"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const password = (drafts[row.id] ?? "").trim();
+                      if (password.length < 4) return;
+                      setPass.mutate({ userId: row.id, password });
+                    }}
+                  >
+                    <input
+                      value={drafts[row.id] ?? ""}
+                      onChange={(e) => setDrafts((d) => ({ ...d, [row.id]: e.target.value }))}
+                      placeholder="nueva clave"
+                      className="h-9 min-w-[7rem] flex-1 rounded-md bg-surface-2 px-2 text-xs outline-none ring-1 ring-border"
+                    />
+                    <button type="submit" className="h-9 rounded-md bg-surface-2 px-2 text-xs">
+                      Asignar
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!accounts.length ? <p className="p-3 text-sm text-muted">Aún no hay jugadores.</p> : null}
       </div>
     </div>
   );
