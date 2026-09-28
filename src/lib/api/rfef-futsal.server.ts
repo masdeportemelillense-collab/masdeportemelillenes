@@ -1,7 +1,7 @@
 import { solofutsalBadge } from "@/data/solofutsal-badges";
 import { shortFor } from "@/lib/api/map";
 import type { ApiEvent } from "@/lib/api/types";
-import type { MatchStatus, StandingRow } from "@/lib/types";
+import type { StandingRow } from "@/lib/types";
 
 const BASE = "https://futsal.rfef.es";
 const BADGE = (id: string) => `https://thumb2.besoccerapps.com/lnfs/guia/teams/${id}.png?size=80`;
@@ -10,9 +10,9 @@ const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
 
 const COMPS = [
-  { path: "primera-femenina", leagueId: "fs-primera-f", leagueName: "Primera División Femenina FS" },
-  { path: "segunda", leagueId: "fs-segunda-m", leagueName: "Segunda División FS" },
-  { path: "segunda-femenina", leagueId: "fs-segunda-f", leagueName: "Segunda División Femenina FS" },
+  { path: "primera-femenina", leagueId: "fs-primera-f", leagueName: "Primera División Femenina FS", mustInclude: /torreblanca/i },
+  { path: "segunda", leagueId: "fs-segunda-m", leagueName: "Segunda División FS", mustInclude: /melistar/i },
+  { path: "segunda-femenina", leagueId: "fs-segunda-f", leagueName: "Segunda División Femenina FS · Grupo 3", mustInclude: /torreblanca/i },
 ] as const;
 
 const TEAM_HINTS: Array<{ re: RegExp; id: string }> = [
@@ -76,12 +76,9 @@ function parseMatches(html: string, leagueId: string, leagueName: string): ApiEv
     if (!isMelillaSide(homeName) && !isMelillaSide(awayName)) continue;
     const hs = m[10].trim();
     const as = m[13].trim();
-    const finished = /finalizado/i.test(m[6] ?? "") || /^\d+$/.test(hs);
-    const status: MatchStatus = finished && /^\d+$/.test(hs) && /^\d+$/.test(as) ? "finished" : "scheduled";
+    const finished = /finalizado/i.test(m[6] ?? "") || (/^\d+$/.test(hs) && /^\d+$/.test(as));
     const homeId = slugForName(homeName);
     const awayId = slugForName(awayName);
-    const jornada = Number(m[14]);
-    const time = m[7] || "12:00";
     events.push({
       externalId: `rfef-${m[3]}-${m[4]}`,
       sport: "futsal",
@@ -89,7 +86,7 @@ function parseMatches(html: string, leagueId: string, leagueName: string): ApiEv
       leagueName,
       isCup: /copa|supercopa/i.test(leagueName),
       venue: "",
-      jornada,
+      jornada: Number(m[14]),
       homeId,
       homeName,
       homeShort: shortFor(homeName, homeId),
@@ -98,13 +95,13 @@ function parseMatches(html: string, leagueId: string, leagueName: string): ApiEv
       awayName,
       awayShort: shortFor(awayName, awayId),
       awayBadge: badgeOf(awayId, awayName, m[11]),
-      kickoff: kickoffFrom(m[5], time),
-      status,
-      minute: status === "finished" ? 40 : 0,
+      kickoff: kickoffFrom(m[5], m[7] || "12:00"),
+      status: finished ? "finished" : "scheduled",
+      minute: finished ? 40 : 0,
       homeScore: Number(hs) || 0,
       awayScore: Number(as) || 0,
-      displayClock: status === "finished" ? "Fin" : "",
-      period: status === "finished" ? "Finalizado" : "Previsto",
+      displayClock: finished ? "Fin" : "",
+      period: finished ? "Finalizado" : "Previsto",
       events: [],
       duration: 48,
     });
@@ -112,14 +109,9 @@ function parseMatches(html: string, leagueId: string, leagueName: string): ApiEv
   return events;
 }
 
-function parseTable(html: string): StandingRow[] {
+function parseOneTable(block: string): StandingRow[] {
   const rows: StandingRow[] = [];
-  const re =
-    /<tr>[\s\S]*?<div class="">(\d+)<\/div>[\s\S]*?shields_futsal\/png\/(\d+)\.png[\s\S]*?href="\/equipo\/([^/]+)\/(\d+)\/info"[^>]*>([^<]+)<\/a>[\s\S]*?<\/tr>/gi;
-  // fallback looser: we'll also parse PTS columns after name via a second pass on tbody text
-  const block = html.match(/id="ClassificationFullTable"[\s\S]*?<\/tbody>/i)?.[0] ?? html;
-  const rowRe = /<tr>([\s\S]*?)<\/tr>/gi;
-  for (const rm of block.matchAll(rowRe)) {
+  for (const rm of block.matchAll(/<tr>([\s\S]*?)<\/tr>/gi)) {
     const chunk = rm[1];
     const pos = chunk.match(/<div class="">(\d+)<\/div>/)?.[1];
     const name = chunk.match(/href="\/equipo\/[^"/]+\/\d+\/info"[^>]*>([^<]+)/)?.[1]?.trim();
@@ -150,21 +142,32 @@ function parseTable(html: string): StandingRow[] {
   });
 }
 
+function parseTable(html: string, mustInclude?: RegExp): StandingRow[] {
+  const blocks = [...html.matchAll(/id="ClassificationFullTable"[\s\S]*?<\/tbody>/gi)].map((m) => m[0]);
+  if (!blocks.length) blocks.push(html);
+  const tables = blocks.map(parseOneTable).filter((t) => t.length);
+  if (mustInclude) {
+    const hit = tables.find((t) => t.some((r) => mustInclude.test(r.name)));
+    if (hit) return hit;
+  }
+  return tables[0] ?? [];
+}
+
 export async function fetchRfefFutsal(): Promise<{ events: ApiEvent[]; tables: Record<string, StandingRow[]> }> {
   const events: ApiEvent[] = [];
   const tables: Record<string, StandingRow[]> = {};
   const settled = await Promise.allSettled(
     COMPS.flatMap((c) => [
-      getText(`${BASE}/competicion/${c.path}/2027/resultados`).then((html) => ({ c, kind: "res" as const, html })),
-      getText(`${BASE}/competicion/${c.path}/2027/clasificacion`).then((html) => ({ c, kind: "cla" as const, html })),
+      getText(`${BASE}/competicion/${c.path}/2027/resultados`).then((html) => ({ c, html })),
+      getText(`${BASE}/competicion/${c.path}/2027/clasificacion`).then((html) => ({ c, html })),
     ]),
   );
   for (const item of settled) {
     if (item.status !== "fulfilled") continue;
     const { c, html } = item.value;
     for (const ev of parseMatches(html, c.leagueId, c.leagueName)) events.push(ev);
-    const table = parseTable(html);
-    if (table.length) tables[c.leagueId] = table;
+    const table = parseTable(html, c.mustInclude);
+    if (table.length && table.some((r) => c.mustInclude.test(r.name))) tables[c.leagueId] = table;
   }
   const byId = new Map<string, ApiEvent>();
   for (const ev of events) byId.set(ev.externalId, ev);
