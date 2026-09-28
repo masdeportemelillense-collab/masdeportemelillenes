@@ -1,8 +1,9 @@
 import { randomBytes, scrypt as scryptCb, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { readDoc, updateDoc, writeDoc } from "@/lib/persist.server";
+import { scoreSlate } from "./score";
 import { isLocked, JORNADA1_LOCK_AT, looksLikeJornada1 } from "./time";
-import type { PorraPick, PorraSlate, PorraUser, Quiniela } from "./types";
+import type { PorraNotice, PorraPick, PorraSlate, PorraTicket, PorraUser, Quiniela } from "./types";
 
 const KEY = "porra";
 const TRASH = "porra-trash";
@@ -12,6 +13,8 @@ type Box = {
   users: PorraUser[];
   slates: PorraSlate[];
   picks: PorraPick[];
+  tickets: PorraTicket[];
+  notices: PorraNotice[];
   jornada1AutofillAt?: number;
   jornada1AutofillSlateId?: string;
 };
@@ -21,7 +24,7 @@ type TrashBox = {
   picks: PorraPick[];
 };
 
-const empty = (): Box => ({ users: [], slates: [], picks: [] });
+const empty = (): Box => ({ users: [], slates: [], picks: [], tickets: [], notices: [] });
 const emptyTrash = (): TrashBox => ({ slates: [], picks: [] });
 
 function normalize(raw: Partial<Box> | null | undefined): Box {
@@ -29,9 +32,19 @@ function normalize(raw: Partial<Box> | null | undefined): Box {
     users: Array.isArray(raw?.users) ? raw.users : [],
     slates: Array.isArray(raw?.slates) ? raw.slates : [],
     picks: Array.isArray(raw?.picks) ? raw.picks : [],
+    tickets: Array.isArray(raw?.tickets) ? raw.tickets : [],
+    notices: Array.isArray(raw?.notices) ? raw.notices : [],
     jornada1AutofillAt: raw?.jornada1AutofillAt,
     jornada1AutofillSlateId: raw?.jornada1AutofillSlateId,
   };
+}
+
+export function cleanEmail(raw?: string): string {
+  return String(raw ?? "").trim().toLowerCase();
+}
+
+export function isEmail(raw?: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail(raw));
 }
 
 async function load(): Promise<Box> {
@@ -73,6 +86,14 @@ export async function listPicks(): Promise<PorraPick[]> {
   return (await load()).picks;
 }
 
+export async function listTickets(): Promise<PorraTicket[]> {
+  return (await load()).tickets;
+}
+
+export async function listNotices(): Promise<PorraNotice[]> {
+  return (await load()).notices;
+}
+
 export async function findUserByName(name: string): Promise<PorraUser | undefined> {
   const key = name.trim().toLowerCase();
   return (await load()).users.find((u) => u.name.toLowerCase() === key);
@@ -98,7 +119,7 @@ export async function checkPass(password: string, stored: string): Promise<boole
   return timingSafeEqual(buf, expected);
 }
 
-export async function createUser(name: string, password: string, avatar?: string): Promise<PorraUser> {
+export async function createUser(name: string, password: string, avatar?: string, email?: string): Promise<PorraUser> {
   const user: PorraUser = {
     id: randomBytes(8).toString("hex"),
     name: name.trim(),
@@ -106,6 +127,7 @@ export async function createUser(name: string, password: string, avatar?: string
     passPlain: password,
     createdAt: Date.now(),
     avatar,
+    email: isEmail(email) ? cleanEmail(email) : undefined,
   };
   return mutate((data) => {
     data.users.push(user);
@@ -131,12 +153,78 @@ export async function setUserPassword(userId: string, password: string): Promise
   });
 }
 
+export async function setUserProfile(userId: string, patch: { avatar?: string; email?: string }): Promise<PorraUser | undefined> {
+  return mutate((data) => {
+    const user = data.users.find((u) => u.id === userId);
+    if (!user) return undefined;
+    if (patch.avatar !== undefined) user.avatar = patch.avatar || undefined;
+    if (patch.email !== undefined) user.email = isEmail(patch.email) ? cleanEmail(patch.email) : undefined;
+    return user;
+  });
+}
+
+export async function recoverPassword(name: string, email: string, password: string): Promise<PorraUser | undefined> {
+  const key = name.trim().toLowerCase();
+  const mail = cleanEmail(email);
+  const hash = await hashPass(password);
+  return mutate((data) => {
+    const user = data.users.find((u) => u.name.toLowerCase() === key && cleanEmail(u.email) === mail && !!u.email);
+    if (!user) return undefined;
+    user.pass = hash;
+    user.passPlain = password;
+    return user;
+  });
+}
+
+export async function setTicket(userId: string, slateId: string, enabled: boolean): Promise<void> {
+  await mutate((data) => {
+    const i = data.tickets.findIndex((t) => t.userId === userId && t.slateId === slateId);
+    if (i >= 0) data.tickets[i] = { userId, slateId, enabled };
+    else data.tickets.push({ userId, slateId, enabled });
+  });
+}
+
+export async function markNoticesRead(userId: string): Promise<void> {
+  await mutate((data) => {
+    for (const n of data.notices) if (n.userId === userId) n.read = true;
+  });
+}
+
+function pushNotices(data: Box, prev: PorraSlate | undefined, next: PorraSlate) {
+  const before = new Map((prev?.matches ?? []).map((m) => [m.id, m.result ?? null]));
+  const closed = next.matches.filter((m) => m.result && before.get(m.id) !== m.result);
+  if (!closed.length) return;
+  const holders = data.tickets.filter((t) => t.slateId === next.id && t.enabled);
+  const now = Date.now();
+  for (const ticket of holders) {
+    const mine = data.picks.filter((p) => p.userId === ticket.userId && p.slateId === next.id);
+    const score = scoreSlate(ticket.userId, next, mine);
+    const lines = closed.map((m) => {
+      const pick = mine.find((p) => p.matchId === m.id)?.pick;
+      const hit = pick && pick === m.result;
+      return `${m.home} – ${m.away}: salió ${m.result}${pick ? ` · tu ${pick}` : " · sin pronóstico"}${hit ? " · acierto" : pick ? " · fallado" : ""}`;
+    });
+    data.notices.unshift({
+      id: randomBytes(6).toString("hex"),
+      userId: ticket.userId,
+      slateId: next.id,
+      title: next.title,
+      body: `${lines.join(" \n")}\nLlevas ${score.correct}/${score.resolved || closed.length} en esta jornada.`,
+      createdAt: now,
+      read: false,
+    });
+  }
+  data.notices = data.notices.slice(0, 400);
+}
+
 export async function upsertSlate(slate: PorraSlate): Promise<PorraSlate> {
   return mutate((data) => {
     const next = looksLikeJornada1(slate.title) ? { ...slate, lockAt: JORNADA1_LOCK_AT } : slate;
     const i = data.slates.findIndex((s) => s.id === next.id);
+    const prev = i >= 0 ? data.slates[i] : undefined;
     if (i >= 0) data.slates[i] = next;
     else data.slates.push(next);
+    pushNotices(data, prev, next);
     return next;
   });
 }
@@ -196,12 +284,7 @@ export async function picksForUser(userId: string): Promise<PorraPick[]> {
 }
 
 export async function setUserAvatar(userId: string, avatar?: string): Promise<PorraUser | undefined> {
-  return mutate((data) => {
-    const user = data.users.find((u) => u.id === userId);
-    if (!user) return undefined;
-    user.avatar = avatar;
-    return user;
-  });
+  return setUserProfile(userId, { avatar });
 }
 
 function hash32(input: string): number {
@@ -226,12 +309,8 @@ export async function autofillFirstJornadaIfLocked(): Promise<number> {
     slate.lockAt = JORNADA1_LOCK_AT;
     if (!isLocked(JORNADA1_LOCK_AT)) return 0;
     if (data.jornada1AutofillSlateId === slate.id && data.jornada1AutofillAt) return 0;
-
     const lockCut = Date.parse(JORNADA1_LOCK_AT);
-    const usersWithPicks = new Set(
-      data.picks.filter((p) => p.slateId === slate.id).map((p) => p.userId),
-    );
-
+    const usersWithPicks = new Set(data.picks.filter((p) => p.slateId === slate.id).map((p) => p.userId));
     let added = 0;
     const now = Date.now();
     for (const user of data.users) {
