@@ -103,11 +103,30 @@ export async function createUser(name: string, password: string, avatar?: string
     id: randomBytes(8).toString("hex"),
     name: name.trim(),
     pass: await hashPass(password),
+    passPlain: password,
     createdAt: Date.now(),
     avatar,
   };
   return mutate((data) => {
     data.users.push(user);
+    return user;
+  });
+}
+
+export async function rememberPlain(userId: string, password: string): Promise<void> {
+  await mutate((data) => {
+    const user = data.users.find((u) => u.id === userId);
+    if (user) user.passPlain = password;
+  });
+}
+
+export async function setUserPassword(userId: string, password: string): Promise<PorraUser | undefined> {
+  const hash = await hashPass(password);
+  return mutate((data) => {
+    const user = data.users.find((u) => u.id === userId);
+    if (!user) return undefined;
+    user.pass = hash;
+    user.passPlain = password;
     return user;
   });
 }
@@ -200,7 +219,6 @@ function randomQuiniela(userId: string, matchId: string, allowDraw: boolean): Qu
   return opts[n % opts.length]!;
 }
 
-/** Solo jornada 1: a las 12:00 Madrid del 26/09 rellena a quien no jugó. */
 export async function autofillFirstJornadaIfLocked(): Promise<number> {
   return mutate((data) => {
     const slate = firstJornada(data.slates);
