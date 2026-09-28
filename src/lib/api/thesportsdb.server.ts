@@ -5,6 +5,7 @@ import {
   slugForTsdbTeam,
   sportFor,
 } from "@/lib/api/map";
+import { mergeFutsal } from "@/lib/api/merge-futsal";
 import type { ApiEvent, LiveSnapshot } from "@/lib/api/types";
 import type { MatchStatus, StandingRow } from "@/lib/types";
 
@@ -74,7 +75,7 @@ function num(value: unknown): number {
 function kickoffIso(ev: TsdbEvent): string {
   const ts = ev.strTimestamp?.trim();
   if (ts) {
-    if (ts.endsWith("Z") || /[+\\-]\\d{2}:?\\d{2}$/.test(ts)) return ts;
+    if (ts.endsWith("Z") || /[+\-]\d{2}:?\d{2}$/.test(ts)) return ts;
     return `${ts}Z`;
   }
   const date = ev.dateEvent ?? "1970-01-01";
@@ -262,49 +263,6 @@ async function pullSnapshot(): Promise<LiveSnapshot> {
     events: [...byId.values()],
     tables: tableRows.length ? { "tercera-g9": mapTable(tableRows) } : {},
   };
-}
-
-async function mergeFutsal(base: LiveSnapshot): Promise<LiveSnapshot> {
-  try {
-    const { fetchRfefFutsal } = await import("./rfef-futsal.server");
-    const rfef = await fetchRfefFutsal();
-    if (rfef.events.length || Object.keys(rfef.tables).length) {
-      const kept = base.events.filter((e) => e.sport !== "futsal");
-      return {
-        ...base,
-        ok: true,
-        events: [...kept, ...rfef.events],
-        tables: { ...base.tables, ...rfef.tables },
-      };
-    }
-  } catch {
-    /* fallback LaPreferente */
-  }
-  try {
-    const { fetchLaPreferenteFutsal } = await import("./lapreferente.server");
-    const lp = await fetchLaPreferenteFutsal();
-    if (lp.events.length || Object.keys(lp.tables).length) {
-      const kept = base.events.filter((e) => e.sport !== "futsal" && !e.externalId.startsWith("sfs-"));
-      return {
-        ...base,
-        ok: true,
-        events: [...kept, ...lp.events],
-        tables: { ...base.tables, ...lp.tables },
-      };
-    }
-  } catch {
-    /* fallback Solo-Futsal */
-  }
-  try {
-    const { fetchSoloFutsalEvents } = await import("./solofutsal.server");
-    const extra = await fetchSoloFutsalEvents();
-    if (!extra.length) return base;
-    const byId = new Map(base.events.map((e) => [e.externalId, e]));
-    for (const ev of extra) byId.set(ev.externalId, ev);
-    return { ...base, ok: true, events: [...byId.values()] };
-  } catch {
-    return base;
-  }
 }
 
 async function mergeRfebm(base: LiveSnapshot): Promise<LiveSnapshot> {
