@@ -15,6 +15,8 @@ export const API_TRACKED_SLUGS = new Set([
   "nueva-era",
   "rusadir-fs-dh",
   "pena-rm-fs",
+  "virgen-victoria",
+  "t-maravillas",
 ]);
 
 export const TSDB_SPORT: Record<string, Sport> = {
