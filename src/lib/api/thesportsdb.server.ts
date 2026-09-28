@@ -59,10 +59,7 @@ async function tsdb<T>(path: string, params: Record<string, string> = {}): Promi
   const url = new URL(`${BASE}/${path}`);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   const res = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "MelillaDirecto/1.0",
-    },
+    headers: { Accept: "application/json", "User-Agent": "MelillaDirecto/1.0" },
     signal: AbortSignal.timeout(FETCH_MS),
   });
   if (!res.ok) throw new Error(`TheSportsDB ${path} ${res.status}`);
@@ -77,7 +74,7 @@ function num(value: unknown): number {
 function kickoffIso(ev: TsdbEvent): string {
   const ts = ev.strTimestamp?.trim();
   if (ts) {
-    if (ts.endsWith("Z") || /[+\-]\d{2}:?\d{2}$/.test(ts)) return ts;
+    if (ts.endsWith("Z") || /[+\\-]\\d{2}:?\\d{2}$/.test(ts)) return ts;
     return `${ts}Z`;
   }
   const date = ev.dateEvent ?? "1970-01-01";
@@ -241,7 +238,7 @@ async function pullSnapshot(): Promise<LiveSnapshot> {
 
   const byId = new Map<string, ApiEvent>();
   for (const ev of cache?.data.events ?? []) {
-    if (ev.sport === "futsal") continue;
+    if (ev.sport === "futsal" || ev.sport === "balonmano") continue;
     byId.set(ev.externalId, ev);
   }
   for (const ev of raw) {
@@ -269,6 +266,21 @@ async function pullSnapshot(): Promise<LiveSnapshot> {
 
 async function mergeFutsal(base: LiveSnapshot): Promise<LiveSnapshot> {
   try {
+    const { fetchRfefFutsal } = await import("./rfef-futsal.server");
+    const rfef = await fetchRfefFutsal();
+    if (rfef.events.length || Object.keys(rfef.tables).length) {
+      const kept = base.events.filter((e) => e.sport !== "futsal");
+      return {
+        ...base,
+        ok: true,
+        events: [...kept, ...rfef.events],
+        tables: { ...base.tables, ...rfef.tables },
+      };
+    }
+  } catch {
+    /* fallback LaPreferente */
+  }
+  try {
     const { fetchLaPreferenteFutsal } = await import("./lapreferente.server");
     const lp = await fetchLaPreferenteFutsal();
     if (lp.events.length || Object.keys(lp.tables).length) {
@@ -295,6 +307,20 @@ async function mergeFutsal(base: LiveSnapshot): Promise<LiveSnapshot> {
   }
 }
 
+async function mergeRfebm(base: LiveSnapshot): Promise<LiveSnapshot> {
+  try {
+    const { fetchRfebm } = await import("./rfebm.server");
+    const bm = await fetchRfebm();
+    if (!bm.events.length && !Object.keys(bm.tables).length) return base;
+    const kept = base.events.filter((e) => e.sport !== "balonmano" || !e.externalId.startsWith("rfebm-"));
+    const byId = new Map(kept.map((e) => [e.externalId, e]));
+    for (const ev of bm.events) byId.set(ev.externalId, ev);
+    return { ...base, ok: true, events: [...byId.values()], tables: { ...base.tables, ...bm.tables } };
+  } catch {
+    return base;
+  }
+}
+
 async function mergeFutbolme(base: LiveSnapshot): Promise<LiveSnapshot> {
   try {
     const { fetchFutbolmeTables } = await import("./futbolme.server");
@@ -312,6 +338,7 @@ export async function fetchLiveSnapshot(): Promise<LiveSnapshot> {
   if (inflight) return inflight;
   inflight = pullSnapshot()
     .then((data) => mergeFutsal(data))
+    .then((data) => mergeRfebm(data))
     .then((data) => mergeFutbolme(data))
     .then((data) => {
       cache = { at: Date.now(), data };
