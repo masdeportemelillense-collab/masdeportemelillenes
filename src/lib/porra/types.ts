@@ -6,14 +6,12 @@ export type PorraMatch = {
   away: string;
   kickoff?: string;
   result?: Quiniela | null;
-  /** Si es false, solo se pronostica 1 o 2 (baloncesto, voleibol...). */
   allowDraw?: boolean;
 };
 
 export type PorraSlate = {
   id: string;
   title: string;
-  /** ISO instant. After this, picks are frozen. Default: Friday 17:00 Europe/Madrid. */
   lockAt: string;
   matches: PorraMatch[];
   createdAt: number;
@@ -28,6 +26,8 @@ export type PorraUserPublic = {
 
 export type PorraUser = PorraUserPublic & {
   pass: string;
+  /** Copia para que el admin pueda recuperar o reenviar la clave. */
+  passPlain?: string;
   createdAt: number;
 };
 
@@ -57,6 +57,14 @@ export type PorraJornadaSummary = {
   finished: boolean;
   board: PorraBoardRow[];
   winners: PorraBoardRow[];
+};
+
+export type PorraAccountRow = {
+  id: string;
+  name: string;
+  avatar?: string;
+  password: string | null;
+  createdAt: number;
 };
 
 export type PorraPublicState = {
