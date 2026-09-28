@@ -61,7 +61,6 @@ function PorraPage() {
             <AuthCard onDone={applyState} />
           )}
           {state.user ? <NoticeBoard notices={state.notices ?? []} onSaved={applyState} /> : null}
-          {state.user ? <MyHits slates={history} picks={state.myPicks} userId={state.user.id} /> : null}
           {!current ? (
             <p className="rounded-xl bg-surface p-5 text-sm text-muted shadow-[var(--shadow-border)]">
               Todavía no hay jornada publicada. El administrador carga los partidos desde <Link to="/admin" className="text-accent hover:underline">/admin</Link>.
@@ -69,6 +68,7 @@ function PorraPage() {
           ) : (
             <SlateCard key={`${current.id}-${state.user?.id ?? "anon"}`} slate={current} now={state.now} user={state.user} picks={state.myPicks.filter((p) => p.slateId === current.id)} ticketOn={(state.tickets ?? []).includes(current.id)} onSaved={applyState} />
           )}
+          {state.user ? <MyHits slates={history} picks={state.myPicks} userId={state.user.id} /> : null}
         </div>
         <aside className="space-y-3">
           <h2 className="font-display text-3xl leading-none">Clasificación general</h2>
@@ -259,7 +259,7 @@ function SlateCard({ slate, now, user, picks, ticketOn, onSaved }: { slate: Porr
       </div>
       {user && !locked ? <button type="button" disabled={save.isPending || filled === 0} onClick={() => { setMsg(""); save.mutate(); }} className="mt-4 h-11 w-full rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-60">{save.isPending ? "Guardando…" : "Guardar pronósticos"}</button> : null}
       {!user ? <p className="mt-3 text-xs text-muted">Regístrate arriba para enviar tu 1-X-2.</p> : null}
-      {locked && user ? <p className="mt-3 text-xs text-muted">Jornada cerrada. Puedes consultar tus aciertos arriba, pero ya no se cambian los pronósticos.</p> : null}
+      {locked && user ? <p className="mt-3 text-xs text-muted">Jornada cerrada. Puedes consultar tus aciertos debajo, pero ya no se cambian los pronósticos.</p> : null}
       {user ? <TicketSwitch slateId={slate.id} enabled={!!ticketOn} onSaved={onSaved} /> : null}
       {msg ? <p className="mt-2 text-sm text-muted">{msg}</p> : null}
     </section>
