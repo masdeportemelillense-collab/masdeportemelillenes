@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { randomBytes } from "node:crypto";
 import { jornadaSummaries, leaderboard } from "./score";
 import { isLocked, nextFridayLockIso } from "./time";
-import type { PorraMatch, PorraPublicState, PorraSlate, Quiniela } from "./types";
+import type { PorraAccountRow, PorraMatch, PorraPublicState, PorraSlate, Quiniela } from "./types";
 
 const NAME_RE = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 ._'-]{3,24}$/;
 
@@ -89,10 +89,12 @@ export const porraLogin = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const store = await import("./store.server");
+      const password = String(data.password ?? "");
       const user = await store.findUserByName(cleanName(data.name ?? ""));
-      if (!user || !(await store.checkPass(String(data.password ?? ""), user.pass))) {
+      if (!user || !(await store.checkPass(password, user.pass))) {
         return { ok: false as const, error: "Alias o contraseña incorrectos." };
       }
+      await store.rememberPlain(user.id, password);
       const session = await import("./session.server");
       const me = { id: user.id, name: user.name, avatar: user.avatar };
       await session.writePorraCookie(await session.issueUserToken(me.id, me.name));
@@ -163,8 +165,11 @@ export const porraSavePicks = createServerFn({ method: "POST" })
   });
 
 export const porraAdminList = createServerFn({ method: "GET" }).handler(async () => {
+  const emptyAccounts: PorraAccountRow[] = [];
   const { requireAdmin } = await import("@/lib/admin/session.server");
-  if (!(await requireAdmin())) return { ok: false as const, slates: [] as PorraSlate[], users: 0, stats: [] as Array<{ slateId: string; predicted: number; complete: number; matches: number }> };
+  if (!(await requireAdmin())) {
+    return { ok: false as const, slates: [] as PorraSlate[], users: 0, stats: [] as Array<{ slateId: string; predicted: number; complete: number; matches: number }>, accounts: emptyAccounts };
+  }
   const store = await import("./store.server");
   try {
     await store.autofillFirstJornadaIfLocked();
@@ -188,8 +193,36 @@ export const porraAdminList = createServerFn({ method: "GET" }).handler(async ()
       matches: totalMatches,
     };
   });
-  return { ok: true as const, slates, users: users.length, stats };
+  const accounts: PorraAccountRow[] = users
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name, "es"))
+    .map((u) => ({
+      id: u.id,
+      name: u.name,
+      avatar: u.avatar,
+      password: u.passPlain?.trim() ? u.passPlain : null,
+      createdAt: u.createdAt,
+    }));
+  return { ok: true as const, slates, users: users.length, stats, accounts };
 });
+
+export const porraAdminSetPassword = createServerFn({ method: "POST" })
+  .inputValidator((d: { userId: string; password: string }) => d)
+  .handler(async ({ data }) => {
+    try {
+      const { requireAdmin } = await import("@/lib/admin/session.server");
+      if (!(await requireAdmin())) return { ok: false as const, error: "Sesión caducada." };
+      const password = String(data.password ?? "");
+      if (password.length < 4) return { ok: false as const, error: "La nueva clave necesita al menos 4 caracteres." };
+      const store = await import("./store.server");
+      const user = await store.setUserPassword(data.userId, password);
+      if (!user) return { ok: false as const, error: "Usuario no encontrado." };
+      return { ok: true as const, name: user.name, password };
+    } catch (err) {
+      console.error("[porra] set password", err);
+      return { ok: false as const, error: "No se pudo cambiar la contraseña." };
+    }
+  });
 
 export const porraAdminSaveSlate = createServerFn({ method: "POST" })
   .inputValidator(
