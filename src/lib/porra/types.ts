@@ -22,11 +22,11 @@ export type PorraUserPublic = {
   id: string;
   name: string;
   avatar?: string;
+  email?: string;
 };
 
 export type PorraUser = PorraUserPublic & {
   pass: string;
-  /** Copia para que el admin pueda recuperar o reenviar la clave. */
   passPlain?: string;
   createdAt: number;
 };
@@ -37,6 +37,22 @@ export type PorraPick = {
   matchId: string;
   pick: Quiniela;
   updatedAt: number;
+};
+
+export type PorraTicket = {
+  userId: string;
+  slateId: string;
+  enabled: boolean;
+};
+
+export type PorraNotice = {
+  id: string;
+  userId: string;
+  slateId: string;
+  title: string;
+  body: string;
+  createdAt: number;
+  read: boolean;
 };
 
 export type PorraBoardRow = {
@@ -63,6 +79,7 @@ export type PorraAccountRow = {
   id: string;
   name: string;
   avatar?: string;
+  email: string | null;
   password: string | null;
   createdAt: number;
 };
@@ -74,4 +91,6 @@ export type PorraPublicState = {
   myPicks: PorraPick[];
   board: PorraBoardRow[];
   jornadas: PorraJornadaSummary[];
+  tickets: string[];
+  notices: PorraNotice[];
 };
