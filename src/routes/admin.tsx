@@ -11,6 +11,7 @@ import {
 } from "@/lib/admin/actions";
 import { draftsToEvents, scoreFromEvents, type DraftEvent } from "@/lib/admin/apply";
 import type { AdminOverride } from "@/lib/admin/types";
+import { CatalogAdmin } from "@/components/catalog-admin";
 import { LiveDesk } from "@/components/live-desk";
 import { PorraAdmin } from "@/components/porra-admin";
 import { useFeed } from "@/lib/api/feed";
@@ -37,7 +38,7 @@ function LoginForm({ onOk }: { onOk: () => void }) {
     <div className="mx-auto max-w-sm rounded-2xl bg-surface p-6 shadow-[var(--shadow-border)]">
       <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-accent">Acceso privado</p>
       <h1 className="mt-2 font-display text-4xl leading-none">Administración</h1>
-      <p className="mt-2 text-sm text-muted">Cambia marcadores, horarios y carga la porra.</p>
+      <p className="mt-2 text-sm text-muted">Cambia marcadores, horarios, equipos y la porra.</p>
       <form className="mt-6 space-y-3" onSubmit={(e) => { e.preventDefault(); setError(""); login.mutate(); }}>
         <label className="block text-xs uppercase tracking-wider text-muted">Usuario<input value={user} onChange={(e) => setUser(e.target.value)} autoComplete="username" className="mt-1 h-11 w-full rounded-md bg-surface-2 px-3 text-sm text-fg outline-none ring-1 ring-border focus:ring-accent/60" /></label>
         <label className="block text-xs uppercase tracking-wider text-muted">Contraseña<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" className="mt-1 h-11 w-full rounded-md bg-surface-2 px-3 text-sm text-fg outline-none ring-1 ring-border focus:ring-accent/60" /></label>
@@ -63,7 +64,7 @@ function PersistHint() {
 function Editor({ onLogout }: { onLogout: () => void }) {
   const feed = useFeed();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"directo" | "resultados" | "porra">("directo");
+  const [tab, setTab] = useState<"directo" | "resultados" | "equipos" | "porra">("equipos");
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | MatchStatus>("all");
   const overridesQ = useQuery({ queryKey: ["admin-overrides"], queryFn: () => adminListOverrides() });
@@ -71,6 +72,7 @@ function Editor({ onLogout }: { onLogout: () => void }) {
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ["admin-overrides"] });
     void qc.invalidateQueries({ queryKey: ["live-snapshot"] });
+    void qc.invalidateQueries({ queryKey: ["catalog"] });
   };
   const list = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -79,12 +81,14 @@ function Editor({ onLogout }: { onLogout: () => void }) {
       .filter((m) => !term || `${m.homeName} ${m.awayName} ${m.competition ?? ""} ${m.leagueId}`.toLowerCase().includes(term))
       .sort((a, b) => Date.parse(b.kickoff) - Date.parse(a.kickoff));
   }, [feed.all, filter, q]);
-  const title = tab === "porra" ? "Porra" : tab === "directo" ? "Directo" : "Editar resultados";
+  const title = tab === "porra" ? "Porra" : tab === "directo" ? "Directo" : tab === "equipos" ? "Equipos y partidos" : "Editar resultados";
   const subtitle =
     tab === "porra"
       ? "Publica los partidos de la quiniela y marca el 1-X-2 cuando terminen."
       : tab === "directo"
         ? "Pon el partido en directo y ve sumando el marcador. Sale en la web al momento."
+        : tab === "equipos"
+          ? "Alta de equipos nuevos, cambio de escudo (URL) y carga de partidos."
         : "Cambia marcador, horario y cronología. Se publica al momento.";
   return (
     <div className="space-y-6">
@@ -98,10 +102,12 @@ function Editor({ onLogout }: { onLogout: () => void }) {
         <button type="button" className="h-10 rounded-md bg-surface px-4 text-sm text-muted hover:text-fg" onClick={() => logout.mutate()}>Cerrar sesión</button>
       </div>
       <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={() => setTab("equipos")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "equipos" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Equipos</button>
         <button type="button" onClick={() => setTab("directo")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "directo" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Directo</button>
         <button type="button" onClick={() => setTab("resultados")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "resultados" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Resultados</button>
         <button type="button" onClick={() => setTab("porra")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "porra" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Porra</button>
       </div>
+      {tab === "equipos" ? <CatalogAdmin /> : null}
       {tab === "porra" ? <PorraAdmin /> : null}
       {tab === "directo" ? <LiveDesk overrides={overridesQ.data?.overrides ?? []} onSaved={refresh} /> : null}
       {tab === "resultados" ? (
