@@ -6,6 +6,7 @@ import {
   forTeam,
   formOf,
   liveOf,
+  mergeRoster,
   nextOf,
   recentOf,
   standingsOf,
@@ -14,9 +15,8 @@ import {
 } from "@/lib/api/merge";
 import type { LiveSnapshot } from "@/lib/api/types";
 import { useNow } from "@/lib/live";
-import type { ResolvedMatch, StandingRow } from "@/lib/types";
+import type { ResolvedMatch, StandingRow, Team } from "@/lib/types";
 
-/** Cadencia del marcador en directo. */
 export const POLL_MS = 12_000;
 
 export type Feed = {
@@ -26,6 +26,8 @@ export type Feed = {
   upcoming: ResolvedMatch[];
   recent: ResolvedMatch[];
   today: ResolvedMatch[];
+  teams: Team[];
+  team: (id: string) => Team | undefined;
   byId: Record<string, ResolvedMatch>;
   forTeam: (id: string) => ResolvedMatch[];
   standings: (leagueId: string) => StandingRow[];
@@ -54,6 +56,7 @@ function makeFeed(
   extra: { isFetching: boolean; updatedAt: number },
 ): Feed {
   const all = buildResolvedFeed(now, snapshot);
+  const roster = mergeRoster(snapshot.catalogTeams);
   const byId = Object.fromEntries(all.map((m) => [m.id, m])) as Record<string, ResolvedMatch>;
   return {
     now,
@@ -62,6 +65,8 @@ function makeFeed(
     upcoming: upcomingOf(all, 8),
     recent: recentOf(all, 8),
     today: todayOf(all, now),
+    teams: roster,
+    team: (id) => roster.find((t) => t.id === id),
     byId,
     forTeam: (id) => forTeam(all, id),
     standings: (leagueId) => standingsOf(leagueId, all, now, snapshot.tables[leagueId]),
