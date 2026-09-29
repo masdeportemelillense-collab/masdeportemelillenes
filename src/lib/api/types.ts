@@ -1,4 +1,5 @@
 import type { AdminOverride } from "@/lib/admin/types";
+import type { CatalogMatch, CatalogTeam } from "@/lib/catalog/types";
 import type { MatchEvent, MatchStatus, Sport, StandingRow } from "@/lib/types";
 
 export type ApiEvent = {
@@ -35,4 +36,6 @@ export type LiveSnapshot = {
   events: ApiEvent[];
   tables: Record<string, StandingRow[]>;
   overrides?: AdminOverride[];
+  catalogTeams?: CatalogTeam[];
+  catalogMatches?: CatalogMatch[];
 };
