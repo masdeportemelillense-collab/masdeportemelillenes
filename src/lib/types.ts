@@ -36,6 +36,7 @@ export type Team = {
   secondary: string;
   nickname: string;
   summary: string;
+  badgeUrl?: string;
 };
 
 export type LeagueTeam = {
@@ -78,9 +79,7 @@ export type Match = {
   awayName: string;
   awayShort: string;
   awayBadge?: string;
-  /** Absolute kickoff, or ignored when liveElapsed is set. */
   kickoff: string;
-  /** If set, the match is always shown live at this elapsed minute. */
   liveElapsed?: number;
   events: MatchEvent[];
   duration: number;
