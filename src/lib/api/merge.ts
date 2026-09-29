@@ -4,9 +4,33 @@ import { matches } from "@/data/matches";
 import { API_TRACKED_SLUGS, normName } from "@/lib/api/map";
 import type { ApiEvent, LiveSnapshot } from "@/lib/api/types";
 import { resolveMatch, standingsFor } from "@/lib/live";
-import type { Match, ResolvedMatch, StandingRow } from "@/lib/types";
+import type { Match, ResolvedMatch, StandingRow, Team } from "@/lib/types";
+import { teams as staticTeams } from "@/data/teams";
+import type { CatalogTeam } from "@/lib/catalog/types";
 
 const MATCH_WINDOW_MS = 36 * 60 * 60 * 1000;
+
+export function mergeRoster(extra?: CatalogTeam[]): Team[] {
+  const map = new Map<string, Team>();
+  for (const t of staticTeams) map.set(t.id, t);
+  for (const t of extra ?? []) {
+    if (t.hidden) {
+      map.delete(t.id);
+      continue;
+    }
+    const prev = map.get(t.id);
+    map.set(t.id, { ...(prev ?? t), ...t });
+  }
+  return [...map.values()];
+}
+
+function catalogPool(snapshot?: LiveSnapshot | null): Match[] {
+  const extra = snapshot?.catalogMatches ?? [];
+  const byId = new Map<string, Match>();
+  for (const m of matches) byId.set(m.id, m);
+  for (const m of extra) byId.set(m.id, m);
+  return [...byId.values()];
+}
 
 function involvesTracked(match: Match): boolean {
   return Boolean(
@@ -32,12 +56,13 @@ function lpCovers(match: Match, events: ApiEvent[]): boolean {
 }
 
 function shouldDropCatalog(match: Match, events: ApiEvent[]): boolean {
+  if (match.source === "catalog") return false;
   if (lpCovers(match, events)) return true;
   return involvesTracked(match) && match.liveElapsed != null;
 }
 
 export function findOverlay(match: Match, events: ApiEvent[]): ApiEvent | undefined {
-  if (!involvesTracked(match)) return undefined;
+  if (!involvesTracked(match) || match.source === "catalog") return undefined;
   const start = Date.parse(match.kickoff);
   return events.find((ev) => {
     if (ev.sport !== match.sport) return false;
@@ -60,11 +85,11 @@ function applyOverlay(match: Match, ev: ApiEvent): ResolvedMatch {
     homeId: ev.homeId ?? match.homeId,
     homeName: ev.homeName,
     homeShort: ev.homeShort,
-    homeBadge: ev.homeBadge,
+    homeBadge: ev.homeBadge || match.homeBadge,
     awayId: ev.awayId ?? match.awayId,
     awayName: ev.awayName,
     awayShort: ev.awayShort,
-    awayBadge: ev.awayBadge,
+    awayBadge: ev.awayBadge || match.awayBadge,
     kickoff: ev.kickoff,
     liveElapsed: undefined,
     events: happened,
@@ -119,15 +144,21 @@ export function buildResolvedFeed(now: number, snapshot?: LiveSnapshot | null): 
   const api = snapshot?.events ?? [];
   const used = new Set<string>();
   const out: ResolvedMatch[] = [];
+  const badges = new Map((snapshot?.catalogTeams ?? []).filter((t) => t.badgeUrl).map((t) => [t.id, t.badgeUrl!]));
 
-  for (const raw of matches) {
+  for (const raw of catalogPool(snapshot)) {
     if (shouldDropCatalog(raw, api)) continue;
-    const overlay = findOverlay(raw, api);
+    const stamped: Match = {
+      ...raw,
+      homeBadge: raw.homeBadge || (raw.homeId ? badges.get(raw.homeId) : undefined),
+      awayBadge: raw.awayBadge || (raw.awayId ? badges.get(raw.awayId) : undefined),
+    };
+    const overlay = findOverlay(stamped, api);
     if (overlay) {
       used.add(overlay.externalId);
-      out.push(applyOverlay(raw, overlay));
+      out.push(applyOverlay(stamped, overlay));
     } else {
-      out.push(resolveMatch(stripFakeLive(raw), now));
+      out.push(resolveMatch(stripFakeLive(stamped), now));
     }
   }
 
