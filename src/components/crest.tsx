@@ -28,6 +28,7 @@ export function TeamBadge({
   short,
   primary,
   secondary,
+  badgeUrl,
   size = 40,
   className,
 }: {
@@ -36,11 +37,16 @@ export function TeamBadge({
   short: string;
   primary?: string;
   secondary?: string;
+  badgeUrl?: string;
   size?: number;
   className?: string;
 }) {
   const src =
-    officialBadge(id, name) || solofutsalBadge(id, name) || futbolmeBadge(id, name) || badgeFor(id, name);
+    badgeUrl ||
+    officialBadge(id, name) ||
+    solofutsalBadge(id, name) ||
+    futbolmeBadge(id, name) ||
+    badgeFor(id, name);
   if (src) {
     return (
       <img
@@ -91,7 +97,7 @@ export function Crest({
   size = 40,
   className,
 }: {
-  team: Pick<Team, "id" | "short" | "primary" | "secondary" | "name">;
+  team: Pick<Team, "id" | "short" | "primary" | "secondary" | "name"> & { badgeUrl?: string };
   size?: number;
   className?: string;
 }) {
@@ -102,6 +108,7 @@ export function Crest({
       short={team.short}
       primary={team.primary}
       secondary={team.secondary}
+      badgeUrl={team.badgeUrl}
       size={size}
       className={className}
     />
