@@ -26,7 +26,8 @@ function PorraPage() {
   const q = useQuery({
     queryKey: ["porra-state"],
     queryFn: () => porraState(),
-    staleTime: 15_000,
+    staleTime: 10_000,
+    refetchInterval: 20_000,
   });
   const state = q.data;
   const history = useMemo(() => {
