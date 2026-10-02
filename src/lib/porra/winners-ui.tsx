@@ -34,48 +34,59 @@ export function WinnerBanner({ jornadas }: { jornadas?: PorraJornadaSummary[] })
 
 export function JornadaWinners({ jornadas, me }: { jornadas?: PorraJornadaSummary[]; me?: string }) {
   const list = jornadas ?? [];
-  const [id, setId] = useState(list.find((j) => j.finished)?.slateId || list[0]?.slateId || "");
+  const [id, setId] = useState(list[0]?.slateId || "");
   const current = list.find((j) => j.slateId === id) || list[0];
   if (!list.length) return null;
+  const live = current && !current.finished && current.resolved > 0;
+  const leaders = current ? current.board.filter((r) => r.points === (current.board[0]?.points ?? 0) && r.points > 0) : [];
   return (
     <div className="rounded-xl bg-surface p-4 shadow-[var(--shadow-border)]">
       <p className="text-xs font-medium uppercase tracking-wider text-muted">Clasificación por jornada</p>
       <select value={current?.slateId || ""} onChange={(e) => setId(e.target.value)} className="mt-2 h-10 w-full rounded-md bg-surface-2 px-2 text-sm outline-none ring-1 ring-border">
         {list.map((j) => (
-          <option key={j.slateId} value={j.slateId}>{j.title}{j.finished ? "" : " · en curso"}</option>
+          <option key={j.slateId} value={j.slateId}>
+            {j.title}{j.finished ? "" : j.resolved ? " · provisional" : " · en curso"}
+          </option>
         ))}
       </select>
-      {!current ? null : !current.finished ? (
-        <p className="mt-3 text-sm text-muted">Esta jornada aún no está cerrada. Faltan resultados.</p>
-      ) : current.winners.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">Sin pronósticos en esta jornada.</p>
+      {!current ? null : current.resolved === 0 ? (
+        <p className="mt-3 text-sm text-muted">Todavía no hay partidos con resultado. Irá saliendo al cerrarlos.</p>
       ) : (
-        <ul className="mt-3 space-y-2">
-          {current.winners.map((w) => (
-            <li key={w.userId} className={cn("flex items-center justify-between gap-2 rounded-lg bg-surface-2 px-2 py-2", me === w.userId && "ring-1 ring-accent")}>
-              <span className="inline-flex min-w-0 items-center gap-2">
-                <Mark teamId={w.avatar} size={24} />
-                <span className="truncate text-sm font-medium">{w.name}</span>
-              </span>
-              <span className="text-sm tabular-nums text-accent">{w.points} pts</span>
-            </li>
-          ))}
-        </ul>
+        <>
+          <p className="mt-3 text-xs text-muted">
+            {current.finished
+              ? `Jornada cerrada · ${current.resolved}/${current.total} resultados`
+              : `Provisional · ${current.resolved}/${current.total} partidos cerrados`}
+          </p>
+          {leaders.length ? (
+            <ul className="mt-2 space-y-2">
+              {leaders.map((w) => (
+                <li key={w.userId} className={cn("flex items-center justify-between gap-2 rounded-lg bg-surface-2 px-2 py-2", me === w.userId && "ring-1 ring-accent")}>
+                  <span className="inline-flex min-w-0 items-center gap-2">
+                    <Mark teamId={w.avatar} size={24} />
+                    <span className="truncate text-sm font-medium">{w.name}</span>
+                  </span>
+                  <span className="text-sm tabular-nums text-accent">{w.points} pts{live ? " *" : ""}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-muted">Nadie ha acertado los partidos ya cerrados.</p>
+          )}
+          <ul className="mt-3 max-h-[28rem] overflow-y-auto divide-y divide-border">
+            {current.board.map((row, i) => (
+              <li key={row.userId} className={cn("flex items-center justify-between gap-2 py-1.5 text-sm", me === row.userId && "text-accent")}>
+                <span className="inline-flex min-w-0 items-center gap-2">
+                  <span className="w-5 tabular-nums text-muted">{i + 1}</span>
+                  <Mark teamId={row.avatar} size={18} />
+                  <span className="truncate">{row.name}</span>
+                </span>
+                <span className="tabular-nums">{row.points}</span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
-      {current?.finished && current.board.length ? (
-        <ul className="mt-3 max-h-[28rem] overflow-y-auto divide-y divide-border">
-          {current.board.map((row, i) => (
-            <li key={row.userId} className={cn("flex items-center justify-between gap-2 py-1.5 text-sm", me === row.userId && "text-accent")}>
-              <span className="inline-flex min-w-0 items-center gap-2">
-                <span className="w-5 tabular-nums text-muted">{i + 1}</span>
-                <Mark teamId={row.avatar} size={18} />
-                <span className="truncate">{row.name}</span>
-              </span>
-              <span className="tabular-nums">{row.points}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
     </div>
   );
 }
