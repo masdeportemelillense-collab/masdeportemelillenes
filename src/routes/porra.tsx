@@ -250,9 +250,9 @@ function SlateCard({ slate, now, user, picks, ticketOn, onSaved }: { slate: Porr
             <div key={m.id} className="grid items-center gap-2 rounded-xl bg-surface-2 px-3 py-3 sm:grid-cols-[1fr_auto] sm:px-4">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{m.home} <span className="text-muted">–</span> {m.away}</p>
-                {m.result ? <p className={cn("mt-1 text-xs", ok === true ? "text-accent" : ok === false ? "text-loss" : "text-muted")}>Resultado {m.result}{pick ? ` · tu ${pick}` : " · sin pronóstico"}{ok === true ? " · acierto +1" : ok === false ? " · fallado" : ""}</p> : pick ? <p className="mt-1 text-xs text-muted">Tu pronóstico: {pick}</p> : null}
+                {m.result ? <p className={cn("mt-1 text-xs font-medium", ok === true ? "text-accent" : ok === false ? "text-loss" : "text-fg")}>Resultado oficial: {m.result}{pick ? ` · tu ${pick}` : " · sin pronóstico"}{ok === true ? " · acierto +1" : ok === false ? " · fallado" : ""}</p> : pick ? <p className="mt-1 text-xs text-muted">Tu pronóstico: {pick}</p> : null}
               </div>
-              <PickTriple value={pick} disabled={!user || locked} allowDraw={m.allowDraw !== false} onChange={(next) => setDraft((prev) => ({ ...prev, [m.id]: next }))} />
+              <PickTriple value={pick} result={m.result} disabled={!user || locked} allowDraw={m.allowDraw !== false} onChange={(next) => setDraft((prev) => ({ ...prev, [m.id]: next }))} />
             </div>
           );
         })}
@@ -266,9 +266,34 @@ function SlateCard({ slate, now, user, picks, ticketOn, onSaved }: { slate: Porr
   );
 }
 
-function PickTriple({ value, disabled, onChange, allowDraw = true }: { value?: Quiniela; disabled?: boolean; allowDraw?: boolean; onChange: (pick: Quiniela) => void }) {
+function PickTriple({ value, result, disabled, onChange, allowDraw = true }: { value?: Quiniela; result?: Quiniela | null; disabled?: boolean; allowDraw?: boolean; onChange: (pick: Quiniela) => void }) {
   const keys = (allowDraw ? ["1", "X", "2"] : ["1", "2"]) as Quiniela[];
-  return <div className="flex gap-1">{keys.map((key) => <button key={key} type="button" disabled={disabled} onClick={() => onChange(key)} className={cn("h-10 w-10 rounded-md text-sm font-semibold tabular-nums", value === key ? "bg-accent text-bg" : "bg-surface text-fg ring-1 ring-border", disabled && "opacity-60")}>{key}</button>)}</div>;
+  return (
+    <div className="flex gap-1">
+      {keys.map((key) => {
+        const official = result === key;
+        const mine = value === key;
+        return (
+          <button
+            key={key}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(key)}
+            title={official ? "Resultado oficial" : undefined}
+            className={cn(
+              "h-10 w-10 rounded-md text-sm font-semibold tabular-nums",
+              mine ? "bg-accent text-bg" : "bg-surface text-fg ring-1 ring-border",
+              official && !mine && "ring-2 ring-accent bg-accent/20",
+              official && mine && "ring-2 ring-bg",
+              disabled && "opacity-80",
+            )}
+          >
+            {key}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function Leaderboard({ board, me }: { board: PorraPublicState["board"]; me?: string }) {
