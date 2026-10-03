@@ -255,13 +255,15 @@ function LiveRow({
             Poner en directo
           </button>
         ) : (
-          <button type="button" disabled={save.isPending} onClick={() => persist({ status: "suspended", showClock: false })} className="h-10 rounded-md bg-loss px-3 text-sm font-medium text-bg">
-            Suspender
-          </button>
           <button type="button" disabled={save.isPending} onClick={() => persist({ status: "finished", minute: clock.minute })} className="h-10 rounded-md bg-accent px-3 text-sm font-medium text-bg">
             Finalizar partido
           </button>
         )}
+        {status !== "suspended" ? (
+          <button type="button" disabled={save.isPending} onClick={() => persist({ status: "suspended", showClock: false })} className="h-10 rounded-md bg-loss px-3 text-sm font-medium text-bg">
+            Suspender
+          </button>
+        ) : null}
         {status !== "scheduled" ? (
           <button type="button" disabled={save.isPending} onClick={() => persist({ status: "scheduled", homeScore: 0, awayScore: 0, showClock: false, clockAnchorAt: undefined, clockBaseMinute: 0 })} className="h-10 rounded-md bg-surface-2 px-3 text-sm text-muted">
             Quitar directo
