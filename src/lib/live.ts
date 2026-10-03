@@ -113,6 +113,19 @@ export function resolveMatch(match: Match, now: number): ResolvedMatch {
   const elapsedMin = (now - start) / 60_000;
   const duration = match.duration;
 
+  if (match.status === "suspended") {
+    return {
+      ...match,
+      status: "suspended",
+      minute: 0,
+      homeScore: 0,
+      awayScore: 0,
+      displayClock: "SUS",
+      happened: [],
+      period: "Suspendido",
+    };
+  }
+
   if (elapsedMin < 0) {
     return {
       ...match,
