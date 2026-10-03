@@ -72,7 +72,8 @@ export async function saveMatch(draft: MatchDraft): Promise<CatalogMatch> {
   const id = draft.id?.trim() || `adm-${slugify(`${draft.homeName}-${draft.awayName}-${draft.kickoff}`)}`;
   const hs = Number(draft.homeScore) || 0;
   const as = Number(draft.awayScore) || 0;
-  const events: MatchEvent[] = draft.finished
+  const suspended = draft.suspended === true;
+  const events: MatchEvent[] = !suspended && draft.finished
     ? [{ minute: 90, side: hs >= as ? "home" : "away", kind: "punto", player: "Final", homeScore: hs, awayScore: as, note: `*${hs}-${as}` }]
     : [];
   const kickoff = draft.kickoff.length === 16 ? `${draft.kickoff}:00` : draft.kickoff;
@@ -94,6 +95,7 @@ export async function saveMatch(draft: MatchDraft): Promise<CatalogMatch> {
     events,
     duration: DURATION[draft.sport] ?? 90,
     source: "catalog",
+    status: suspended ? "suspended" : draft.finished ? "finished" : undefined,
     updatedAt: Date.now(),
   };
   await updateDoc<CatalogState>(KEY, EMPTY, (cur) => {
