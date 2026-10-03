@@ -139,7 +139,7 @@ export function MatchCard({
         />
         <div className="w-16 shrink-0 text-center sm:w-[5.5rem]">
           {match.status === "suspended" ? (
-            <p className="font-display text-xl font-semibold leading-none text-loss sm:text-2xl">SUS</p>
+            <p className="font-display text-sm font-semibold uppercase leading-none text-loss sm:text-base">Suspendido</p>
           ) : match.status === "scheduled" ? (
             <p className="font-display text-xl leading-none text-muted tabular-nums sm:text-2xl">
               {new Date(match.kickoff).toLocaleTimeString("es-ES", {
@@ -188,7 +188,7 @@ export function MatchRow({ match }: { match: ResolvedMatch }) {
             {match.displayClock}
           </span>
         ) : match.status === "suspended" ? (
-          <span className="text-[11px] font-semibold uppercase text-loss">SUS</span>
+          <span className="text-[11px] font-semibold uppercase text-loss">Suspendido</span>
         ) : match.status === "finished" ? (
           <span className="text-[11px] uppercase text-muted">Fin</span>
         ) : (
@@ -205,7 +205,7 @@ export function MatchRow({ match }: { match: ResolvedMatch }) {
         {match.homeName} <span className="text-muted">–</span> {match.awayName}
       </p>
       <p className="font-display text-lg leading-none tabular-nums">
-        {match.status === "suspended" ? "SUS" : match.status === "scheduled" ? "–" : `${match.homeScore}–${match.awayScore}`}
+        {match.status === "suspended" ? "Suspendido" : match.status === "scheduled" ? "–" : `${match.homeScore}–${match.awayScore}`}
       </p>
     </Link>
   );
