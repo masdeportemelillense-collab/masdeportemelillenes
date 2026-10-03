@@ -7,6 +7,7 @@ export type PorraMatch = {
   kickoff?: string;
   result?: Quiniela | null;
   allowDraw?: boolean;
+  suspended?: boolean;
 };
 
 export type PorraSlate = {
