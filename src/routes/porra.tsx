@@ -165,7 +165,7 @@ function MyHits({ slates, picks, userId }: { slates: PorraSlate[]; picks: PorraP
                   return (
                     <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                       <p className="text-sm">{m.home} <span className="text-muted">–</span> {m.away}</p>
-                      <p className={cn("text-xs", ok === true ? "text-accent" : ok === false ? "text-loss" : "text-muted")}>{pick ? `Tu ${pick}` : "Sin pronóstico"}{m.result ? ` · salió ${m.result}` : ""}{ok === true ? " · +1" : ok === false ? " · fallado" : ""}</p>
+                      <p className={cn("text-xs", ok === true ? "text-accent" : ok === false ? "text-loss" : "text-muted")}>{m.suspended ? "Suspendido · no puntúa" : `${pick ? `Tu ${pick}` : "Sin pronóstico"}${m.result ? ` · salió ${m.result}` : ""}${ok === true ? " · +1" : ok === false ? " · fallado" : ""}`}</p>
                     </li>
                   );
                 })}
@@ -251,9 +251,9 @@ function SlateCard({ slate, now, user, picks, ticketOn, onSaved }: { slate: Porr
             <div key={m.id} className="grid items-center gap-2 rounded-xl bg-surface-2 px-3 py-3 sm:grid-cols-[1fr_auto] sm:px-4">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{m.home} <span className="text-muted">–</span> {m.away}</p>
-                {m.result ? <p className={cn("mt-1 text-xs font-medium", ok === true ? "text-accent" : ok === false ? "text-loss" : "text-fg")}>Resultado oficial: {m.result}{pick ? ` · tu ${pick}` : " · sin pronóstico"}{ok === true ? " · acierto +1" : ok === false ? " · fallado" : ""}</p> : pick ? <p className="mt-1 text-xs text-muted">Tu pronóstico: {pick}</p> : null}
+                {m.suspended ? <p className="mt-1 text-xs font-medium text-loss">Partido suspendido · no puntúa</p> : m.result ? <p className={cn("mt-1 text-xs font-medium", ok === true ? "text-accent" : ok === false ? "text-loss" : "text-fg")}>Resultado oficial: {m.result}{pick ? ` · tu ${pick}` : " · sin pronóstico"}{ok === true ? " · acierto +1" : ok === false ? " · fallado" : ""}</p> : pick ? <p className="mt-1 text-xs text-muted">Tu pronóstico: {pick}</p> : null}
               </div>
-              <PickTriple value={pick} result={m.result} disabled={!user || locked} allowDraw={m.allowDraw !== false} onChange={(next) => setDraft((prev) => ({ ...prev, [m.id]: next }))} />
+              <PickTriple value={pick} result={m.suspended ? null : m.result} disabled={!user || locked || !!m.suspended} allowDraw={m.allowDraw !== false} onChange={(next) => setDraft((prev) => ({ ...prev, [m.id]: next }))} />
             </div>
           );
         })}
