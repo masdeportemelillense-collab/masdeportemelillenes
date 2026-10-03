@@ -55,6 +55,7 @@ const emptyMatch = (): MatchDraft => ({
   homeScore: "",
   awayScore: "",
   finished: false,
+  suspended: false,
 });
 
 export function CatalogAdmin() {
@@ -225,8 +226,12 @@ export function CatalogAdmin() {
           </label>
           <label className="text-xs text-muted">Jornada<input className={field} value={match.jornada} onChange={(e) => setMatch({ ...match, jornada: e.target.value })} /></label>
           <label className="text-xs text-muted flex items-center gap-2 pt-6">
-            <input type="checkbox" checked={match.finished} onChange={(e) => setMatch({ ...match, finished: e.target.checked })} />
+            <input type="checkbox" checked={match.finished} onChange={(e) => setMatch({ ...match, finished: e.target.checked, suspended: e.target.checked ? false : match.suspended })} />
             Ya se jugó (poner marcador)
+          </label>
+          <label className="text-xs text-muted flex items-center gap-2 pt-6">
+            <input type="checkbox" checked={match.suspended} onChange={(e) => setMatch({ ...match, suspended: e.target.checked, finished: e.target.checked ? false : match.finished })} />
+            Suspendido (no puntúa ni sale como jugado)
           </label>
           <label className="text-xs text-muted">Goles / puntos local<input className={field} value={match.homeScore} onChange={(e) => setMatch({ ...match, homeScore: e.target.value })} /></label>
           <label className="text-xs text-muted">Goles / puntos visitante<input className={field} value={match.awayScore} onChange={(e) => setMatch({ ...match, awayScore: e.target.value })} /></label>
