@@ -51,6 +51,9 @@ function MatchPage() {
             {match.displayClock}
           </p>
         )}
+        {match.status === "suspended" && (
+          <p className="mb-4 text-xs font-medium uppercase tracking-wider text-loss">Partido suspendido</p>
+        )}
         {match.status === "finished" && (
           <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted">
             {match.source === "api" ? "Final oficial" : "Finalizado"}
@@ -71,7 +74,7 @@ function MatchPage() {
             badgeUrl={match.homeBadge}
           />
           <div className="min-w-[7rem]">
-            {match.status === "scheduled" ? (
+            {match.status === "scheduled" || match.status === "suspended" ? (
               <p className="font-display text-5xl leading-none text-muted">vs</p>
             ) : (
               <p
