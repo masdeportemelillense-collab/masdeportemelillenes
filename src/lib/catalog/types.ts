@@ -50,4 +50,5 @@ export type MatchDraft = {
   homeScore: string;
   awayScore: string;
   finished: boolean;
+  suspended: boolean;
 };
