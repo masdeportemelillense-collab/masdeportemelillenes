@@ -114,8 +114,8 @@ function Editor({ onLogout }: { onLogout: () => void }) {
         <>
           <div className="flex flex-wrap gap-2">
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar equipo o liga" className="h-10 min-w-[12rem] flex-1 rounded-md bg-surface px-3 text-sm outline-none ring-1 ring-border focus:ring-accent/60" />
-            {(["all", "live", "scheduled", "finished"] as const).map((key) => (
-              <button key={key} type="button" onClick={() => setFilter(key)} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${filter === key ? "bg-accent text-bg" : "bg-surface text-muted"}`}>{key === "all" ? "Todos" : key === "live" ? "Directo" : key === "scheduled" ? "Previstos" : "Finalizados"}</button>
+            {(["all", "live", "scheduled", "finished", "suspended"] as const).map((key) => (
+              <button key={key} type="button" onClick={() => setFilter(key)} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${filter === key ? "bg-accent text-bg" : "bg-surface text-muted"}`}>{key === "all" ? "Todos" : key === "live" ? "Directo" : key === "scheduled" ? "Previstos" : key === "suspended" ? "Suspendidos" : "Finalizados"}</button>
             ))}
           </div>
           <p className="text-xs text-muted">{list.length} partidos · {overridesQ.data?.overrides.length ?? 0} cambios guardados</p>
@@ -170,7 +170,7 @@ function MatchEditor({ match, saved, onSaved }: { match: ResolvedMatch; saved?: 
       <div className="mt-3 grid gap-2 sm:grid-cols-6">
         <label className="text-xs text-muted">Local<input value={home} onChange={(e) => setHome(e.target.value)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm" /></label>
         <label className="text-xs text-muted">Visitante<input value={away} onChange={(e) => setAway(e.target.value)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm" /></label>
-        <label className="text-xs text-muted">Estado<select value={status} onChange={(e) => setStatus(e.target.value as MatchStatus)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm"><option value="scheduled">Previsto</option><option value="live">En directo</option><option value="finished">Finalizado</option></select></label>
+        <label className="text-xs text-muted">Estado<select value={status} onChange={(e) => setStatus(e.target.value as MatchStatus)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm"><option value="scheduled">Previsto</option><option value="live">En directo</option><option value="finished">Finalizado</option><option value="suspended">Suspendido</option></select></label>
         <label className="text-xs text-muted sm:col-span-2">Fecha y hora<input type="datetime-local" value={kickoff} onChange={(e) => setKickoff(e.target.value)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm" /></label>
         <label className="text-xs text-muted">Pabellón<input value={venue} onChange={(e) => setVenue(e.target.value)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm" /></label>
       </div>
