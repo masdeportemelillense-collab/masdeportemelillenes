@@ -178,7 +178,7 @@ function LiveRow({
         <div>
           <p className="text-[11px] uppercase tracking-wider text-muted">
             {match.competition || match.leagueId} · {match.sport}
-            {status === "live" ? " · EN DIRECTO" : status === "finished" ? " · FINAL" : ""}
+            {status === "live" ? " · EN DIRECTO" : status === "finished" ? " · FINAL" : status === "suspended" ? " · SUSPENDIDO" : ""}
           </p>
           <h2 className="mt-1 text-base font-medium">
             {match.homeName} — {match.awayName}
@@ -255,6 +255,9 @@ function LiveRow({
             Poner en directo
           </button>
         ) : (
+          <button type="button" disabled={save.isPending} onClick={() => persist({ status: "suspended", showClock: false })} className="h-10 rounded-md bg-loss px-3 text-sm font-medium text-bg">
+            Suspender
+          </button>
           <button type="button" disabled={save.isPending} onClick={() => persist({ status: "finished", minute: clock.minute })} className="h-10 rounded-md bg-accent px-3 text-sm font-medium text-bg">
             Finalizar partido
           </button>
