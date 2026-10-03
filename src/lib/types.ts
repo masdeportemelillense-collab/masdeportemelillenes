@@ -8,7 +8,7 @@ export type Sport =
 
 export type Gender = "m" | "f" | "mixto";
 
-export type MatchStatus = "scheduled" | "live" | "finished";
+export type MatchStatus = "scheduled" | "live" | "finished" | "suspended";
 
 export type EventKind =
   | "gol"
@@ -85,6 +85,7 @@ export type Match = {
   duration: number;
   periodLabel?: string;
   source?: "catalog" | "api";
+  status?: MatchStatus;
   externalId?: string;
   isCup?: boolean;
   competition?: string;
