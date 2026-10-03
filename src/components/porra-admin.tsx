@@ -4,8 +4,8 @@ import { porraAdminDeleteSlate, porraAdminList, porraAdminSaveSlate, porraAdminS
 import { nextFridayLockIso } from "@/lib/porra/time";
 import type { PorraAccountRow, PorraSlate, Quiniela } from "@/lib/porra/types";
 
-type DraftMatch = { id?: string; home: string; away: string; kickoff: string; result: "" | Quiniela; allowDraw: boolean };
-const emptyMatch = (): DraftMatch => ({ home: "", away: "", kickoff: "", result: "", allowDraw: true });
+type DraftMatch = { id?: string; home: string; away: string; kickoff: string; result: "" | Quiniela; allowDraw: boolean; suspended: boolean };
+const emptyMatch = (): DraftMatch => ({ home: "", away: "", kickoff: "", result: "", allowDraw: true, suspended: false });
 
 export function PorraAdmin() {
   const qc = useQueryClient();
@@ -32,8 +32,9 @@ export function PorraAdmin() {
             home: m.home,
             away: m.away,
             kickoff: m.kickoff || undefined,
-            result: m.allowDraw ? m.result || null : m.result === "X" ? null : m.result || null,
+            result: m.suspended ? null : m.allowDraw ? m.result || null : m.result === "X" ? null : m.result || null,
             allowDraw: m.allowDraw,
+            suspended: m.suspended,
           })),
         },
       }),
@@ -64,7 +65,7 @@ export function PorraAdmin() {
     setEditing(slate.id);
     setTitle(slate.title);
     setLockAt(slate.lockAt);
-    setMatches(slate.matches.map((m) => ({ id: m.id, home: m.home, away: m.away, kickoff: m.kickoff ?? "", result: m.result ?? "", allowDraw: m.allowDraw !== false })));
+    setMatches(slate.matches.map((m) => ({ id: m.id, home: m.home, away: m.away, kickoff: m.kickoff ?? "", result: m.suspended ? "" : m.result ?? "", allowDraw: m.allowDraw !== false, suspended: !!m.suspended })));
     setError("");
   }
 
@@ -104,6 +105,9 @@ export function PorraAdmin() {
                     <input type="checkbox" checked={!m.allowDraw} onChange={(e) => setMatches((rows) => rows.map((r, j) => (j === i ? { ...r, allowDraw: !e.target.checked, result: e.target.checked && r.result === "X" ? "" : r.result } : r)))} />
                     Sin empate
                   </label>
+                  <button type="button" onClick={() => setMatches((rows) => rows.map((r, j) => (j === i ? { ...r, suspended: !r.suspended, result: !r.suspended ? "" : r.result } : r)))} className={`h-10 rounded-md px-2 text-[11px] font-semibold ${m.suspended ? "bg-loss text-bg" : "bg-surface ring-1 ring-border"}`}>
+                    {m.suspended ? "Suspendido" : "Suspender"}
+                  </button>
                 </div>
                 <button type="button" onClick={() => setMatches((rows) => rows.filter((_, j) => j !== i))} className="h-10 rounded-md px-3 text-xs text-muted hover:text-loss">
                   Quitar
