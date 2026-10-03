@@ -28,7 +28,7 @@ export function scoreSlate(
   let correct = 0;
   let resolved = 0;
   for (const match of slate.matches) {
-    if (!match.result) continue;
+    if (match.suspended || !match.result) continue;
     resolved += 1;
     const hit = mine.find((p) => p.matchId === match.id);
     if (!hit) continue;
@@ -58,9 +58,10 @@ export function jornadaSummaries(users: PorraUser[], slates: PorraSlate[], picks
     .sort((a, b) => b.createdAt - a.createdAt)
     .map((slate) => {
       const board = leaderboard(users, [slate], picks);
-      const resolved = slate.matches.filter((m) => m.result === "1" || m.result === "X" || m.result === "2").length;
+      const resolved = slate.matches.filter((m) => !m.suspended && (m.result === "1" || m.result === "X" || m.result === "2")).length;
+      const settled = slate.matches.filter((m) => m.suspended || m.result === "1" || m.result === "X" || m.result === "2").length;
       const total = slate.matches.length;
-      const finished = total > 0 && resolved === total;
+      const finished = total > 0 && settled === total;
       const top = board[0]?.points ?? 0;
       const winners = finished ? board.filter((r) => r.points === top) : [];
       return {
