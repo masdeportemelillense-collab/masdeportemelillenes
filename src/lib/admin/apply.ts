@@ -58,10 +58,13 @@ export function applyAdminOverrides(
     const clock = status === "live" && clockOn && !onBreak ? clockFromOverride(hit, now) : null;
     const minute = clock?.minute ?? hit.minute ?? fromEvents?.minute ?? match.minute;
     const period =
-      hit.periodLabel || (status === "live" ? "En directo" : status === "finished" ? "Finalizado" : "Previsto");
+      status === "suspended"
+        ? "Suspendido"
+        : hit.periodLabel || (status === "live" ? "En directo" : status === "finished" ? "Finalizado" : "Previsto");
 
     let displayClock = match.displayClock;
-    if (status === "finished") displayClock = "Fin";
+    if (status === "suspended") displayClock = "SUS";
+    else if (status === "finished") displayClock = "Fin";
     else if (status === "live" && onBreak) displayClock = "Descanso";
     else if (status === "live" && clockOn) displayClock = clock?.display ?? (minute ? `${minute}'` : "LIVE");
     else if (status === "live") displayClock = hit.periodLabel || "LIVE";
