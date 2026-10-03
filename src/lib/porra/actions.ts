@@ -262,7 +262,7 @@ export const porraAdminSaveSlate = createServerFn({ method: "POST" })
       title: string;
       lockAt?: string;
       published?: boolean;
-      matches: Array<{ id?: string; home: string; away: string; kickoff?: string; result?: Quiniela | null; allowDraw?: boolean }>;
+      matches: Array<{ id?: string; home: string; away: string; kickoff?: string; result?: Quiniela | null; allowDraw?: boolean; suspended?: boolean }>;
     }) => d,
   )
   .handler(async ({ data }) => {
@@ -274,8 +274,9 @@ export const porraAdminSaveSlate = createServerFn({ method: "POST" })
       const matches: PorraMatch[] = (data.matches ?? [])
         .map((m) => {
           const allowDraw = m.allowDraw !== false;
-          const result = m.result === "1" || m.result === "2" || (allowDraw && m.result === "X") ? m.result : null;
-          return { id: m.id?.trim() || randomBytes(5).toString("hex"), home: String(m.home ?? "").trim(), away: String(m.away ?? "").trim(), kickoff: m.kickoff?.trim() || undefined, result, allowDraw };
+          const suspended = m.suspended === true;
+          const result = suspended ? null : m.result === "1" || m.result === "2" || (allowDraw && m.result === "X") ? m.result : null;
+          return { id: m.id?.trim() || randomBytes(5).toString("hex"), home: String(m.home ?? "").trim(), away: String(m.away ?? "").trim(), kickoff: m.kickoff?.trim() || undefined, result, allowDraw, suspended };
         })
         .filter((m) => m.home && m.away);
       if (!matches.length) return { ok: false as const, error: "Añade al menos un partido." };
