@@ -52,6 +52,11 @@ function StatusChip({ match }: { match: ResolvedMatch }) {
       </span>
     );
   }
+  if (match.status === "suspended") {
+    return (
+      <span className="text-[11px] font-medium uppercase tracking-wider text-loss">Suspendido</span>
+    );
+  }
   if (match.status === "finished") {
     return (
       <span className="text-[11px] font-medium uppercase tracking-wider text-muted">
@@ -133,7 +138,7 @@ export function MatchCard({
           badgeUrl={match.homeBadge}
         />
         <div className="w-16 shrink-0 text-center sm:w-[5.5rem]">
-          {match.status === "scheduled" ? (
+          {match.status === "scheduled" || match.status === "suspended" ? (
             <p className="font-display text-xl leading-none text-muted tabular-nums sm:text-2xl">
               {new Date(match.kickoff).toLocaleTimeString("es-ES", {
                 hour: "2-digit",
@@ -180,6 +185,8 @@ export function MatchRow({ match }: { match: ResolvedMatch }) {
             <span className="pulse-live size-1.5 rounded-full bg-live" />
             {match.displayClock}
           </span>
+        ) : match.status === "suspended" ? (
+          <span className="text-[11px] uppercase text-loss">SUS</span>
         ) : match.status === "finished" ? (
           <span className="text-[11px] uppercase text-muted">Fin</span>
         ) : (
