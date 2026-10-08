@@ -18,20 +18,18 @@ export function NoticeBoard({
       if (res.ok) onSaved(res.state);
     },
   });
-  if (!notices.length) return null;
+  if (!unread.length) return null;
   return (
     <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-display text-3xl leading-none">Avisos del ticket</h2>
-        {unread.length ? (
-          <button type="button" onClick={() => mark.mutate()} className="text-xs uppercase tracking-wider text-accent hover:underline">
-            Marcar leídos
-          </button>
-        ) : null}
+        <button type="button" onClick={() => mark.mutate()} className="text-xs uppercase tracking-wider text-accent hover:underline">
+          Marcar leídos
+        </button>
       </div>
       <ul className="mt-3 space-y-2">
-        {notices.slice(0, 8).map((n) => (
-          <li key={n.id} className={cn("rounded-xl bg-surface-2 px-3 py-2", !n.read && "ring-1 ring-accent/40")}>
+        {unread.slice(0, 8).map((n) => (
+          <li key={n.id} className="rounded-xl bg-surface-2 px-3 py-2 ring-1 ring-accent/40">
             <p className="text-xs uppercase tracking-wider text-muted">{n.title}</p>
             <p className="mt-1 whitespace-pre-line text-sm">{n.body}</p>
           </li>
