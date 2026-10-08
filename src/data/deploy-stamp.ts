@@ -1,1 +1,1 @@
-export const DEPLOY_STAMP = "2026-10-03T11-suspendido";
+export const DEPLOY_STAMP = "2026-10-08T13-puntos-avisos";
