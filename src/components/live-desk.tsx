@@ -233,7 +233,7 @@ function LiveRow({
           value={home}
           disabled={save.isPending}
           onMinus={() => persist({ homeScore: home - 1, awayScore: away, status: status === "scheduled" ? "live" : status })}
-          onPlus={() => persist({ homeScore: home + 1, awayScore: away, status: status === "scheduled" ? "live" : status })}
+          onPlus={(n) => persist({ homeScore: home + n, awayScore: away, status: status === "scheduled" ? "live" : status })}
         />
         <p className="font-display text-4xl tabular-nums text-live">
           {home}
@@ -245,7 +245,7 @@ function LiveRow({
           value={away}
           disabled={save.isPending}
           onMinus={() => persist({ homeScore: home, awayScore: away - 1, status: status === "scheduled" ? "live" : status })}
-          onPlus={() => persist({ homeScore: home, awayScore: away + 1, status: status === "scheduled" ? "live" : status })}
+          onPlus={(n) => persist({ homeScore: home, awayScore: away + n, status: status === "scheduled" ? "live" : status })}
         />
       </div>
 
@@ -284,20 +284,22 @@ function ScorePad({
 }: {
   label: string;
   value: number;
-  onPlus: () => void;
+  onPlus: (n: number) => void;
   onMinus: () => void;
   disabled?: boolean;
 }) {
   return (
     <div className="flex min-w-[7.5rem] flex-col items-center gap-2">
       <p className="max-w-[9rem] truncate text-center text-xs text-muted">{label}</p>
-      <div className="flex items-center gap-2">
-        <button type="button" disabled={disabled || value <= 0} onClick={onMinus} className="size-10 rounded-md bg-surface-2 text-lg text-fg disabled:opacity-40">
+      <div className="flex items-center gap-1">
+        <button type="button" disabled={disabled || value <= 0} onClick={onMinus} className="h-10 min-w-10 rounded-md bg-surface-2 px-2 text-sm text-fg disabled:opacity-40">
           −1
         </button>
-        <button type="button" disabled={disabled} onClick={onPlus} className="size-10 rounded-md bg-accent text-lg font-medium text-bg disabled:opacity-40">
-          +1
-        </button>
+        {[1, 2, 3].map((n) => (
+          <button key={n} type="button" disabled={disabled} onClick={() => onPlus(n)} className="h-10 min-w-10 rounded-md bg-accent px-2 text-sm font-medium text-bg disabled:opacity-40">
+            +{n}
+          </button>
+        ))}
       </div>
     </div>
   );
