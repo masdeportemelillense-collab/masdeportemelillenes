@@ -75,7 +75,7 @@ function MatchPage() {
             team={home}
             badgeUrl={match.homeBadge}
           />
-          <div className="min-w-[7rem]">
+          <div className="shrink-0 whitespace-nowrap px-1 text-center">
             {match.status === "suspended" ? (
               <p className="font-display text-2xl font-semibold uppercase leading-none text-loss sm:text-3xl">Suspendido</p>
             ) : match.status === "scheduled" ? (
@@ -83,7 +83,7 @@ function MatchPage() {
             ) : (
               <p
                 className={cn(
-                  "font-display text-6xl leading-none tabular-nums sm:text-7xl",
+                  "whitespace-nowrap font-display text-4xl leading-none tabular-nums sm:text-6xl",
                   match.status === "live" && "text-live",
                 )}
               >
