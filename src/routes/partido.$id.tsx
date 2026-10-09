@@ -171,7 +171,7 @@ function TeamBlock({
       ) : (
         <OpponentMark short={short} name={name} size={56} badgeUrl={badgeUrl} />
       )}
-      <p className="mt-2 max-w-[8rem] text-sm font-medium sm:max-w-none">{name}</p>
+      <p className="mt-2 text-sm font-medium leading-snug [overflow-wrap:anywhere]">{name}</p>
     </>
   );
   if (!id) return <div className="flex min-w-0 flex-1 flex-col items-center">{inner}</div>;
