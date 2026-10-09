@@ -129,7 +129,7 @@ export function MatchCard({
           <StatusChip match={match} />
         </div>
       </div>
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex flex-nowrap items-center gap-2 sm:gap-3">
         <Side
           id={match.homeId}
           name={match.homeName}
@@ -137,11 +137,11 @@ export function MatchCard({
           align="left"
           badgeUrl={match.homeBadge}
         />
-        <div className="w-14 shrink-0 text-center sm:w-[5.5rem]">
+        <div className="shrink-0 whitespace-nowrap px-1 text-center">
           {match.status === "suspended" ? (
-            <p className="font-display text-sm font-semibold uppercase leading-none text-loss sm:text-base">Suspendido</p>
+            <p className="whitespace-nowrap font-display text-sm font-semibold uppercase leading-none text-loss sm:text-base">Suspendido</p>
           ) : match.status === "scheduled" ? (
-            <p className="font-display text-xl leading-none text-muted tabular-nums sm:text-2xl">
+            <p className="whitespace-nowrap font-display text-xl leading-none text-muted tabular-nums sm:text-2xl">
               {new Date(match.kickoff).toLocaleTimeString("es-ES", {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -151,7 +151,7 @@ export function MatchCard({
           ) : (
             <p
               className={cn(
-                "font-display text-[1.65rem] leading-none tabular-nums sm:text-[2rem]",
+                "whitespace-nowrap font-display text-[1.35rem] leading-none tabular-nums sm:text-[2rem]",
                 match.status === "live" && "text-live",
               )}
             >
