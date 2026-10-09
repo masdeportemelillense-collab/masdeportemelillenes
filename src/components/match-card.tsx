@@ -36,8 +36,8 @@ function Side({
         <OpponentMark short={short} name={name} size={36} badgeUrl={badgeUrl} />
       )}
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-fg">{name}</p>
-        <p className="truncate text-xs text-muted">{short}</p>
+        <p className="text-sm font-medium leading-snug text-fg [overflow-wrap:anywhere]">{name}</p>
+        <p className="hidden text-xs text-muted sm:block">{short}</p>
       </div>
     </div>
   );
@@ -115,10 +115,10 @@ export function MatchCard({
       params={{ id: match.id }}
       className="block rounded-xl bg-surface p-3.5 shadow-[var(--shadow-border)] transition-[background-color,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-surface-2"
     >
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2 text-muted">
           <SportMark sport={match.sport} />
-          <span className="truncate text-xs">
+          <span className="text-xs leading-snug [overflow-wrap:anywhere]">
             {sportLabel[match.sport]} · {competitionLine(match)}
           </span>
         </div>
@@ -129,7 +129,7 @@ export function MatchCard({
           <StatusChip match={match} />
         </div>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <Side
           id={match.homeId}
           name={match.homeName}
@@ -137,7 +137,7 @@ export function MatchCard({
           align="left"
           badgeUrl={match.homeBadge}
         />
-        <div className="w-16 shrink-0 text-center sm:w-[5.5rem]">
+        <div className="w-full shrink-0 text-center sm:w-[5.5rem]">
           {match.status === "suspended" ? (
             <p className="font-display text-sm font-semibold uppercase leading-none text-loss sm:text-base">Suspendido</p>
           ) : match.status === "scheduled" ? (
@@ -175,7 +175,7 @@ export function MatchCard({
           badgeUrl={match.awayBadge}
         />
       </div>
-      <p className="mt-3 truncate text-xs text-subtle">{match.venue}</p>
+      <p className="mt-3 text-xs leading-snug text-subtle [overflow-wrap:anywhere]">{match.venue}</p>
     </Link>
   );
 }
@@ -207,7 +207,7 @@ export function MatchRow({ match }: { match: ResolvedMatch }) {
           </span>
         )}
       </div>
-      <p className="min-w-0 flex-1 truncate text-sm">
+      <p className="min-w-0 flex-1 text-sm leading-snug [overflow-wrap:anywhere]">
         {match.homeName} <span className="text-muted">–</span> {match.awayName}
       </p>
       <p className="font-display text-lg leading-none tabular-nums">
