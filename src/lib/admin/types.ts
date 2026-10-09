@@ -20,6 +20,11 @@ export type AdminOverride = {
   clockBaseMinute?: number;
   note?: string;
   events?: MatchEvent[];
+  /** Voleibol: puntos del set en juego. */
+  pointHome?: number;
+  pointAway?: number;
+  /** Voleibol: marcador de cada set cerrado. */
+  setScores?: { home: number; away: number }[];
   deleted?: boolean;
   updatedAt: number;
 };
