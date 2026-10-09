@@ -227,27 +227,49 @@ function LiveRow({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
-        <ScorePad
-          label={match.homeShort || match.homeName}
-          value={home}
+      {match.sport === "voleibol" ? (
+        <VolleyBoard
+          homeName={match.homeShort || match.homeName}
+          awayName={match.awayShort || match.awayName}
+          sets={saved?.setScores ?? []}
+          pointHome={saved?.pointHome ?? 0}
+          pointAway={saved?.pointAway ?? 0}
           disabled={save.isPending}
-          onMinus={() => persist({ homeScore: home - 1, awayScore: away, status: status === "scheduled" ? "live" : status })}
-          onPlus={(n) => persist({ homeScore: home + n, awayScore: away, status: status === "scheduled" ? "live" : status })}
+          onChange={(next) =>
+            persist({
+              status: status === "scheduled" ? "live" : status,
+              homeScore: next.sets.filter((s) => s.home > s.away).length,
+              awayScore: next.sets.filter((s) => s.away > s.home).length,
+              setScores: next.sets,
+              pointHome: next.pointHome,
+              pointAway: next.pointAway,
+              periodLabel: next.periodLabel,
+            })
+          }
         />
-        <p className="font-display text-4xl tabular-nums text-live">
-          {home}
-          <span className="mx-1 text-muted">–</span>
-          {away}
-        </p>
-        <ScorePad
-          label={match.awayShort || match.awayName}
-          value={away}
-          disabled={save.isPending}
-          onMinus={() => persist({ homeScore: home, awayScore: away - 1, status: status === "scheduled" ? "live" : status })}
-          onPlus={(n) => persist({ homeScore: home, awayScore: away + n, status: status === "scheduled" ? "live" : status })}
-        />
-      </div>
+      ) : (
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
+          <ScorePad
+            label={match.homeShort || match.homeName}
+            value={home}
+            disabled={save.isPending}
+            onMinus={() => persist({ homeScore: home - 1, awayScore: away, status: status === "scheduled" ? "live" : status })}
+            onPlus={(n) => persist({ homeScore: home + n, awayScore: away, status: status === "scheduled" ? "live" : status })}
+          />
+          <p className="font-display text-4xl tabular-nums text-live">
+            {home}
+            <span className="mx-1 text-muted">–</span>
+            {away}
+          </p>
+          <ScorePad
+            label={match.awayShort || match.awayName}
+            value={away}
+            disabled={save.isPending}
+            onMinus={() => persist({ homeScore: home, awayScore: away - 1, status: status === "scheduled" ? "live" : status })}
+            onPlus={(n) => persist({ homeScore: home, awayScore: away + n, status: status === "scheduled" ? "live" : status })}
+          />
+        </div>
+      )}
 
       <div className="mt-4 flex flex-wrap gap-2">
         {status !== "live" ? (
@@ -272,6 +294,79 @@ function LiveRow({
         {save.isPending ? <span className="self-center text-xs text-muted">Actualizando…</span> : null}
       </div>
     </article>
+  );
+}
+
+
+const SET_LABELS = ["1er Set", "2º Set", "3er Set", "4º Set", "5º Set"];
+
+function VolleyBoard({
+  homeName,
+  awayName,
+  sets,
+  pointHome,
+  pointAway,
+  disabled,
+  onChange,
+}: {
+  homeName: string;
+  awayName: string;
+  sets: { home: number; away: number }[];
+  pointHome: number;
+  pointAway: number;
+  disabled?: boolean;
+  onChange: (next: { sets: { home: number; away: number }[]; pointHome: number; pointAway: number; periodLabel: string }) => void;
+}) {
+  const setsHome = sets.filter((s) => s.home > s.away).length;
+  const setsAway = sets.filter((s) => s.away > s.home).length;
+  const periodLabel = SET_LABELS[Math.min(sets.length, 4)] ?? "5º Set";
+  function push(side: "home" | "away", delta: number) {
+    const nextHome = Math.max(0, pointHome + (side === "home" ? delta : 0));
+    const nextAway = Math.max(0, pointAway + (side === "away" ? delta : 0));
+    onChange({ sets, pointHome: nextHome, pointAway: nextAway, periodLabel });
+  }
+  function closeSet() {
+    if (pointHome === pointAway) return;
+    onChange({
+      sets: [...sets, { home: pointHome, away: pointAway }],
+      pointHome: 0,
+      pointAway: 0,
+      periodLabel: SET_LABELS[Math.min(sets.length + 1, 4)] ?? "5º Set",
+    });
+  }
+  function undoSet() {
+    if (!sets.length) return;
+    const last = sets[sets.length - 1];
+    onChange({ sets: sets.slice(0, -1), pointHome: last.home, pointAway: last.away, periodLabel: SET_LABELS[Math.min(sets.length - 1, 4)] ?? "1er Set" });
+  }
+  return (
+    <div className="mt-4 space-y-3">
+      <p className="text-center text-xs uppercase tracking-wider text-muted">Sets {setsHome}–{setsAway} · {periodLabel}</p>
+      <div className="flex flex-wrap items-center justify-center gap-4">
+        <div className="flex flex-col items-center gap-1">
+          <p className="max-w-[8rem] truncate text-xs text-muted">{homeName}</p>
+          <div className="flex gap-1">
+            <button type="button" disabled={disabled || pointHome <= 0} onClick={() => push("home", -1)} className="h-10 min-w-10 rounded-md bg-surface-2 text-sm">−1</button>
+            <button type="button" disabled={disabled} onClick={() => push("home", 1)} className="h-10 min-w-10 rounded-md bg-accent text-sm font-medium text-bg">+1</button>
+          </div>
+        </div>
+        <p className="font-display text-4xl tabular-nums text-live">{pointHome}<span className="mx-1 text-muted">–</span>{pointAway}</p>
+        <div className="flex flex-col items-center gap-1">
+          <p className="max-w-[8rem] truncate text-xs text-muted">{awayName}</p>
+          <div className="flex gap-1">
+            <button type="button" disabled={disabled || pointAway <= 0} onClick={() => push("away", -1)} className="h-10 min-w-10 rounded-md bg-surface-2 text-sm">−1</button>
+            <button type="button" disabled={disabled} onClick={() => push("away", 1)} className="h-10 min-w-10 rounded-md bg-accent text-sm font-medium text-bg">+1</button>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-wrap justify-center gap-2">
+        <button type="button" disabled={disabled || pointHome === pointAway} onClick={closeSet} className="h-9 rounded-md bg-surface-2 px-3 text-xs">Cerrar set</button>
+        <button type="button" disabled={disabled || sets.length === 0} onClick={undoSet} className="h-9 rounded-md px-3 text-xs text-muted">Deshacer set</button>
+      </div>
+      {sets.length ? (
+        <p className="text-center text-xs text-muted">Sets cerrados: {sets.map((s) => `${s.home}-${s.away}`).join(" · ")}</p>
+      ) : null}
+    </div>
   );
 }
 
