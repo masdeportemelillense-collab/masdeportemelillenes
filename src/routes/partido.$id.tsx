@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { AdminBadgeEditor } from "@/components/admin-badge";
 import { Crest, OpponentMark } from "@/components/crest";
 import { Group9Board } from "@/components/group9-board";
 import { MatchComments } from "@/components/match-comments";
@@ -68,25 +69,14 @@ function MatchPage() {
         )}
 
         <div className="flex items-center justify-between gap-3">
-          <TeamBlock
-            id={match.homeId}
-            name={match.homeName}
-            short={match.homeShort}
-            team={home}
-            badgeUrl={match.homeBadge}
-          />
+          <TeamBlock id={match.homeId} name={match.homeName} short={match.homeShort} team={home} badgeUrl={match.homeBadge} />
           <div className="shrink-0 whitespace-nowrap px-1 text-center">
             {match.status === "suspended" ? (
               <p className="font-display text-2xl font-semibold uppercase leading-none text-loss sm:text-3xl">Suspendido</p>
             ) : match.status === "scheduled" ? (
               <p className="font-display text-5xl leading-none text-muted">vs</p>
             ) : (
-              <p
-                className={cn(
-                  "whitespace-nowrap font-display text-4xl leading-none tabular-nums sm:text-6xl",
-                  match.status === "live" && "text-live",
-                )}
-              >
+              <p className={cn("whitespace-nowrap font-display text-4xl leading-none tabular-nums sm:text-6xl", match.status === "live" && "text-live")}>
                 {match.homeScore}
                 <span className="mx-1 text-3xl text-muted">–</span>
                 {match.awayScore}
@@ -101,21 +91,15 @@ function MatchPage() {
               </p>
             ) : null}
           </div>
-          <TeamBlock
-            id={match.awayId}
-            name={match.awayName}
-            short={match.awayShort}
-            team={away}
-            badgeUrl={match.awayBadge}
-          />
+          <TeamBlock id={match.awayId} name={match.awayName} short={match.awayShort} team={away} badgeUrl={match.awayBadge} />
         </div>
         <p className="mt-6 text-xs text-subtle">{match.venue}</p>
         {match.source === "api" && (
-          <p className="mt-2 text-[11px] uppercase tracking-wider text-accent">
-            Actualización automática · TheSportsDB
-          </p>
+          <p className="mt-2 text-[11px] uppercase tracking-wider text-accent">Actualización automática · TheSportsDB</p>
         )}
       </section>
+
+      <AdminBadgeEditor match={match} />
 
       <section>
         <h2 className="mb-3 font-display text-3xl leading-none">Cronología</h2>
@@ -139,9 +123,7 @@ function MatchPage() {
       {isUdMelilla(match) ? <Group9Board /> : null}
       <MatchComments matchId={match.id} />
 
-      {league && (
-        <p className="text-xs text-subtle">{league.name}</p>
-      )}
+      {league && <p className="text-xs text-subtle">{league.name}</p>}
     </div>
   );
 }
@@ -167,7 +149,7 @@ function TeamBlock({
   const inner = (
     <>
       {team ? (
-        <Crest team={team} size={56} />
+        <Crest team={{ ...team, badgeUrl }} size={56} />
       ) : (
         <OpponentMark short={short} name={name} size={56} badgeUrl={badgeUrl} />
       )}
@@ -176,11 +158,7 @@ function TeamBlock({
   );
   if (!id) return <div className="flex min-w-0 flex-1 flex-col items-center">{inner}</div>;
   return (
-    <Link
-      to="/equipo/$slug"
-      params={{ slug: id }}
-      className="flex min-w-0 flex-1 flex-col items-center hover:text-accent"
-    >
+    <Link to="/equipo/$slug" params={{ slug: id }} className="flex min-w-0 flex-1 flex-col items-center hover:text-accent">
       {inner}
     </Link>
   );
@@ -201,23 +179,12 @@ function EventRow({ event, match }: { event: MatchEvent; match: ResolvedMatch })
   return (
     <li className="flex items-center gap-3 rounded-lg px-3 py-2.5">
       <span className="w-10 text-right text-xs tabular-nums text-muted">{event.minute}'</span>
-      <Badge
-        variant={
-          event.kind === "gol" || event.kind === "set" || event.kind === "punto"
-            ? "accent"
-            : event.kind === "roja"
-              ? "loss"
-              : "default"
-        }
-      >
+      <Badge variant={event.kind === "gol" || event.kind === "set" || event.kind === "punto" ? "accent" : event.kind === "roja" ? "loss" : "default"}>
         {kindLabel[event.kind] ?? event.kind}
       </Badge>
       <span className="min-w-0 flex-1 truncate text-sm">
         {event.player}
-        <span className="text-muted">
-          {" "}
-          · {isHome ? match.homeShort : match.awayShort}
-        </span>
+        <span className="text-muted"> · {isHome ? match.homeShort : match.awayShort}</span>
       </span>
       <span className="font-display text-lg leading-none tabular-nums">
         {event.homeScore}–{event.awayScore}
