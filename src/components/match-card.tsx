@@ -31,7 +31,7 @@ function Side({
       )}
     >
       {team ? (
-        <Crest team={team} size={36} />
+        <Crest team={{ ...team, badgeUrl }} size={36} />
       ) : (
         <OpponentMark short={short} name={name} size={36} badgeUrl={badgeUrl} />
       )}
@@ -130,31 +130,16 @@ export function MatchCard({
         </div>
       </div>
       <div className="flex flex-nowrap items-center gap-2 sm:gap-3">
-        <Side
-          id={match.homeId}
-          name={match.homeName}
-          short={match.homeShort}
-          align="left"
-          badgeUrl={match.homeBadge}
-        />
+        <Side id={match.homeId} name={match.homeName} short={match.homeShort} align="left" badgeUrl={match.homeBadge} />
         <div className="shrink-0 whitespace-nowrap px-1 text-center">
           {match.status === "suspended" ? (
             <p className="whitespace-nowrap font-display text-sm font-semibold uppercase leading-none text-loss sm:text-base">Suspendido</p>
           ) : match.status === "scheduled" ? (
             <p className="whitespace-nowrap font-display text-xl leading-none text-muted tabular-nums sm:text-2xl">
-              {new Date(match.kickoff).toLocaleTimeString("es-ES", {
-                hour: "2-digit",
-                minute: "2-digit",
-                timeZone: "Europe/Madrid",
-              })}
+              {new Date(match.kickoff).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" })}
             </p>
           ) : (
-            <p
-              className={cn(
-                "whitespace-nowrap font-display text-[1.35rem] leading-none tabular-nums sm:text-[2rem]",
-                match.status === "live" && "text-live",
-              )}
-            >
+            <p className={cn("whitespace-nowrap font-display text-[1.35rem] leading-none tabular-nums sm:text-[2rem]", match.status === "live" && "text-live")}>
               {match.homeScore}
               <span className="mx-1 text-muted">–</span>
               {match.awayScore}
@@ -167,13 +152,7 @@ export function MatchCard({
             </p>
           ) : null}
         </div>
-        <Side
-          id={match.awayId}
-          name={match.awayName}
-          short={match.awayShort}
-          align="right"
-          badgeUrl={match.awayBadge}
-        />
+        <Side id={match.awayId} name={match.awayName} short={match.awayShort} align="right" badgeUrl={match.awayBadge} />
       </div>
       <p className="mt-3 text-xs leading-snug text-subtle [overflow-wrap:anywhere]">{match.venue}</p>
     </Link>
@@ -182,11 +161,7 @@ export function MatchCard({
 
 export function MatchRow({ match }: { match: ResolvedMatch }) {
   return (
-    <Link
-      to="/partido/$id"
-      params={{ id: match.id }}
-      className="flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-surface-2"
-    >
+    <Link to="/partido/$id" params={{ id: match.id }} className="flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-surface-2">
       <div className="w-16 shrink-0">
         {match.status === "live" ? (
           <span className="inline-flex items-center gap-1 text-[11px] font-medium uppercase text-live">
@@ -199,11 +174,7 @@ export function MatchRow({ match }: { match: ResolvedMatch }) {
           <span className="text-[11px] uppercase text-muted">Fin</span>
         ) : (
           <span className="text-[11px] tabular-nums text-muted">
-            {new Date(match.kickoff).toLocaleTimeString("es-ES", {
-              hour: "2-digit",
-              minute: "2-digit",
-              timeZone: "Europe/Madrid",
-            })}
+            {new Date(match.kickoff).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" })}
           </span>
         )}
       </div>
