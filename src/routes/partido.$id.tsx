@@ -1,5 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Crest, OpponentMark } from "@/components/crest";
+import { Group9Board } from "@/components/group9-board";
+import { MatchComments } from "@/components/match-comments";
 import { competitionLine, formatKickoff } from "@/components/match-card";
 import { SportMark } from "@/components/sport-mark";
 import { Badge } from "@/components/ui/badge";
@@ -134,11 +136,19 @@ function MatchPage() {
         )}
       </section>
 
+      {isUdMelilla(match) ? <Group9Board /> : null}
+      <MatchComments matchId={match.id} />
+
       {league && (
         <p className="text-xs text-subtle">{league.name}</p>
       )}
     </div>
   );
+}
+
+function isUdMelilla(match: ResolvedMatch): boolean {
+  if (match.homeId === "ud-melilla" || match.awayId === "ud-melilla") return true;
+  return /u\.?d\.?\s*melilla/i.test(`${match.homeName} ${match.awayName}`);
 }
 
 function TeamBlock({
