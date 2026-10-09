@@ -69,6 +69,13 @@ export function applyAdminOverrides(
     else if (status === "live" && clockOn) displayClock = clock?.display ?? (minute ? `${minute}'` : "LIVE");
     else if (status === "live") displayClock = hit.periodLabel || "LIVE";
 
+    const setScores = hit.setScores;
+    const pointHome = hit.pointHome;
+    const pointAway = hit.pointAway;
+    if (setScores?.length || pointHome != null || pointAway != null) {
+      if (status === "live") displayClock = `${pointHome ?? 0}-${pointAway ?? 0}`;
+      else if (status === "finished" && setScores?.length) displayClock = setScores.map((s) => `${s.home}-${s.away}`).join(" · ");
+    }
     out.push({
       ...match,
       homeName: hit.homeName || match.homeName,
@@ -86,6 +93,9 @@ export function applyAdminOverrides(
       events,
       happened: events,
       source: match.source ?? "catalog",
+      pointHome,
+      pointAway,
+      setScores,
     });
   }
 
