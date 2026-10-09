@@ -90,6 +90,14 @@ function MatchPage() {
                 {match.awayScore}
               </p>
             )}
+            {match.setScores?.length || match.pointHome != null ? (
+              <p className="mt-3 text-sm text-muted">
+                {(match.setScores ?? []).map((s, i) => (
+                  <span key={i} className="mx-1 tabular-nums">{s.home}-{s.away}</span>
+                ))}
+                {match.status === "live" ? <span className="mx-1 font-medium text-live">{match.pointHome ?? 0}-{match.pointAway ?? 0}</span> : null}
+              </p>
+            ) : null}
           </div>
           <TeamBlock
             id={match.awayId}
