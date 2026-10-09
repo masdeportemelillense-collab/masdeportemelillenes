@@ -29,6 +29,8 @@ export type ApiEvent = {
   duration: number;
 };
 
+export type BadgeOverride = { key: string; badgeUrl: string };
+
 export type LiveSnapshot = {
   fetchedAt: number;
   ok: boolean;
@@ -38,4 +40,5 @@ export type LiveSnapshot = {
   overrides?: AdminOverride[];
   catalogTeams?: CatalogTeam[];
   catalogMatches?: CatalogMatch[];
+  badgeOverrides?: BadgeOverride[];
 };
