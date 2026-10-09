@@ -160,6 +160,12 @@ export function MatchCard({
               {match.awayScore}
             </p>
           )}
+          {match.setScores?.length || match.pointHome != null ? (
+            <p className="mt-1 text-[10px] leading-tight text-muted">
+              {(match.setScores ?? []).map((s) => `${s.home}-${s.away}`).join(" · ")}
+              {match.status === "live" ? `${match.setScores?.length ? " · " : ""}${match.pointHome ?? 0}-${match.pointAway ?? 0}` : ""}
+            </p>
+          ) : null}
         </div>
         <Side
           id={match.awayId}
