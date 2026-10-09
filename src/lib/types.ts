@@ -114,4 +114,7 @@ export type ResolvedMatch = Match & {
   displayClock: string;
   happened: MatchEvent[];
   period: string;
+  pointHome?: number;
+  pointAway?: number;
+  setScores?: { home: number; away: number }[];
 };
