@@ -36,7 +36,7 @@ function Side({
         <OpponentMark short={short} name={name} size={36} badgeUrl={badgeUrl} />
       )}
       <div className="min-w-0">
-        <p className="text-sm font-medium leading-snug text-fg [overflow-wrap:anywhere]">{name}</p>
+        <p className="text-[13px] font-medium leading-tight text-fg [overflow-wrap:anywhere] sm:text-sm">{name}</p>
         <p className="hidden text-xs text-muted sm:block">{short}</p>
       </div>
     </div>
@@ -129,7 +129,7 @@ export function MatchCard({
           <StatusChip match={match} />
         </div>
       </div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <Side
           id={match.homeId}
           name={match.homeName}
@@ -137,7 +137,7 @@ export function MatchCard({
           align="left"
           badgeUrl={match.homeBadge}
         />
-        <div className="w-full shrink-0 text-center sm:w-[5.5rem]">
+        <div className="w-14 shrink-0 text-center sm:w-[5.5rem]">
           {match.status === "suspended" ? (
             <p className="font-display text-sm font-semibold uppercase leading-none text-loss sm:text-base">Suspendido</p>
           ) : match.status === "scheduled" ? (
