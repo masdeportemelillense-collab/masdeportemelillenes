@@ -56,7 +56,7 @@ function makeFeed(
   extra: { isFetching: boolean; updatedAt: number },
 ): Feed {
   const all = buildResolvedFeed(now, snapshot);
-  const roster = mergeRoster(snapshot.catalogTeams);
+  const roster = mergeRoster(snapshot.catalogTeams, snapshot.badgeOverrides);
   const byId = Object.fromEntries(all.map((m) => [m.id, m])) as Record<string, ResolvedMatch>;
   return {
     now,
