@@ -30,6 +30,7 @@ export type ApiEvent = {
 };
 
 export type BadgeOverride = { key: string; badgeUrl: string };
+export type NameOverride = { key: string; name: string };
 
 export type LiveSnapshot = {
   fetchedAt: number;
@@ -41,4 +42,5 @@ export type LiveSnapshot = {
   catalogTeams?: CatalogTeam[];
   catalogMatches?: CatalogMatch[];
   badgeOverrides?: BadgeOverride[];
+  nameOverrides?: NameOverride[];
 };
