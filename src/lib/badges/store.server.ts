@@ -20,9 +20,13 @@ export async function listBadgeOverrides(): Promise<BadgeOverride[]> {
   return readDoc<BadgeOverride[]>(KEY, []);
 }
 
-export async function setBadgeOverride(teamId: string | undefined, name: string, badgeUrl: string): Promise<void> {
+export async function setBadgeOverride(
+  teamId: string | undefined,
+  names: string[],
+  badgeUrl: string,
+): Promise<void> {
   const url = badgeUrl.trim();
-  const keys = [badgeNameKey(name)];
+  const keys = [...new Set(names.filter(Boolean).map(badgeNameKey))];
   if (teamId) keys.push(badgeIdKey(teamId));
   await updateDoc<BadgeOverride[]>(KEY, [], (rows) => {
     const next = rows.filter((row) => !keys.includes(row.key));
