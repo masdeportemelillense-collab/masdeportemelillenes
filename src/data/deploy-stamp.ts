@@ -1,1 +1,1 @@
-export const DEPLOY_STAMP = "2026-10-10T01-escudos-admin";
+export const DEPLOY_STAMP = "2026-10-10T17-nombres-admin";
