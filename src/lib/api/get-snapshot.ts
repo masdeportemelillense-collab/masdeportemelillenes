@@ -8,7 +8,7 @@ export const getLiveSnapshot = createServerFn({ method: "GET" }).handler(
     try {
       const { listOverrides } = await import("@/lib/admin/store.server");
       const { getCatalog } = await import("@/lib/catalog/store.server");
-      const { listBadgeOverrides } = await import("@/lib/badges/store.server");
+      const { listBadgeOverrides, listNameOverrides } = await import("@/lib/badges/store.server");
       const catalog = await getCatalog();
       return {
         ...snap,
@@ -16,6 +16,7 @@ export const getLiveSnapshot = createServerFn({ method: "GET" }).handler(
         catalogTeams: catalog.teams,
         catalogMatches: catalog.matches,
         badgeOverrides: await listBadgeOverrides(),
+        nameOverrides: await listNameOverrides(),
       };
     } catch {
       return snap;
