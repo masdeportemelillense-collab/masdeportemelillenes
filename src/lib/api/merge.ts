@@ -20,7 +20,16 @@ function badgePick(id: string | undefined, name: string | undefined, map: Map<st
   return map.get(key);
 }
 
-export function mergeRoster(extra?: CatalogTeam[], badgeOverrides?: { key: string; badgeUrl: string }[]): Team[] {
+function shortOf(name: string): string {
+  const clean = name.trim();
+  return clean.length > 16 ? `${clean.slice(0, 14)}…` : clean;
+}
+
+export function mergeRoster(
+  extra?: CatalogTeam[],
+  badgeOverrides?: { key: string; badgeUrl: string }[],
+  nameOverrides?: { key: string; name: string }[],
+): Team[] {
   const map = new Map<string, Team>();
   for (const t of staticTeams) map.set(t.id, t);
   for (const t of extra ?? []) {
@@ -32,9 +41,15 @@ export function mergeRoster(extra?: CatalogTeam[], badgeOverrides?: { key: strin
     map.set(t.id, { ...(prev ?? t), ...t });
   }
   const badges = new Map((badgeOverrides ?? []).map((b) => [b.key, b.badgeUrl]));
+  const names = new Map((nameOverrides ?? []).map((n) => [n.key, n.name]));
   return [...map.values()].map((t) => {
     const url = badgePick(t.id, t.name, badges);
-    return url ? { ...t, badgeUrl: url } : t;
+    const renamed = badgePick(t.id, t.name, names);
+    return {
+      ...t,
+      ...(url ? { badgeUrl: url } : {}),
+      ...(renamed ? { name: renamed, short: shortOf(renamed) } : {}),
+    };
   });
 }
 
@@ -182,13 +197,18 @@ export function buildResolvedFeed(now: number, snapshot?: LiveSnapshot | null): 
   }
 
   const badgeMap = new Map((snapshot?.badgeOverrides ?? []).map((b) => [b.key, b.badgeUrl]));
-  const stamped = badgeMap.size
-    ? out.map((match) => ({
-        ...match,
-        homeBadge: badgePick(match.homeId, match.homeName, badgeMap) || match.homeBadge,
-        awayBadge: badgePick(match.awayId, match.awayName, badgeMap) || match.awayBadge,
-      }))
-    : out;
+  const nameMap = new Map((snapshot?.nameOverrides ?? []).map((n) => [n.key, n.name]));
+  const stamped = out.map((match) => {
+    const homeName = badgePick(match.homeId, match.homeName, nameMap);
+    const awayName = badgePick(match.awayId, match.awayName, nameMap);
+    return {
+      ...match,
+      homeBadge: badgePick(match.homeId, match.homeName, badgeMap) || match.homeBadge,
+      awayBadge: badgePick(match.awayId, match.awayName, badgeMap) || match.awayBadge,
+      ...(homeName ? { homeName, homeShort: shortOf(homeName) } : {}),
+      ...(awayName ? { awayName, awayShort: shortOf(awayName) } : {}),
+    };
+  });
   return applyAdminOverrides(stamped, snapshot?.overrides);
 }
 
