@@ -120,7 +120,7 @@ function MatchPage() {
         )}
       </section>
 
-      {isUdMelilla(match) ? <Group9Board /> : null}
+      {isUdMelilla(match) ? <Group9Board jornada={match.jornada} /> : null}
       <MatchComments matchId={match.id} />
 
       {league && <p className="text-xs text-subtle">{league.name}</p>}
