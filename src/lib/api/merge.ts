@@ -10,14 +10,17 @@ import type { CatalogTeam } from "@/lib/catalog/types";
 
 const MATCH_WINDOW_MS = 36 * 60 * 60 * 1000;
 
-function badgePick(id: string | undefined, name: string | undefined, map: Map<string, string>): string | undefined {
-  if (id && map.get(`id:${id}`)) return map.get(`id:${id}`);
-  const key = `name:${(name ?? "")
+function nameKey(name: string | undefined): string {
+  return `name:${(name ?? "")
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "")}`;
-  return map.get(key);
+}
+
+function badgePick(id: string | undefined, name: string | undefined, map: Map<string, string>, alias?: string): string | undefined {
+  if (id && map.get(`id:${id}`)) return map.get(`id:${id}`);
+  return map.get(nameKey(name)) || (alias ? map.get(nameKey(alias)) : undefined);
 }
 
 function shortOf(name: string): string {
@@ -203,8 +206,8 @@ export function buildResolvedFeed(now: number, snapshot?: LiveSnapshot | null): 
     const awayName = badgePick(match.awayId, match.awayName, nameMap);
     return {
       ...match,
-      homeBadge: badgePick(match.homeId, match.homeName, badgeMap) || match.homeBadge,
-      awayBadge: badgePick(match.awayId, match.awayName, badgeMap) || match.awayBadge,
+      homeBadge: badgePick(match.homeId, match.homeName, badgeMap, homeName) || match.homeBadge,
+      awayBadge: badgePick(match.awayId, match.awayName, badgeMap, awayName) || match.awayBadge,
       ...(homeName ? { homeName, homeShort: shortOf(homeName) } : {}),
       ...(awayName ? { awayName, awayShort: shortOf(awayName) } : {}),
     };
