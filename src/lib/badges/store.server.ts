@@ -32,3 +32,24 @@ export async function setBadgeOverride(teamId: string | undefined, name: string,
     return next;
   });
 }
+
+export type NameOverride = { key: string; name: string };
+
+const NAME_KEY = "name-overrides";
+
+export async function listNameOverrides(): Promise<NameOverride[]> {
+  return readDoc<NameOverride[]>(NAME_KEY, []);
+}
+
+export async function setNameOverride(teamId: string | undefined, originalName: string, nextName: string): Promise<void> {
+  const name = nextName.trim();
+  const keys = [badgeNameKey(originalName)];
+  if (teamId) keys.push(badgeIdKey(teamId));
+  await updateDoc<NameOverride[]>(NAME_KEY, [], (rows) => {
+    const next = rows.filter((row) => !keys.includes(row.key));
+    if (name) {
+      for (const key of keys) next.push({ key, name });
+    }
+    return next;
+  });
+}
