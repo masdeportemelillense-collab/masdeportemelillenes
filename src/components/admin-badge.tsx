@@ -33,7 +33,7 @@ function TeamField({ teamId, name, badge }: { teamId?: string; name: string; bad
     },
   });
   const saveBadge = useMutation({
-    mutationFn: () => adminSetBadge({ data: { teamId, name: nextName || name, badgeUrl: url } }),
+    mutationFn: () => adminSetBadge({ data: { teamId, originalName: name, name: nextName || name, badgeUrl: url } }),
     onSuccess: (res) => {
       setMsg(res.ok ? "Escudo guardado." : res.error);
       if (res.ok) refresh();
