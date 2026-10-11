@@ -4,11 +4,10 @@ import type { AdminOverride } from "@/lib/admin/types";
 export const adminLogin = createServerFn({ method: "POST" })
   .inputValidator((d: { user: string; password: string }) => d)
   .handler(async ({ data }) => {
-    const { credentialsOk, issueToken, writeAdminCookie } = await import("./session.server");
-    if (!credentialsOk(data.user, data.password)) {
-      return { ok: false as const, error: "Usuario o contraseña incorrectos." };
-    }
-    await writeAdminCookie(await issueToken());
+    const { findAccount, issueToken, writeAdminCookie } = await import("./session.server");
+    const account = findAccount(data.user, data.password);
+    if (!account) return { ok: false as const, error: "Usuario o contraseña incorrectos." };
+    await writeAdminCookie(await issueToken(account.user, account.scope));
     return { ok: true as const };
   });
 
@@ -19,11 +18,11 @@ export const adminLogout = createServerFn({ method: "POST" }).handler(async () =
 });
 
 export const adminSession = createServerFn({ method: "GET" }).handler(async () => {
-  const { requireAdmin } = await import("./session.server");
-  const ok = await requireAdmin();
-  if (!ok) return { ok: false as const, persist: "file" as const };
+  const { readSession } = await import("./session.server");
+  const session = await readSession();
+  if (!session.ok) return { ok: false as const, persist: "file" as const, scope: "all" as const };
   const { persistBackend } = await import("@/lib/persist.server");
-  return { ok: true as const, persist: await persistBackend() };
+  return { ok: true as const, persist: await persistBackend(), scope: session.scope, user: session.user };
 });
 
 export const adminListOverrides = createServerFn({ method: "GET" }).handler(async () => {
@@ -37,8 +36,12 @@ export const adminSaveOverride = createServerFn({ method: "POST" })
   .inputValidator((d: AdminOverride) => d)
   .handler(async ({ data }) => {
     try {
-      const { requireAdmin } = await import("./session.server");
-      if (!(await requireAdmin())) return { ok: false as const, error: "Sesión caducada." };
+      const { readSession, isAtmMelilla } = await import("./session.server");
+      const session = await readSession();
+      if (!session.ok) return { ok: false as const, error: "Sesión caducada." };
+      if (session.scope === "atm-melilla" && !isAtmMelilla(data)) {
+        return { ok: false as const, error: "Solo puedes modificar partidos del ATM Melilla." };
+      }
       const { upsertOverride } = await import("./store.server");
       const saved = await upsertOverride(data);
       return { ok: true as const, override: saved };
