@@ -6,7 +6,7 @@ import type { ResolvedMatch } from "@/lib/types";
 
 export function AdminBadgeEditor({ match }: { match: ResolvedMatch }) {
   const session = useQuery({ queryKey: ["admin-session"], queryFn: () => adminSession(), staleTime: 30_000 });
-  if (!session.data?.ok) return null;
+  if (!session.data?.ok || session.data.scope !== "all") return null;
   return (
     <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
       <h2 className="font-display text-3xl leading-none">Equipos · administración</h2>
