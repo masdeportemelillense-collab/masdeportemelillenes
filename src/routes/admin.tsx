@@ -64,7 +64,10 @@ function PersistHint() {
 function Editor({ onLogout }: { onLogout: () => void }) {
   const feed = useFeed();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"directo" | "resultados" | "equipos" | "porra">("equipos");
+  const session = useQuery({ queryKey: ["admin-session"], queryFn: () => adminSession() });
+  const scope = session.data && "scope" in session.data ? session.data.scope : "all";
+  const limited = scope === "atm-melilla";
+  const [tab, setTab] = useState<"directo" | "resultados" | "equipos" | "porra">(limited ? "directo" : "equipos");
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | MatchStatus>("all");
   const overridesQ = useQuery({ queryKey: ["admin-overrides"], queryFn: () => adminListOverrides() });
@@ -102,14 +105,14 @@ function Editor({ onLogout }: { onLogout: () => void }) {
         <button type="button" className="h-10 rounded-md bg-surface px-4 text-sm text-muted hover:text-fg" onClick={() => logout.mutate()}>Cerrar sesión</button>
       </div>
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={() => setTab("equipos")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "equipos" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Equipos</button>
+        {limited ? null : <button type="button" onClick={() => setTab("equipos")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "equipos" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Equipos</button>}
         <button type="button" onClick={() => setTab("directo")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "directo" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Directo</button>
-        <button type="button" onClick={() => setTab("resultados")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "resultados" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Resultados</button>
-        <button type="button" onClick={() => setTab("porra")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "porra" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Porra</button>
+        {limited ? null : <button type="button" onClick={() => setTab("resultados")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "resultados" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Resultados</button>}
+        {limited ? null : <button type="button" onClick={() => setTab("porra")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "porra" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Porra</button>}
       </div>
-      {tab === "equipos" ? <CatalogAdmin /> : null}
-      {tab === "porra" ? <PorraAdmin /> : null}
-      {tab === "directo" ? <LiveDesk overrides={overridesQ.data?.overrides ?? []} onSaved={refresh} /> : null}
+      {!limited && tab === "equipos" ? <CatalogAdmin /> : null}
+      {!limited && tab === "porra" ? <PorraAdmin /> : null}
+      {tab === "directo" || limited ? <LiveDesk overrides={overridesQ.data?.overrides ?? []} onSaved={refresh} teamId={limited ? "atm-melilla" : undefined} /> : null}
       {tab === "resultados" ? (
         <>
           <div className="flex flex-wrap gap-2">
