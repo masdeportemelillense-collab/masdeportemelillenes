@@ -26,7 +26,7 @@ export function Group9Board({ jornada }: { jornada?: number }) {
               <span className={m.played ? "font-semibold tabular-nums text-fg" : "tabular-nums text-muted"}>{m.score}</span>
               <span className="leading-tight [overflow-wrap:anywhere]">{m.away}</span>
             </div>
-            {session.data?.ok ? (
+            {session.data?.ok && session.data.scope === "all" ? (
               <ScoreEdit jornada={data.jornada} home={m.home} away={m.away} current={m.played ? m.score : ""} />
             ) : null}
           </li>
