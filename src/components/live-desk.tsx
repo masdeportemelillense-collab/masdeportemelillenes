@@ -26,14 +26,17 @@ function nowMadridDay() {
 export function LiveDesk({
   overrides,
   onSaved,
+  teamId,
 }: {
   overrides: AdminOverride[];
   onSaved: () => void;
+  teamId?: string;
 }) {
   const feed = useFeed();
   const list = useMemo(() => {
     const day = nowMadridDay();
     return feed.all
+      .filter((m) => !teamId || m.homeId === teamId || m.awayId === teamId || /atm\s*melilla/i.test(`${m.homeName} ${m.awayName}`))
       .filter((m) => m.status === "live" || todayKey(m.kickoff) === day)
       .sort((a, b) => {
         if (a.status === "live" && b.status !== "live") return -1;
@@ -45,7 +48,7 @@ export function LiveDesk({
   if (!list.length) {
     return (
       <p className="rounded-xl bg-surface p-4 text-sm text-muted shadow-[var(--shadow-border)]">
-        No hay partidos de hoy. Busca el partido en Resultados, ponlo «en directo» y aquí podrás ir sumando el marcador.
+        {teamId ? "No hay partidos del ATM Melilla hoy." : "No hay partidos de hoy. Busca el partido en Resultados, ponlo «en directo» y aquí podrás ir sumando el marcador."}
       </p>
     );
   }
@@ -101,6 +104,10 @@ function LiveRow({
       adminSaveOverride({
         data: {
           matchId: match.id,
+          homeId: match.homeId,
+          awayId: match.awayId,
+          homeName: match.homeName,
+          awayName: match.awayName,
           venue: saved?.venue ?? match.venue,
           kickoff: saved?.kickoff ?? match.kickoff,
           events: saved?.events ?? match.happened,
