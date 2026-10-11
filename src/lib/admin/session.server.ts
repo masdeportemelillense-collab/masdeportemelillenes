@@ -1,22 +1,51 @@
 import { SignJWT, jwtVerify } from "jose";
 
 const COOKIE = "mdm_admin";
-const USER = process.env.ADMIN_USER?.trim() || "surijavi";
-const PASS = process.env.ADMIN_PASSWORD?.trim() || "Futbolme8";
 const SECRET = new TextEncoder().encode(
   process.env.ADMIN_SECRET?.trim() || "mdm-admin-surijavi-futbolme8-2026",
 );
 
-export function credentialsOk(user: string, password: string): boolean {
-  return user.trim() === USER && password === PASS;
+export type AdminScope = "all" | "atm-melilla";
+
+type Account = { user: string; pass: string; scope: AdminScope };
+
+const ACCOUNTS: Account[] = [
+  {
+    user: process.env.ADMIN_USER?.trim() || "surijavi",
+    pass: process.env.ADMIN_PASSWORD?.trim() || "Futbolme8",
+    scope: "all",
+  },
+  { user: "adminATM", pass: "admin01", scope: "atm-melilla" },
+];
+
+export function findAccount(user: string, password: string): Account | undefined {
+  const name = user.trim();
+  return ACCOUNTS.find((a) => a.user === name && a.pass === password);
 }
 
-export async function issueToken(): Promise<string> {
-  return new SignJWT({ role: "admin", sub: USER })
+export function credentialsOk(user: string, password: string): boolean {
+  return Boolean(findAccount(user, password));
+}
+
+export async function issueToken(user: string, scope: AdminScope): Promise<string> {
+  return new SignJWT({ role: "admin", sub: user, scope })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("14d")
     .sign(SECRET);
+}
+
+export async function readSession(): Promise<{ ok: true; user: string; scope: AdminScope } | { ok: false }> {
+  const token = await readAdminCookie();
+  if (!token) return { ok: false };
+  try {
+    const { payload } = await jwtVerify(token, SECRET);
+    if (payload.role !== "admin") return { ok: false };
+    const scope = payload.scope === "atm-melilla" ? "atm-melilla" : "all";
+    return { ok: true, user: String(payload.sub ?? ""), scope };
+  } catch {
+    return { ok: false };
+  }
 }
 
 export async function tokenOk(token?: string | null): Promise<boolean> {
@@ -56,5 +85,10 @@ export async function clearAdminCookie(): Promise<void> {
 }
 
 export async function requireAdmin(): Promise<boolean> {
-  return tokenOk(await readAdminCookie());
+  return (await readSession()).ok;
+}
+
+export function isAtmMelilla(input: { homeId?: string; awayId?: string; homeName?: string; awayName?: string }): boolean {
+  if (input.homeId === "atm-melilla" || input.awayId === "atm-melilla") return true;
+  return /atm\s*melilla/i.test(`${input.homeName ?? ""} ${input.awayName ?? ""}`);
 }
