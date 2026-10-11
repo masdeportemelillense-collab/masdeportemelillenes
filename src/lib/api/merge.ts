@@ -269,6 +269,7 @@ const NAME_ALIASES: Array<string[]> = [
   ["churriana", "churrianadelavega", "cdchurriana", "churrianacf"],
   ["atleticodemarbella", "atleticomarbella", "cdatleticodemarbella"],
   ["cantoria", "cantoria2017"],
+  ["melillabaloncesto", "melillaciudaddeldeporte", "clubmelillabaloncesto", "melilla"],
 ];
 
 function keyName(name: string): string {
