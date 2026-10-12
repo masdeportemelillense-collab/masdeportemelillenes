@@ -392,7 +392,7 @@ function Admin({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPubli
   const [picked, setPicked] = useState<string[]>([]);
   const [msg, setMsg] = useState("");
   const slate = state.slates.find((s) => s.id === slateId);
-  const save = useMutation({ mutationFn: () => superUpdateLeague({ data: { leagueId: league.id, name, password, max, seasonStart: season, jornadaOpen: open, jornadaClose: close } }), onSuccess: (res) => { setMsg(res.ok ? "Liga guardada." : res.error); if (res.ok) onSaved(res.state); } });
+  const save = useMutation({ mutationFn: () => superUpdateLeague({ data: { leagueId: league.id, name, password, max, seasonStart: season } }), onSuccess: (res) => { setMsg(res.ok ? "Liga guardada." : res.error); if (res.ok) onSaved(res.state); } });
   const gen = useMutation({ mutationFn: () => superGenerate({ data: { leagueId: league.id } }), onSuccess: (res) => { setMsg(res.ok ? "Calendario generado." : res.error); if (res.ok) onSaved(res.state); } });
   const select = useMutation({ mutationFn: () => superSelectMatches({ data: { leagueId: league.id, slateId, matchIds: picked } }), onSuccess: (res) => { setMsg(res.ok ? "Partidos publicados." : res.error); if (res.ok) onSaved(res.state); } });
   const result = useMutation({ mutationFn: (d: { jornadaId: string; matchId: string; home: number; away: number; sport: SportKind }) => superSetResult({ data: { leagueId: league.id, ...d } }), onSuccess: (res) => { setResultMsg(res.ok ? "Resultado registrado." : res.error); if (res.ok) onSaved(res.state); } });
