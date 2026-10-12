@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as PorraRouteImport } from './routes/porra'
+import { Route as SuperporraRouteImport } from './routes/superporra'
 import { Route as DeporteSportRouteImport } from './routes/deporte.$sport'
 import { Route as EquipoSlugRouteImport } from './routes/equipo.$slug'
 import { Route as PartidoIdRouteImport } from './routes/partido.$id'
@@ -29,6 +30,11 @@ const AdminRoute = AdminRouteImport.update({
 const PorraRoute = PorraRouteImport.update({
   id: '/porra',
   path: '/porra',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuperporraRoute = SuperporraRouteImport.update({
+  id: '/superporra',
+  path: '/superporra',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeporteSportRoute = DeporteSportRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/porra': typeof PorraRoute
+  '/superporra': typeof SuperporraRoute
   '/deporte/$sport': typeof DeporteSportRoute
   '/equipo/$slug': typeof EquipoSlugRoute
   '/partido/$id': typeof PartidoIdRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/porra': typeof PorraRoute
+  '/superporra': typeof SuperporraRoute
   '/deporte/$sport': typeof DeporteSportRoute
   '/equipo/$slug': typeof EquipoSlugRoute
   '/partido/$id': typeof PartidoIdRoute
@@ -68,22 +76,24 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/porra': typeof PorraRoute
+  '/superporra': typeof SuperporraRoute
   '/deporte/$sport': typeof DeporteSportRoute
   '/equipo/$slug': typeof EquipoSlugRoute
   '/partido/$id': typeof PartidoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/porra' | '/deporte/$sport' | '/equipo/$slug' | '/partido/$id'
+  fullPaths: '/' | '/admin' | '/porra' | '/superporra' | '/deporte/$sport' | '/equipo/$slug' | '/partido/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/porra' | '/deporte/$sport' | '/equipo/$slug' | '/partido/$id'
-  id: '__root__' | '/' | '/admin' | '/porra' | '/deporte/$sport' | '/equipo/$slug' | '/partido/$id'
+  to: '/' | '/admin' | '/porra' | '/superporra' | '/deporte/$sport' | '/equipo/$slug' | '/partido/$id'
+  id: '__root__' | '/' | '/admin' | '/porra' | '/superporra' | '/deporte/$sport' | '/equipo/$slug' | '/partido/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   PorraRoute: typeof PorraRoute
+  SuperporraRoute: typeof SuperporraRoute
   DeporteSportRoute: typeof DeporteSportRoute
   EquipoSlugRoute: typeof EquipoSlugRoute
   PartidoIdRoute: typeof PartidoIdRoute
@@ -110,6 +120,13 @@ declare module '@tanstack/react-router' {
       path: '/porra'
       fullPath: '/porra'
       preLoaderRoute: typeof PorraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/superporra': {
+      id: '/superporra'
+      path: '/superporra'
+      fullPath: '/superporra'
+      preLoaderRoute: typeof SuperporraRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/deporte/$sport': {
@@ -140,6 +157,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   PorraRoute: PorraRoute,
+  SuperporraRoute: SuperporraRoute,
   DeporteSportRoute: DeporteSportRoute,
   EquipoSlugRoute: EquipoSlugRoute,
   PartidoIdRoute: PartidoIdRoute,
