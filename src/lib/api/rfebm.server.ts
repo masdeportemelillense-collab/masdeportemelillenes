@@ -16,7 +16,7 @@ type Comp = {
 
 const COMPS: Comp[] = [
   {
-    id: "1031246",
+    id: "1038400",
     leagueId: "bm-primera-f",
     leagueName: "Primera División Masculina BM · Grupo F",
     ours: /virgen\s*de\s*la\s*victoria|melilla\s+ciudad\s+del\s+deporte\s+balonmano\s+virgen/i,
@@ -149,42 +149,27 @@ function parseCalendar(html: string, comp: Comp): ApiEvent[] {
 
 function parseTable(html: string, comp: Comp): StandingRow[] {
   const rows: StandingRow[] = [];
-  const tbody = html.match(/<tbody>([\s\S]*?)<\/tbody>/i)?.[1] ?? html;
-  for (const rm of tbody.matchAll(/<tr>([\s\S]*?)<\/tr>/gi)) {
-    const chunk = rm[1];
-    const pos = chunk.match(/celda_peque'>\s*(\d+)/)?.[1];
-    const name = cleanName(chunk.match(/nombre-clasi'[\s\S]*?<\/div>[\s\S]*?([A-ZÁÉÍÓÚÑ][^<]{3,80})</)?.[1] ?? chunk.match(/escudo_tabla_clasificacion'[\s\S]*?<\/div>[\s\S]*?<\/div>[\s\S]*?([A-ZÁÉÍÓÚÑ][^<]{3,80})</)?.[1] ?? "");
-    const fallbackName = cleanName((chunk.match(/id_equipo=\d+[^>]*>[\s\S]*?([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑa-záéíóúñü .'\-]{4,80})</) || [])[1] ?? "");
-    const teamName = name.length > 3 ? name : fallbackName;
-    if (!pos || teamName.length < 3) continue;
-    const g = Number(chunk.match(/mostrarPartidos\('[^']+','g'[^>]*>\s*(\d+)/)?.[1] ?? "0");
-    const e = Number(chunk.match(/mostrarPartidos\('[^']+','e'[^>]*>\s*(\d+)/)?.[1] ?? "0");
-    const p = Number(chunk.match(/mostrarPartidos\('[^']+','p'[^>]*>\s*(\d+)/)?.[1] ?? "0");
-    const goals = [...chunk.matchAll(/negrita centrado p-t-15'>\s*([+-]?\d+)/g)].map((x) => Number(x[1]));
-    const gf = goals[0] ?? 0;
-    const gc = goals[1] ?? 0;
-    const slug = slugFor(teamName, comp);
-    rows.push({
-      pos: Number(pos),
-      teamId: slug,
-      name: teamName,
-      short: shortFor(teamName, slug),
-      pts: g * 2 + e,
-      pj: g + e + p,
-      g,
-      e,
-      p,
-      gf,
-      gc,
-      form: [],
-    });
+  const chunks = html.split("<td class='celda_peque'>").slice(1);
+  for (const chunk of chunks) {
+    const pos = Number(chunk.match(/^\s*(\d+)/)?.[1] ?? "0");
+    const name = cleanName(chunk.match(/<span>[^<]*<\/span>\s*([^<]{3,90})/)?.[1] ?? "");
+    if (!pos || name.length < 3) continue;
+    const nums = [...chunk.matchAll(/negrita centrado p-t-15'>\s*([+-]?\d+)/g)].map((x) => Number(x[1]));
+    const gf = nums[0] ?? 0;
+    const gc = nums[1] ?? 0;
+    const form = [...chunk.matchAll(/class='(ganado|empatado|perdido) racha'/g)].map((x) => x[1][0].toUpperCase());
+    const g = form.filter((f) => f === "G").length;
+    const e = form.filter((f) => f === "E").length;
+    const p = form.filter((f) => f === "P").length;
+    const slug = slugFor(name, comp);
+    rows.push({ pos, teamId: slug, name, short: shortFor(name, slug), pts: g * 2 + e, pj: g + e + p, g, e, p, gf, gc, form: form.slice(-5) });
   }
   return rows.slice(0, 16);
 }
 
 async function fetchComp(comp: Comp): Promise<{ events: ApiEvent[]; table: StandingRow[] }> {
-  const calUrl = `https://resultadosbalonmano.isquad.es/calendario.php?seleccion=0&id=${comp.id}&id_superficie=1`;
-  const claUrl = `https://resultadosbalonmano.isquad.es/clasificacion.php?seleccion=0&id=${comp.id}&id_superficie=1`;
+  const calUrl = `https://resultadosbalonmano.isquad.es/calendario.php?seleccion=0&id=${comp.id}&id_ambito=1&id_territorial=9999&id_superficie=1&iframe=0&id_categoria=3017&id_competicion=211438`;
+  const claUrl = `https://resultadosbalonmano.isquad.es/clasificacion.php?seleccion=0&id=${comp.id}&id_ambito=1&id_territorial=9999&id_superficie=1&iframe=0&id_categoria=3017&id_competicion=211438`;
   const [cal, cla] = await Promise.allSettled([getText(calUrl), getText(claUrl)]);
   const events = cal.status === "fulfilled" ? parseCalendar(cal.value, comp) : [];
   const table = cla.status === "fulfilled" ? parseTable(cla.value, comp) : [];
