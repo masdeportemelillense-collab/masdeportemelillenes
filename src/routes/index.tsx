@@ -45,6 +45,11 @@ function Home() {
       {favs.length > 0 && (<section><SectionHead title="Tus equipos" /><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{favs.map((t) => (<Link key={t.id} to="/equipo/$slug" params={{ slug: t.id }} className="flex items-center gap-3 rounded-xl bg-surface p-3 shadow-[var(--shadow-border)] transition-colors duration-150 hover:bg-surface-2"><Crest team={t} size={36} /><span className="min-w-0"><span className="block truncate text-sm font-medium">{t.name}</span><span className="block truncate text-xs text-muted">{t.category}</span></span></Link>))}</div></section>)}
       <section><SectionHead title="Deportes" /><div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">{SPORTS.map((s) => { const count = teams.filter((t) => t.sport === s.id).length; return (<Link key={s.id} to="/deporte/$sport" params={{ sport: s.id }} className="group rounded-xl bg-surface p-4 shadow-[var(--shadow-border)] transition-colors duration-150 hover:bg-surface-2"><SportMark sport={s.id} className="size-5 text-accent" /><p className="mt-3 font-medium">{s.label}</p><p className="text-xs text-muted">{count} {count === 1 ? "equipo" : "equipos"}</p></Link>); })}</div></section>
       {restUpcoming.length > 0 && (<section><SectionHead title="Próximos partidos" /><div className="grid gap-3 md:grid-cols-2">{restUpcoming.map((m) => <MatchCard key={m.id} match={m} />)}</div></section>)}
+      <Link to="/superporra" className="block rounded-2xl bg-surface px-5 py-4 shadow-[var(--shadow-border)] transition-colors hover:bg-surface-2">
+        <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-accent">Nuevo juego</p>
+        <p className="mt-1 font-display text-3xl leading-none">Superporra Melillense</p>
+        <p className="mt-2 text-sm text-muted">Ligas privadas de resultado exacto. Crea la tuya o únete a la de tus amigos.</p>
+      </Link>
       <section><SectionHead title="Últimos resultados" /><div className="grid gap-3 md:grid-cols-2">{recent.slice(0, 6).map((m) => <MatchCard key={m.id} match={m} />)}</div></section>
       <section><SectionHead title="Todos los equipos" /><div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">{teams.map((t) => <TeamChip key={t.id} id={t.id} />)}</div></section>
     </div>
