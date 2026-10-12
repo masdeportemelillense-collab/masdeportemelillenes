@@ -222,19 +222,20 @@ function Picks({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPubli
   return (
     <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
       <h3 className="font-display text-3xl">Jornada {jornada.number}{jornada.autoFilled ? " · automática" : ""}</h3>
+      <p className="mt-1 text-xs text-muted">Inicio: {formatWhen(jornada.openAt)} · Cierre: {formatWhen(jornada.closeAt)}</p>
       <ul className="mt-3 space-y-2">
         {jornada.matches.map((m) => {
           const saved = state.picks.find((p) => p.matchId === m.id);
           const value = draft[m.id] ?? { home: saved ? String(saved.home) : "", away: saved ? String(saved.away) : "" };
           return (
-            <li key={m.id} className="grid items-center gap-2 rounded-xl bg-surface-2 p-3 sm:grid-cols-[1fr_auto_1fr]">
-              <span className="text-right text-sm">{m.home}</span>
-              <span className="flex items-center justify-center gap-1">
+            <li key={m.id} className="flex items-center gap-2 rounded-xl bg-surface-2 px-3 py-2">
+              <span className="min-w-0 flex-1 truncate text-right text-sm">{m.home}</span>
+              <span className="flex shrink-0 items-center gap-1">
                 <input value={value.home} onChange={(e) => setDraft((d) => ({ ...d, [m.id]: { ...value, home: e.target.value } }))} className="h-9 w-12 rounded-md bg-surface text-center text-sm outline-none ring-1 ring-border" />
                 <span className="text-muted">-</span>
                 <input value={value.away} onChange={(e) => setDraft((d) => ({ ...d, [m.id]: { ...value, away: e.target.value } }))} className="h-9 w-12 rounded-md bg-surface text-center text-sm outline-none ring-1 ring-border" />
               </span>
-              <span className="text-sm">{m.away}{m.officialHome != null ? <span className="ml-2 text-xs text-muted">oficial {m.officialHome}-{m.officialAway}</span> : null}</span>
+              <span className="min-w-0 flex-1 truncate text-sm">{m.away}{m.officialHome != null ? <span className="ml-2 text-xs text-muted">oficial {m.officialHome}-{m.officialAway}</span> : null}</span>
             </li>
           );
         })}
@@ -407,8 +408,6 @@ function Admin({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPubli
           <input value={password} onChange={(e) => setPassword(e.target.value)} className="h-10 rounded-md bg-surface-2 px-3 text-sm outline-none ring-1 ring-border" />
           <label className="text-xs text-muted">Máximo<input type="number" value={max} onChange={(e) => setMax(Number(e.target.value))} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-3 text-sm outline-none ring-1 ring-border" /></label>
           <label className="text-xs text-muted">Inicio de temporada<input type="date" value={season} onChange={(e) => setSeason(e.target.value)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-3 text-sm outline-none ring-1 ring-border" /></label>
-          <label className="text-xs text-muted">Inicio de jornada<input type="datetime-local" value={open} onChange={(e) => setOpen(e.target.value)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-3 text-sm outline-none ring-1 ring-border" /></label>
-          <label className="text-xs text-muted">Cierre de jornada<input type="datetime-local" value={close} onChange={(e) => setClose(e.target.value)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-3 text-sm outline-none ring-1 ring-border" /></label>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" onClick={() => save.mutate()} className="h-10 rounded-md bg-accent px-3 text-sm text-bg">Guardar</button>
@@ -437,16 +436,31 @@ function Admin({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPubli
         </ul>
         <button type="button" onClick={() => select.mutate()} className="mt-3 h-10 rounded-md bg-accent px-3 text-sm text-bg">Publicar {picked.length} partidos</button>
       </section>}
-      {openRound ? <JornadaPanel jornada={openRound} count={state.predictionCount} total={state.predictionTotal} resultMsg={resultMsg} onSave={(matchId, home, away, sport) => result.mutate({ jornadaId: openRound.id, matchId, home, away, sport })} onClose={() => closeRound.mutate(openRound.id)} /> : null}
+      {openRound ? <JornadaPanel jornada={openRound} count={state.predictionCount} total={state.predictionTotal} resultMsg={resultMsg} onSave={(matchId, home, away, sport) => result.mutate({ jornadaId: openRound.id, matchId, home, away, sport })} onClose={() => closeRound.mutate(openRound.id)} onDates={(nextOpen, nextClose) => { setOpen(nextOpen); setClose(nextClose); void superUpdateLeague({ data: { leagueId: league.id, jornadaOpen: nextOpen, jornadaClose: nextClose } }).then((res) => { setMsg(res.ok ? "Fechas guardadas." : res.error); if (res.ok) onSaved(res.state); }); }} /> : null}
       <ClosedRounds state={state} />
     </div>
   );
 }
 
-function JornadaPanel({ jornada, count, total, resultMsg, onSave, onClose }: { jornada: SuperPublic["jornadas"][number]; count: number; total: number; resultMsg: string; onSave: (matchId: string, home: number, away: number, sport: SportKind) => void; onClose: () => void }) {
+function formatWhen(value?: string): string {
+  if (!value) return "sin fecha";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value.replace("T", " ");
+  return date.toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+function JornadaPanel({ jornada, count, total, resultMsg, onSave, onClose, onDates }: { jornada: SuperPublic["jornadas"][number]; count: number; total: number; resultMsg: string; onSave: (matchId: string, home: number, away: number, sport: SportKind) => void; onClose: () => void; onDates: (open: string, close: string) => void }) {
+  const [open, setOpen] = useState(jornada.openAt ?? "");
+  const [close, setClose] = useState(jornada.closeAt ?? "");
   return (
     <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
-      <h3 className="font-display text-2xl">Resultados jornada {jornada.number}{jornada.closed ? " · cerrada" : ""}</h3>
+      <h3 className="font-display text-2xl">Jornada {jornada.number} a pronosticar</h3>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        <label className="text-xs text-muted">Inicio<input type="datetime-local" value={open} onChange={(e) => setOpen(e.target.value)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-3 text-sm outline-none ring-1 ring-border" /></label>
+        <label className="text-xs text-muted">Cierre<input type="datetime-local" value={close} onChange={(e) => setClose(e.target.value)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-3 text-sm outline-none ring-1 ring-border" /></label>
+      </div>
+      <button type="button" onClick={() => onDates(open, close)} className="mt-2 h-9 rounded-md bg-surface-2 px-3 text-xs">Guardar fechas</button>
+      <h4 className="mt-4 font-display text-2xl">Resultados</h4>
       {!jornada.closed ? <p className="mt-1 text-xs text-muted">Han pronosticado {count} de {total}</p> : null}
       {resultMsg ? <p className="mt-1 text-sm text-accent">{resultMsg}</p> : null}
       <ul className="mt-2 space-y-2">
