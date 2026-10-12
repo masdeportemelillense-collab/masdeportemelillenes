@@ -31,6 +31,8 @@ export type SuperJornada = {
   createdAt: number;
   openAt?: string;
   closeAt?: string;
+  closed?: boolean;
+  closedAt?: number;
 };
 
 export type SuperPick = {
