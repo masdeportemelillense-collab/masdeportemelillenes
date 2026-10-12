@@ -1,1 +1,1 @@
-export const DEPLOY_STAMP = "2026-10-12T13-aciertos-superporra";
+export const DEPLOY_STAMP = "2026-10-12T14-cerrar-jornada";
