@@ -26,6 +26,14 @@ export const Route = createFileRoute("/superporra")({
   component: SuperPage,
 });
 
+function logoutAndReset(qc: ReturnType<typeof useQueryClient>, setLeagueId: (id?: string) => void) {
+  return async () => {
+    await superLogout();
+    setLeagueId(undefined);
+    await qc.invalidateQueries({ queryKey: ["superporra"] });
+  };
+}
+
 function SuperPage() {
   const qc = useQueryClient();
   const [leagueId, setLeagueId] = useState<string | undefined>();
@@ -49,6 +57,9 @@ function SuperPage() {
         <p className="mt-3 max-w-2xl text-sm text-muted">
           Ligas privadas de resultado exacto. El enlace está abajo a propósito mientras se prueba.
         </p>
+        {state.user ? (
+          <button type="button" onClick={logoutAndReset(qc, setLeagueId)} className="mt-4 h-9 rounded-md bg-surface-2 px-3 text-xs uppercase tracking-wider text-muted hover:text-accent">Cerrar sesión</button>
+        ) : null}
       </section>
       {state.isWebAdmin ? <MasterPanel state={state} onOpen={setLeagueId} /> : null}
       {state.league ? <LeagueView state={state} onBack={() => setLeagueId(undefined)} onSaved={apply} /> : !state.user ? <Auth onDone={apply} /> : <Hub state={state} onOpen={setLeagueId} onSaved={apply} />}
@@ -118,7 +129,7 @@ function Hub({ state, onOpen, onSaved }: { state: SuperPublic; onOpen: (id: stri
       <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-3xl">Hola, {state.user?.name}</h2>
-          <button type="button" onClick={async () => { await superLogout(); await qc.invalidateQueries({ queryKey: ["superporra"] }); }} className="text-xs text-muted hover:text-accent">Salir</button>
+          <button type="button" onClick={logoutAndReset(qc, () => undefined)} className="text-xs text-muted hover:text-accent">Cerrar sesión</button>
         </div>
         <p className="mt-1 text-xs text-muted">Escudo de perfil</p>
         <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
