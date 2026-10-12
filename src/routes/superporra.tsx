@@ -81,6 +81,19 @@ function Rules() {
     <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
       <h2 className="font-display text-3xl">Reglas</h2>
       <div className="mt-3 space-y-3 text-sm text-muted">
+        <div>
+          <p className="font-medium text-fg">¿Cómo funciona? PUNTOS CLAVE</p>
+          <ul className="mt-2 space-y-1">
+            <li>▶️ Ligas privadas de amigos.</li>
+            <li>▶️ Pronostica 10 partidos al resultado exacto.</li>
+            <li>▶️ Calendario de ida y vuelta con enfrentamientos entre los participantes.</li>
+            <li>▶️ Los resultados de los enfrentamientos se sacan de los puntos que consigas al pronosticar los 10 partidos.</li>
+            <li>▶️ Se genera clasificación al modo fútbol. 3 puntos si ganas, 1 empate y 0 si pierdes.</li>
+            <li>▶️ Los puntos se otorgan según el deporte:</li>
+            <li className="pl-4">➡️ Fútbol, Fútbol Sala y Voleibol: 2 puntos si aciertas el resultado exacto, 1 si aciertas ganador o empate.</li>
+            <li className="pl-4">➡️ Balonmano y Baloncesto: 3 si aciertas el resultado exacto, 2 la diferencia y 1 si aciertas ganador.</li>
+          </ul>
+        </div>
         <p>La Superporra Melillense es un juego de ligas privadas. Cada jugador se registra con su propio usuario, distinto al de la porra, y elige un escudo.</p>
         <p>Puedes crear una liga o unirte a una con su contraseña. Quien la crea es el administrador: pone el nombre, la contraseña, el número de plazas, las fechas y puede expulsar participantes.</p>
         <p>Cuando están los jugadores, el administrador genera el calendario de ida y vuelta. Ese calendario no se puede volver a generar. Cada jornada del calendario enfrenta a los participantes entre sí.</p>
