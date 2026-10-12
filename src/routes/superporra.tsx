@@ -13,6 +13,7 @@ import {
   superLogout,
   superRegister,
   superSavePicks,
+  superCloseJornada,
   superSelectMatches,
   superSetAvatar,
   superSetResult,
@@ -325,6 +326,14 @@ function Breakdown({ state, round, homeId, awayId, homeName, awayName }: { state
   );
 }
 
+function Avatar({ id }: { id?: string }) {
+  const options = porraAvatarOptions();
+  const hit = options.find((o) => o.id === id);
+  const src = id?.startsWith("http") ? id : hit?.src;
+  if (!src) return <span className="grid size-7 place-items-center rounded-full bg-surface-2 text-[10px] text-muted">•</span>;
+  return <img src={src} alt="" className="size-7 rounded-full object-contain" />;
+}
+
 function Table({ state }: { state: SuperPublic }) {
   return (
     <section className="overflow-x-auto rounded-2xl bg-surface p-4 shadow-[var(--shadow-border)]">
@@ -333,7 +342,7 @@ function Table({ state }: { state: SuperPublic }) {
         <tbody>
           {state.board.map((row, i) => (
             <tr key={row.userId} className={cn("border-t border-border", row.userId === state.user?.id && "text-accent")}>
-              <td className="py-2">{i + 1}. {row.name}</td><td>{row.played}</td><td>{row.won}</td><td>{row.drawn}</td><td>{row.lost}</td><td>{row.gf}</td><td>{row.gc}</td><td className="font-medium">{row.pts}</td>
+              <td className="py-2"><span className="flex items-center gap-2"><Avatar id={row.avatar} />{i + 1}. {row.name}</span></td><td>{row.played}</td><td>{row.won}</td><td>{row.drawn}</td><td>{row.lost}</td><td>{row.gf}</td><td>{row.gc}</td><td className="font-medium">{row.pts}</td>
             </tr>
           ))}
         </tbody>
@@ -377,6 +386,7 @@ function Admin({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPubli
   const [season, setSeason] = useState(league.seasonStart ?? "");
   const [open, setOpen] = useState(league.jornadaOpen ?? "");
   const [close, setClose] = useState(league.jornadaClose ?? "");
+  const [resultMsg, setResultMsg] = useState("");
   const [slateId, setSlateId] = useState(state.slates[0]?.id ?? "");
   const [picked, setPicked] = useState<string[]>([]);
   const [msg, setMsg] = useState("");
@@ -384,7 +394,9 @@ function Admin({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPubli
   const save = useMutation({ mutationFn: () => superUpdateLeague({ data: { leagueId: league.id, name, password, max, seasonStart: season, jornadaOpen: open, jornadaClose: close } }), onSuccess: (res) => { setMsg(res.ok ? "Liga guardada." : res.error); if (res.ok) onSaved(res.state); } });
   const gen = useMutation({ mutationFn: () => superGenerate({ data: { leagueId: league.id } }), onSuccess: (res) => { setMsg(res.ok ? "Calendario generado." : res.error); if (res.ok) onSaved(res.state); } });
   const select = useMutation({ mutationFn: () => superSelectMatches({ data: { leagueId: league.id, slateId, matchIds: picked } }), onSuccess: (res) => { setMsg(res.ok ? "Partidos publicados." : res.error); if (res.ok) onSaved(res.state); } });
-  const result = useMutation({ mutationFn: (d: { jornadaId: string; matchId: string; home: number; away: number; sport: SportKind }) => superSetResult({ data: { leagueId: league.id, ...d } }), onSuccess: (res) => { if (res.ok) onSaved(res.state); } });
+  const result = useMutation({ mutationFn: (d: { jornadaId: string; matchId: string; home: number; away: number; sport: SportKind }) => superSetResult({ data: { leagueId: league.id, ...d } }), onSuccess: (res) => { setResultMsg(res.ok ? "Resultado registrado." : res.error); if (res.ok) onSaved(res.state); } });
+  const closeRound = useMutation({ mutationFn: (jornadaId: string) => superCloseJornada({ data: { leagueId: league.id, jornadaId } }), onSuccess: (res) => { setMsg(res.ok ? "Jornada cerrada." : res.error); if (res.ok) { setOpen(""); setClose(""); onSaved(res.state); } } });
+  const openRound = state.jornadas.find((j) => !j.closed);
   const kick = useMutation({ mutationFn: (userId: string) => superKick({ data: { leagueId: league.id, userId } }), onSuccess: (res) => { if (res.ok) onSaved(res.state); } });
   return (
     <div className="space-y-4">
@@ -410,7 +422,7 @@ function Admin({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPubli
           })}
         </ul>
       </section>
-      <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
+      {openRound ? null : <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
         <h3 className="font-display text-3xl">Elegir 10 partidos</h3>
         <p className="mt-1 text-xs text-muted">Salen de la porra publicada. Si pasan 24 horas sin elegir, se cogen solos.</p>
         <select value={slateId} onChange={(e) => { setSlateId(e.target.value); setPicked([]); }} className="mt-2 h-10 rounded-md bg-surface-2 px-2 text-sm">
@@ -422,21 +434,25 @@ function Admin({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPubli
           ))}
         </ul>
         <button type="button" onClick={() => select.mutate()} className="mt-3 h-10 rounded-md bg-accent px-3 text-sm text-bg">Publicar {picked.length} partidos</button>
-      </section>
+      </section>}
       {state.jornadas.map((j) => (
         <section key={j.id} className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
-          <h3 className="font-display text-2xl">Resultados jornada {j.number}</h3>
+          <h3 className="font-display text-2xl">Resultados jornada {j.number}{j.closed ? " · cerrada" : ""}</h3>
           {j.id === state.jornadas.at(-1)?.id ? <p className="mt-1 text-xs text-muted">Han pronosticado {state.predictionCount} de {state.predictionTotal}</p> : null}
+          {resultMsg ? <p className="mt-1 text-sm text-accent">{resultMsg}</p> : null}
           <ul className="mt-2 space-y-2">
-            {j.matches.map((m) => <ResultRow key={m.id} match={m} onSave={(home, away, sport) => result.mutate({ jornadaId: j.id, matchId: m.id, home, away, sport })} />)}
+            {j.matches.map((m) => <ResultRow key={m.id} match={m} locked={!!j.closed} onSave={(home, away, sport) => result.mutate({ jornadaId: j.id, matchId: m.id, home, away, sport })} />)}
           </ul>
+          {!j.closed && j.matches.length > 0 && j.matches.every((m) => m.officialHome != null && m.officialAway != null) ? (
+            <button type="button" onClick={() => closeRound.mutate(j.id)} className="mt-3 h-10 rounded-md bg-loss px-3 text-sm text-bg">Cerrar jornada</button>
+          ) : null}
         </section>
       ))}
     </div>
   );
 }
 
-function ResultRow({ match, onSave }: { match: { id: string; home: string; away: string; sport: SportKind; officialHome?: number; officialAway?: number }; onSave: (home: number, away: number, sport: SportKind) => void }) {
+function ResultRow({ match, locked, onSave }: { match: { id: string; home: string; away: string; sport: SportKind; officialHome?: number; officialAway?: number }; locked?: boolean; onSave: (home: number, away: number, sport: SportKind) => void }) {
   const [home, setHome] = useState(match.officialHome != null ? String(match.officialHome) : "");
   const [away, setAway] = useState(match.officialAway != null ? String(match.officialAway) : "");
   const [sport, setSport] = useState<SportKind>(match.sport);
@@ -449,7 +465,7 @@ function ResultRow({ match, onSave }: { match: { id: string; home: string; away:
       <span className="flex gap-1">
         <input value={home} onChange={(e) => setHome(e.target.value)} className="h-9 w-12 rounded-md bg-surface-2 text-center text-sm outline-none ring-1 ring-border" />
         <input value={away} onChange={(e) => setAway(e.target.value)} className="h-9 w-12 rounded-md bg-surface-2 text-center text-sm outline-none ring-1 ring-border" />
-        <button type="button" onClick={() => onSave(Number(home), Number(away), sport)} className="h-9 rounded-md bg-surface px-2 text-xs">Ok</button>
+        <button type="button" disabled={locked} onClick={() => onSave(Number(home), Number(away), sport)} className="h-9 rounded-md bg-surface px-2 text-xs disabled:opacity-40">Ok</button>
       </span>
     </li>
   );
