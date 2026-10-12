@@ -36,6 +36,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <p>Más deporte Melillense · Temporada 2026-27</p>
           <p>Calendario y clasificaciones de los equipos de Melilla. Fútbol: Futbolme · Fútbol sala: Solo-FutSal.{" "}
             <Link to="/admin" className="text-muted/80 underline-offset-2 hover:text-accent hover:underline">Admin</Link>
+            {" · "}
+            <Link to="/superporra" className="text-muted/60 underline-offset-2 hover:text-accent hover:underline">Superporra</Link>
           </p>
         </div>
       </footer>
