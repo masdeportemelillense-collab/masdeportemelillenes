@@ -4,6 +4,7 @@ import type { MatchStatus } from "@/lib/types";
 const UA = "MasDeporteMelillense/1.0 (+https://masdeportemelillenes.netlify.app)";
 const SEGUNDA = "https://www.feb.es/competiciones/resultados/segundafeb/2/2026";
 const TERCERA = "https://baloncestoenvivo.feb.es/resultados/ligaeba/7/2026";
+const CHALLENGE = "https://www.feb.es/lfchallenge/clasificacion.aspx";
 const CALENDAR = "https://baloncestoenvivo.feb.es/calendario.aspx?g=3&t=2026&nm=tercerafeb";
 
 function strip(value: string): string {
@@ -18,6 +19,7 @@ function shortOf(name: string): string {
 function teamId(name: string): string | undefined {
   const n = name.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
   if (n.includes("enrique soler")) return "enrique-soler";
+  if (n.includes("salle")) return "la-salle-fem";
   if (n.includes("melilla") && !n.includes("soler")) return "melilla-baloncesto";
   return undefined;
 }
@@ -115,6 +117,26 @@ function eventOf(jornada: number, home: string, away: string, kickoff: string, s
   };
 }
 
+
+function parseChallenge(html: string): StandingRow[] {
+  const rows = [...html.matchAll(/<tr[^>]*trClasificacionTabla[\s\S]*?<\/tr>/gi)];
+  const out: StandingRow[] = [];
+  for (const row of rows) {
+    const cells = [...row[0].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((m) => strip(m[1]));
+    if (cells.length < 7) continue;
+    const pos = Number(cells[0]);
+    const name = cells[1];
+    const pj = Number(cells[2]) || 0;
+    const pg = Number(cells[3]) || 0;
+    const pp = Number(cells[4]) || 0;
+    const pf = Number(cells[5]) || 0;
+    const pc = Number(cells[6]) || 0;
+    if (!name || !pos) continue;
+    out.push({ pos, teamId: teamId(name), name, short: shortOf(name), pj, g: pg, e: 0, p: pp, gf: pf, gc: pc, pts: pg * 2, form: [] });
+  }
+  return out;
+}
+
 async function get(url: string): Promise<string> {
   const res = await fetch(url, { headers: { "user-agent": UA, accept: "text/html" } });
   if (!res.ok) throw new Error(`feb ${res.status}`);
@@ -157,6 +179,10 @@ export async function fetchFeb(): Promise<{ tables: Record<string, StandingRow[]
   try {
     const tercera = parseTable(await get(TERCERA));
     if (tercera.length) tables["tercera-feb"] = tercera;
+  } catch { /* keep going */ }
+  try {
+    const challenge = parseChallenge(await get(CHALLENGE));
+    if (challenge.length) tables["lf-challenge"] = challenge;
   } catch { /* keep going */ }
   try {
     events = parseCalendar(await calendarHtml());
