@@ -45,7 +45,8 @@ function SuperPage() {
   });
   const state = q.data;
   function apply(next: SuperPublic) {
-    qc.setQueryData(["superporra", leagueId ?? ""], next);
+    qc.setQueryData(["superporra", next.league?.id ?? leagueId ?? ""], next);
+    if (!next.league) qc.setQueryData(["superporra", ""], next);
     if (next.league && next.league.id !== leagueId) setLeagueId(next.league.id);
   }
   if (q.isLoading || !state) return <p className="text-sm text-muted">Cargando la Superporra…</p>;
@@ -78,7 +79,7 @@ function Auth({ onDone }: { onDone: (s: SuperPublic) => void }) {
   const chosen = url.trim() || avatar;
   const register = useMutation({
     mutationFn: () => superRegister({ data: { name, password, avatar: chosen } }),
-    onSuccess: (res) => { if (res.ok) onDone(res.state); else setError(res.error); },
+    onSuccess: (res) => { if (res.ok && res.state.user) onDone(res.state); else setError(res.ok ? "No se pudo iniciar la sesión." : res.error); },
   });
   const login = useMutation({
     mutationFn: () => superLogin({ data: { name, password } }),
