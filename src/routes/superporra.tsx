@@ -437,20 +437,47 @@ function Admin({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPubli
         </ul>
         <button type="button" onClick={() => select.mutate()} className="mt-3 h-10 rounded-md bg-accent px-3 text-sm text-bg">Publicar {picked.length} partidos</button>
       </section>}
-      {state.jornadas.map((j) => (
-        <section key={j.id} className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
-          <h3 className="font-display text-2xl">Resultados jornada {j.number}{j.closed ? " · cerrada" : ""}</h3>
-          {j.id === state.jornadas.at(-1)?.id ? <p className="mt-1 text-xs text-muted">Han pronosticado {state.predictionCount} de {state.predictionTotal}</p> : null}
-          {resultMsg ? <p className="mt-1 text-sm text-accent">{resultMsg}</p> : null}
-          <ul className="mt-2 space-y-2">
-            {j.matches.map((m) => <ResultRow key={m.id} match={m} locked={!!j.closed} onSave={(home, away, sport) => result.mutate({ jornadaId: j.id, matchId: m.id, home, away, sport })} />)}
-          </ul>
-          {!j.closed && j.matches.length > 0 && j.matches.every((m) => m.officialHome != null && m.officialAway != null) ? (
-            <button type="button" onClick={() => closeRound.mutate(j.id)} className="mt-3 h-10 rounded-md bg-loss px-3 text-sm text-bg">Cerrar jornada</button>
-          ) : null}
-        </section>
-      ))}
+      {openRound ? <JornadaPanel jornada={openRound} count={state.predictionCount} total={state.predictionTotal} resultMsg={resultMsg} onSave={(matchId, home, away, sport) => result.mutate({ jornadaId: openRound.id, matchId, home, away, sport })} onClose={() => closeRound.mutate(openRound.id)} /> : null}
+      <ClosedRounds state={state} />
     </div>
+  );
+}
+
+function JornadaPanel({ jornada, count, total, resultMsg, onSave, onClose }: { jornada: SuperPublic["jornadas"][number]; count: number; total: number; resultMsg: string; onSave: (matchId: string, home: number, away: number, sport: SportKind) => void; onClose: () => void }) {
+  return (
+    <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
+      <h3 className="font-display text-2xl">Resultados jornada {jornada.number}{jornada.closed ? " · cerrada" : ""}</h3>
+      {!jornada.closed ? <p className="mt-1 text-xs text-muted">Han pronosticado {count} de {total}</p> : null}
+      {resultMsg ? <p className="mt-1 text-sm text-accent">{resultMsg}</p> : null}
+      <ul className="mt-2 space-y-2">
+        {jornada.matches.map((m) => <ResultRow key={m.id} match={m} locked={!!jornada.closed} onSave={(home, away, sport) => onSave(m.id, home, away, sport)} />)}
+      </ul>
+      {!jornada.closed && jornada.matches.length > 0 && jornada.matches.every((m) => m.officialHome != null && m.officialAway != null) ? (
+        <button type="button" onClick={onClose} className="mt-3 h-10 rounded-md bg-loss px-3 text-sm text-bg">Cerrar jornada</button>
+      ) : null}
+    </section>
+  );
+}
+
+function ClosedRounds({ state }: { state: SuperPublic }) {
+  const closed = state.jornadas.filter((j) => j.closed);
+  const [id, setId] = useState(closed.at(-1)?.id ?? "");
+  const jornada = closed.find((j) => j.id === id);
+  if (!closed.length) return null;
+  return (
+    <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-display text-2xl">Jornadas cerradas</h3>
+        <select value={id} onChange={(e) => setId(e.target.value)} className="h-9 rounded-md bg-surface-2 px-2 text-sm">
+          {closed.map((j) => <option key={j.id} value={j.id}>Jornada {j.number}</option>)}
+        </select>
+      </div>
+      {jornada ? (
+        <ul className="mt-3 space-y-1 text-sm">
+          {jornada.matches.map((m) => <li key={m.id} className="flex items-center justify-between gap-2 rounded-lg bg-surface-2 px-3 py-2"><span>{m.home} – {m.away}</span><span className="tabular-nums text-muted">{m.officialHome}-{m.officialAway}</span></li>)}
+        </ul>
+      ) : null}
+    </section>
   );
 }
 
