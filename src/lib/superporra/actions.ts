@@ -32,6 +32,7 @@ async function state(leagueId?: string, userOverride?: { id: string; name: strin
   const latest = slates[0];
   if (latest && leagueId) {
     try { await store.autofill(leagueId, latest); } catch { /* ignore */ }
+    try { await store.ensureNextWindow(leagueId); } catch { /* ignore */ }
   }
   const box = await store.listAll();
   const user = me ? box.users.find((u) => u.id === me.id) : undefined;
@@ -226,6 +227,16 @@ export const superSetResult = createServerFn({ method: "POST" })
     return { ok: true as const, state: await state(data.leagueId) };
   });
 
+export const superCloseJornada = createServerFn({ method: "POST" })
+  .inputValidator((d: { leagueId: string; jornadaId: string }) => d)
+  .handler(async ({ data }) => {
+    if (!(await canManage(data.leagueId))) return { ok: false as const, error: "No puedes administrar esta liga." };
+    const store = await import("./store.server");
+    const ok = await store.closeJornada(data.leagueId, data.jornadaId);
+    if (!ok) return { ok: false as const, error: "Pon el resultado de todos los partidos antes de cerrar." };
+    return { ok: true as const, state: await state(data.leagueId) };
+  });
+
 export const superSavePicks = createServerFn({ method: "POST" })
   .inputValidator((d: { leagueId: string; jornadaId: string; picks: Array<{ matchId: string; home: number; away: number }> }) => d)
   .handler(async ({ data }) => {
@@ -237,7 +248,7 @@ export const superSavePicks = createServerFn({ method: "POST" })
     const league = box.leagues.find((l) => l.id === data.leagueId);
     if (!league?.participants.includes(me.id)) return { ok: false as const, error: "No estás en esta liga." };
     const jornada = box.jornadas.find((j) => j.id === data.jornadaId);
-    if (jornada?.closeAt && Date.now() > Date.parse(jornada.closeAt)) return { ok: false as const, error: "La jornada ya está cerrada." };
+    if (jornada?.closed || (jornada?.closeAt && Date.now() > Date.parse(jornada.closeAt))) return { ok: false as const, error: "La jornada ya está cerrada." };
     await store.savePicks(me.id, data.leagueId, data.jornadaId, data.picks.filter((p) => Number.isFinite(p.home) && Number.isFinite(p.away)));
     return { ok: true as const, state: await state(data.leagueId) };
   });
