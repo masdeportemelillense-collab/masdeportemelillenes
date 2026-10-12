@@ -155,6 +155,11 @@ export async function updateLeague(leagueId: string, patch: Partial<Pick<SuperLe
     if (patch.seasonStart !== undefined) league.seasonStart = patch.seasonStart;
     if (patch.jornadaOpen !== undefined) league.jornadaOpen = patch.jornadaOpen;
     if (patch.jornadaClose !== undefined) league.jornadaClose = patch.jornadaClose;
+    const open = data.jornadas.filter((j) => j.leagueId === leagueId && !j.closed).sort((a, b) => b.number - a.number)[0];
+    if (open) {
+      if (patch.jornadaOpen !== undefined) open.openAt = patch.jornadaOpen;
+      if (patch.jornadaClose !== undefined) open.closeAt = patch.jornadaClose;
+    }
   });
 }
 
