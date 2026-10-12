@@ -51,7 +51,7 @@ function SuperPage() {
         </p>
       </section>
       {state.isWebAdmin ? <MasterPanel state={state} onOpen={setLeagueId} /> : null}
-      {!state.user ? <Auth onDone={apply} /> : state.league ? <LeagueView state={state} onBack={() => setLeagueId(undefined)} onSaved={apply} /> : <Hub state={state} onOpen={setLeagueId} onSaved={apply} />}
+      {state.league ? <LeagueView state={state} onBack={() => setLeagueId(undefined)} onSaved={apply} /> : !state.user ? <Auth onDone={apply} /> : <Hub state={state} onOpen={setLeagueId} onSaved={apply} />}
     </div>
   );
 }
