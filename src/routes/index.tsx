@@ -11,12 +11,18 @@ import { SPORTS, sportLabel } from "@/lib/sports";
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
-  const { live, upcoming, recent, today } = useFeed();
+  const { live, recent, today, next: feedNext } = useFeed();
   const favIds = useFavoriteIds();
   const favs = teams.filter((t) => favIds.includes(t.id));
   const melilla = (m: { homeId?: string; awayId?: string }) => !!(m.homeId || m.awayId);
   const todayRest = today.filter((m) => m.status !== "live" && melilla(m));
-  const restUpcoming = upcoming.filter((m) => melilla(m) && !today.some((t) => t.id === m.id)).slice(0, 6);
+  const nextByTeam = teams
+    .map((team) => feedNext(team.id))
+    .filter((m): m is NonNullable<typeof m> => !!m && melilla(m));
+  const seen = new Set<string>();
+  const restUpcoming = nextByTeam
+    .filter((m) => !today.some((t) => t.id === m.id) && !seen.has(m.id) && seen.add(m.id))
+    .sort((a, b) => Date.parse(a.kickoff) - Date.parse(b.kickoff));
   const recentMelilla = recent.filter(melilla);
 
   return (
