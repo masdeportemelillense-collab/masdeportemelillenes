@@ -111,6 +111,9 @@ export type SuperPublic = {
   isWebAdmin: boolean;
   jornadas: SuperJornada[];
   picks: SuperPick[];
+  rivalPicks: SuperPick[];
+  predictionCount: number;
+  predictionTotal: number;
   fixtures: FixtureView[];
   board: BoardRow[];
   chat: Array<SuperMessage & { name: string; avatar?: string }>;
