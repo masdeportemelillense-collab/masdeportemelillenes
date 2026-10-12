@@ -293,10 +293,11 @@ async function mergeFutbolme(base: LiveSnapshot): Promise<LiveSnapshot> {
 
 async function mergeFeb(base: LiveSnapshot): Promise<LiveSnapshot> {
   try {
-    const { fetchFebSegunda } = await import("./feb.server");
-    const tables = await fetchFebSegunda();
-    if (!Object.keys(tables).length) return base;
-    return { ...base, ok: true, tables: { ...base.tables, ...tables } };
+    const { fetchFeb } = await import("./feb.server");
+    const feb = await fetchFeb();
+    if (!Object.keys(feb.tables).length && !feb.events.length) return base;
+    const kept = base.events.filter((e) => !e.externalId.startsWith("feb-soler-"));
+    return { ...base, ok: true, events: [...kept, ...feb.events], tables: { ...base.tables, ...feb.tables } };
   } catch {
     return base;
   }
