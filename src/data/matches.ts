@@ -1,5 +1,6 @@
 import { udmMatches } from "@/data/matches-udm";
 import { basketAMatches } from "@/data/matches-basket-a";
+import { solerMatches } from "@/data/matches-soler";
 import { restoMatches } from "@/data/matches-resto";
 import { juvMatches } from "@/data/matches-juv";
 import { atmMatches } from "@/data/matches-atm";
@@ -17,6 +18,7 @@ export const matches: Match[] = [
   ...atmMatches,
   ...atmSrMatches,
   ...basketAMatches,
+  ...solerMatches,
   ...copaBskMatches,
   ...boomerangMatches,
   ...salleBMatches,
