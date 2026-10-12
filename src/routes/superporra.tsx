@@ -65,8 +65,33 @@ function SuperPage() {
         ) : null}
       </section>
       {state.isWebAdmin ? <MasterPanel state={state} onOpen={setLeagueId} /> : null}
-      {state.league ? <LeagueView state={state} onBack={() => setLeagueId(undefined)} onSaved={apply} /> : !state.user ? <Auth onDone={apply} /> : <Hub state={state} onOpen={setLeagueId} onSaved={apply} />}
+      {state.league ? <LeagueView state={state} onBack={() => setLeagueId(undefined)} onSaved={apply} /> : (
+        <>
+          {!state.user ? <Auth onDone={apply} /> : <Hub state={state} onOpen={setLeagueId} onSaved={apply} />}
+          <Rules />
+        </>
+      )}
     </div>
+  );
+}
+
+
+function Rules() {
+  return (
+    <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
+      <h2 className="font-display text-3xl">Reglas</h2>
+      <div className="mt-3 space-y-3 text-sm text-muted">
+        <p>La Superporra Melillense es un juego de ligas privadas. Cada jugador se registra con su propio usuario, distinto al de la porra, y elige un escudo.</p>
+        <p>Puedes crear una liga o unirte a una con su contraseña. Quien la crea es el administrador: pone el nombre, la contraseña, el número de plazas, las fechas y puede expulsar participantes.</p>
+        <p>Cuando están los jugadores, el administrador genera el calendario de ida y vuelta. Ese calendario no se puede volver a generar. Cada jornada del calendario enfrenta a los participantes entre sí.</p>
+        <p>El administrador elige 10 partidos de la jornada publicada en la porra. Esa jornada de la porra solo se puede usar una vez. Cuando se publique otra, volverá a aparecer para elegir 10 nuevos. Si pasan 24 horas y no ha elegido, se cogen solos.</p>
+        <p>Los jugadores pronostican el resultado exacto de esos 10 partidos. Al guardar sale el aviso de pronóstico registrado y se conserva para siempre.</p>
+        <p><strong className="text-fg">Puntos del pronóstico.</strong> En fútbol y voleibol: 2 si aciertas el resultado exacto y 1 si aciertas el ganador o el empate. Solo se suma uno de los dos. En baloncesto y balonmano: 3 si aciertas el exacto, 2 si aciertas la diferencia de la victoria y 1 si aciertas el ganador.</p>
+        <p>El partido entre dos jugadores se decide con la suma de esos puntos. El que más tenga gana 3 puntos de liga, el empate da 1 a cada uno y el perdedor se queda con 0.</p>
+        <p>La clasificación muestra jornadas jugadas, ganados, empatados, perdidos, goles a favor, goles en contra y puntos. Puedes revisar tus aciertos jornada por jornada y, al cerrarse, ver de dónde salen los puntos tuyos y los del rival.</p>
+        <p>Cada liga tiene chat y un tablón de anuncios del administrador. El administrador de la web puede entrar en todas las ligas para corregir cualquier cosa.</p>
+      </div>
+    </section>
   );
 }
 
