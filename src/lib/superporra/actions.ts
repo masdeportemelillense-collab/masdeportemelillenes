@@ -72,7 +72,10 @@ async function state(leagueId?: string, userOverride?: { id: string; name: strin
     board,
     chat,
     announcements: canSee ? box.announcements.filter((a) => a.leagueId === leagueId).slice(0, 12) : [],
-    slates: slates.slice(0, 4).map((s) => ({ id: s.id, title: s.title, createdAt: s.createdAt, matches: s.matches.map((m) => ({ id: m.id, home: m.home, away: m.away })) })),
+    slates: slates
+      .filter((s) => !jornadas.some((j) => j.slateId === s.id))
+      .slice(0, 4)
+      .map((s) => ({ id: s.id, title: s.title, createdAt: s.createdAt, matches: s.matches.map((m) => ({ id: m.id, home: m.home, away: m.away })) })),
     accounts: admin ? box.users.map((u) => ({ id: u.id, name: u.name, password: u.passPlain ?? null })) : undefined,
     allLeagues: admin ? box.leagues.map((l) => ({ id: l.id, name: l.name, password: l.password, owner: box.users.find((u) => u.id === l.ownerId)?.name ?? l.ownerId })) : undefined,
   };
@@ -206,6 +209,8 @@ export const superSelectMatches = createServerFn({ method: "POST" })
     if (!chosen.length) return { ok: false as const, error: "Elige al menos un partido." };
     const store = await import("./store.server");
     const box = await store.listAll();
+    if (box.jornadas.some((j) => j.leagueId === data.leagueId && j.slateId === slate.id)) return { ok: false as const, error: "Esa jornada de la porra ya se ha usado." };
+    if (box.jornadas.some((j) => j.leagueId === data.leagueId && !j.closed)) return { ok: false as const, error: "Cierra la jornada actual antes de publicar otra." };
     const number = data.number || Math.max(0, ...box.jornadas.filter((j) => j.leagueId === data.leagueId).map((j) => j.number)) + 1;
     await store.setJornada(
       data.leagueId,
