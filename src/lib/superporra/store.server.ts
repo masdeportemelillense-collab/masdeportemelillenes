@@ -206,7 +206,8 @@ export async function setJornada(leagueId: string, number: number, slateId: stri
 export async function setOfficial(leagueId: string, jornadaId: string, matchId: string, home?: number, away?: number): Promise<void> {
   await mutate((data) => {
     const jornada = data.jornadas.find((j) => j.id === jornadaId && j.leagueId === leagueId);
-    const match = jornada?.matches.find((m) => m.id === matchId);
+    if (!jornada || jornada.closed) return;
+    const match = jornada.matches.find((m) => m.id === matchId);
     if (!match) return;
     match.officialHome = home;
     match.officialAway = away;
@@ -216,8 +217,48 @@ export async function setOfficial(leagueId: string, jornadaId: string, matchId: 
 export async function setSport(leagueId: string, jornadaId: string, matchId: string, sport: SportKind): Promise<void> {
   await mutate((data) => {
     const jornada = data.jornadas.find((j) => j.id === jornadaId && j.leagueId === leagueId);
-    const match = jornada?.matches.find((m) => m.id === matchId);
+    if (!jornada || jornada.closed) return;
+    const match = jornada.matches.find((m) => m.id === matchId);
     if (match) match.sport = sport;
+  });
+}
+
+export async function closeJornada(leagueId: string, jornadaId: string): Promise<boolean> {
+  return mutate((data) => {
+    const jornada = data.jornadas.find((j) => j.id === jornadaId && j.leagueId === leagueId);
+    if (!jornada || jornada.closed) return false;
+    if (!jornada.matches.length || jornada.matches.some((m) => m.officialHome == null || m.officialAway == null)) return false;
+    jornada.closed = true;
+    jornada.closedAt = Date.now();
+    const league = data.leagues.find((l) => l.id === leagueId);
+    if (league) {
+      league.jornadaOpen = "";
+      league.jornadaClose = "";
+    }
+    return true;
+  });
+}
+
+function nextMadrid(weekday: number, hour: number, from = new Date()): string {
+  const dateFmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit" });
+  const dayFmt = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Madrid", weekday: "short" });
+  const map: Record<string, number> = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
+  const cursor = new Date(from);
+  for (let i = 0; i < 8; i++) {
+    if (map[dayFmt.format(cursor)] === weekday) return `${dateFmt.format(cursor)}T${String(hour).padStart(2, "0")}:00`;
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return "";
+}
+
+export async function ensureNextWindow(leagueId: string): Promise<void> {
+  await mutate((data) => {
+    const league = data.leagues.find((l) => l.id === leagueId);
+    if (!league || league.jornadaOpen || league.jornadaClose) return;
+    const last = data.jornadas.filter((j) => j.leagueId === leagueId && j.closed).sort((a, b) => b.number - a.number)[0];
+    if (!last?.closedAt || Date.now() - last.closedAt < 24 * 60 * 60 * 1000) return;
+    league.jornadaOpen = nextMadrid(1, 17);
+    league.jornadaClose = nextMadrid(5, 17);
   });
 }
 
