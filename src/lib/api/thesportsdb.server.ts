@@ -271,9 +271,8 @@ async function mergeRfebm(base: LiveSnapshot): Promise<LiveSnapshot> {
     const bm = await fetchRfebm();
     if (!bm.events.length && !Object.keys(bm.tables).length) return base;
     const kept = base.events.filter((e) => e.sport !== "balonmano" || !e.externalId.startsWith("rfebm-"));
-    const byId = new Map(kept.map((e) => [e.externalId, e]));
-    for (const ev of bm.events) byId.set(ev.externalId, ev);
-    return { ...base, ok: true, events: [...byId.values()], tables: { ...base.tables, ...bm.tables } };
+    const extra = bm.events.filter((e) => e.leagueId !== "bm-primera-f");
+    return { ...base, ok: true, events: [...kept, ...extra], tables: { ...base.tables, ...bm.tables } };
   } catch {
     return base;
   }
