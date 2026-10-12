@@ -19,7 +19,8 @@ import {
   superState,
   superUpdateLeague,
 } from "@/lib/superporra/actions";
-import type { SportKind, SuperPublic } from "@/lib/superporra/types";
+import { scoreMatch } from "@/lib/superporra/score";
+import type { SportKind, SuperJornada, SuperPick, SuperPublic } from "@/lib/superporra/types";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/superporra")({
@@ -199,6 +200,8 @@ function LeagueView({ state, onBack, onSaved }: { state: SuperPublic; onBack: ()
 function Picks({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPublic) => void }) {
   const jornada = state.jornadas.at(-1);
   const [draft, setDraft] = useState<Record<string, { home: string; away: string }>>({});
+  const [msg, setMsg] = useState("");
+  const [historyId, setHistoryId] = useState(state.jornadas.at(-1)?.id ?? "");
   const save = useMutation({
     mutationFn: () => superSavePicks({
       data: {
@@ -207,7 +210,12 @@ function Picks({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPubli
         picks: Object.entries(draft).filter(([, v]) => v.home !== "" && v.away !== "").map(([matchId, v]) => ({ matchId, home: Number(v.home), away: Number(v.away) })),
       },
     }),
-    onSuccess: (res) => { if (res.ok) onSaved(res.state); },
+    onSuccess: (res) => {
+      if (res.ok) {
+        setMsg("Pronóstico registrado.");
+        onSaved(res.state);
+      } else setMsg(res.error);
+    },
   });
   if (!jornada) return <p className="rounded-xl bg-surface p-4 text-sm text-muted">El administrador todavía no ha elegido los 10 partidos de esta jornada.</p>;
   return (
@@ -230,12 +238,45 @@ function Picks({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPubli
           );
         })}
       </ul>
-      <button type="button" onClick={() => save.mutate()} className="mt-3 h-10 rounded-md bg-accent px-3 text-sm text-bg">{save.isPending ? "Guardando…" : "Guardar pronósticos"}</button>
+      <button type="button" onClick={() => { setMsg(""); save.mutate(); }} className="mt-3 h-10 rounded-md bg-accent px-3 text-sm text-bg">{save.isPending ? "Guardando…" : "Guardar pronósticos"}</button>
+      {msg ? <p className="mt-2 text-sm text-accent">{msg}</p> : null}
+      {(state.isOwner || state.isWebAdmin) && jornada ? <p className="mt-2 text-xs text-muted">Pronósticos hechos: {state.predictionCount}/{state.predictionTotal}</p> : null}
+      <History state={state} selected={historyId} onSelect={setHistoryId} />
     </section>
   );
 }
 
+function History({ state, selected, onSelect }: { state: SuperPublic; selected: string; onSelect: (id: string) => void }) {
+  const jornada = state.jornadas.find((j) => j.id === selected) ?? state.jornadas.at(-1);
+  if (!jornada) return null;
+  return (
+    <div className="mt-5 border-t border-border pt-4">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="font-display text-2xl">Tus aciertos</h4>
+        <select value={jornada.id} onChange={(e) => onSelect(e.target.value)} className="h-9 rounded-md bg-surface-2 px-2 text-xs">
+          {state.jornadas.map((j) => <option key={j.id} value={j.id}>Jornada {j.number}</option>)}
+        </select>
+      </div>
+      <ul className="mt-2 space-y-1 text-sm">
+        {jornada.matches.map((m) => {
+          const pick = state.picks.find((p) => p.jornadaId === jornada.id && p.matchId === m.id);
+          const pts = pick ? scoreMatch(m.sport, pick.home, pick.away, m.officialHome, m.officialAway) : 0;
+          const done = m.officialHome != null;
+          return (
+            <li key={m.id} className="flex items-center justify-between gap-2 rounded-lg bg-surface-2 px-3 py-2">
+              <span className="min-w-0">{m.home} – {m.away}</span>
+              <span className="shrink-0 text-xs text-muted">{pick ? `${pick.home}-${pick.away}` : "sin pronóstico"}{done ? ` · oficial ${m.officialHome}-${m.officialAway}` : ""}</span>
+              <span className={done ? (pts ? "text-win" : "text-loss") : "text-muted"}>{done ? (pts ? `+${pts}` : "fallo") : "pendiente"}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 function Calendar({ state }: { state: SuperPublic }) {
+  const [open, setOpen] = useState<string | null>(null);
   const rounds = [...new Set(state.fixtures.map((f) => f.round))].sort((a, b) => a - b);
   if (!rounds.length) return <p className="rounded-xl bg-surface p-4 text-sm text-muted">El administrador todavía no ha generado el calendario.</p>;
   return (
@@ -245,16 +286,42 @@ function Calendar({ state }: { state: SuperPublic }) {
           <h3 className="font-display text-2xl">Jornada {round}</h3>
           <ul className="mt-2 divide-y divide-border">
             {state.fixtures.filter((f) => f.round === round).map((f) => (
-              <li key={f.id} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-2 text-sm">
-                <span className="text-right">{f.homeName}</span>
-                <span className="tabular-nums text-muted">{f.resolved ? `${f.homePoints}-${f.awayPoints}` : "–"}</span>
-                <span>{f.awayName}</span>
+              <li key={f.id} className="py-2 text-sm">
+                <button type="button" disabled={!f.resolved} onClick={() => setOpen(open === f.id ? null : f.id)} className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 disabled:cursor-default">
+                  <span className="text-right">{f.homeName}</span>
+                  <span className="tabular-nums text-muted">{f.resolved ? `${f.homePoints}-${f.awayPoints}` : "–"}</span>
+                  <span className="text-left">{f.awayName}</span>
+                </button>
+                {open === f.id ? <Breakdown state={state} round={round} homeId={f.homeUserId} awayId={f.awayUserId} homeName={f.homeName} awayName={f.awayName} /> : null}
               </li>
             ))}
           </ul>
         </section>
       ))}
     </div>
+  );
+}
+
+function Breakdown({ state, round, homeId, awayId, homeName, awayName }: { state: SuperPublic; round: number; homeId: string; awayId: string; homeName: string; awayName: string }) {
+  const jornada = state.jornadas.find((j) => j.number === round);
+  if (!jornada) return null;
+  const pickOf = (userId: string, matchId: string) => [...state.picks, ...state.rivalPicks].find((p) => p.userId === userId && p.jornadaId === jornada.id && p.matchId === matchId);
+  return (
+    <ul className="mt-2 space-y-1 rounded-xl bg-surface-2 p-3 text-xs">
+      {jornada.matches.map((m) => {
+        const home = pickOf(homeId, m.id);
+        const away = pickOf(awayId, m.id);
+        const hp = home ? scoreMatch(m.sport, home.home, home.away, m.officialHome, m.officialAway) : 0;
+        const ap = away ? scoreMatch(m.sport, away.home, away.away, m.officialHome, m.officialAway) : 0;
+        return (
+          <li key={m.id} className="grid gap-1 border-b border-border py-2 last:border-0 sm:grid-cols-[1.2fr_1fr_1fr]">
+            <span>{m.home} {m.officialHome ?? "–"}-{m.officialAway ?? "–"} {m.away}</span>
+            <span>{homeName}: {home ? `${home.home}-${home.away}` : "—"} · {hp} pts</span>
+            <span>{awayName}: {away ? `${away.home}-${away.away}` : "—"} · {ap} pts</span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -333,7 +400,7 @@ function Admin({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPubli
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" onClick={() => save.mutate()} className="h-10 rounded-md bg-accent px-3 text-sm text-bg">Guardar</button>
-          <button type="button" onClick={() => gen.mutate()} className="h-10 rounded-md bg-surface-2 px-3 text-sm">Generar calendario</button>
+          <button type="button" onClick={() => gen.mutate()} disabled={league.started} className="h-10 rounded-md bg-surface-2 px-3 text-sm disabled:opacity-40">{league.started ? "Calendario generado" : "Generar calendario"}</button>
         </div>
         {msg ? <p className="mt-2 text-xs text-muted">{msg}</p> : null}
         <ul className="mt-3 space-y-1 text-sm">
@@ -359,6 +426,7 @@ function Admin({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPubli
       {state.jornadas.map((j) => (
         <section key={j.id} className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
           <h3 className="font-display text-2xl">Resultados jornada {j.number}</h3>
+          {j.id === state.jornadas.at(-1)?.id ? <p className="mt-1 text-xs text-muted">Han pronosticado {state.predictionCount} de {state.predictionTotal}</p> : null}
           <ul className="mt-2 space-y-2">
             {j.matches.map((m) => <ResultRow key={m.id} match={m} onSave={(home, away, sport) => result.mutate({ jornadaId: j.id, matchId: m.id, home, away, sport })} />)}
           </ul>
