@@ -38,7 +38,13 @@ async function state(leagueId?: string, userOverride?: { id: string; name: strin
   const league = leagueId ? box.leagues.find((l) => l.id === leagueId) : undefined;
   const canSee = Boolean(league && (admin || (user && league.participants.includes(user.id))));
   const jornadas = canSee ? box.jornadas.filter((j) => j.leagueId === leagueId).sort((a, b) => a.number - b.number) : [];
+  const closedIds = new Set(jornadas.filter((j) => j.matches.some((m) => m.officialHome != null)).map((j) => j.id));
   const picks = canSee && user ? box.picks.filter((p) => p.leagueId === leagueId && p.userId === user.id) : [];
+  const rivalPicks = canSee ? box.picks.filter((p) => p.leagueId === leagueId && closedIds.has(p.jornadaId) && p.userId !== user?.id) : [];
+  const currentJornada = jornadas.at(-1);
+  const predicted = currentJornada ? new Set(box.picks.filter((p) => p.jornadaId === currentJornada.id).map((p) => p.userId)) : new Set();
+  const predictionCount = currentJornada && league ? league.participants.filter((id) => predicted.has(id)).length : 0;
+  const predictionTotal = league?.participants.length ?? 0;
   const fixtures = canSee ? buildViews(box.fixtures.filter((f) => f.leagueId === leagueId), jornadas, box.picks, box.users) : [];
   const board = canSee && league ? buildBoard(league.participants, fixtures, box.users) : [];
   const chat = canSee
@@ -58,6 +64,9 @@ async function state(leagueId?: string, userOverride?: { id: string; name: strin
     isWebAdmin: admin,
     jornadas,
     picks,
+    rivalPicks,
+    predictionCount,
+    predictionTotal,
     fixtures,
     board,
     chat,
@@ -180,6 +189,7 @@ export const superGenerate = createServerFn({ method: "POST" })
     if (!(await canManage(data.leagueId))) return { ok: false as const, error: "No puedes administrar esta liga." };
     const store = await import("./store.server");
     const n = await store.generateCalendar(data.leagueId);
+    if (n < 0) return { ok: false as const, error: "El calendario ya está generado y no se puede volver a crear." };
     if (!n) return { ok: false as const, error: "Hacen falta al menos 2 participantes." };
     return { ok: true as const, state: await state(data.leagueId) };
   });
