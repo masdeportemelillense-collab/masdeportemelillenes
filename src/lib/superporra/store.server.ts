@@ -170,6 +170,7 @@ export async function generateCalendar(leagueId: string): Promise<number> {
   return mutate((data) => {
     const league = data.leagues.find((l) => l.id === leagueId);
     if (!league || league.participants.length < 2) return 0;
+    if (league.started || data.fixtures.some((f) => f.leagueId === leagueId)) return -1;
     data.fixtures = data.fixtures.filter((f) => f.leagueId !== leagueId);
     const pairs = roundRobin(league.participants);
     for (const pair of pairs) {
