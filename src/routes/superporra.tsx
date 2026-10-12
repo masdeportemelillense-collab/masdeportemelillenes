@@ -424,10 +424,12 @@ function Admin({ state, onSaved }: { state: SuperPublic; onSaved: (s: SuperPubli
       </section>
       {openRound ? null : <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)]">
         <h3 className="font-display text-3xl">Elegir 10 partidos</h3>
-        <p className="mt-1 text-xs text-muted">Salen de la porra publicada. Si pasan 24 horas sin elegir, se cogen solos.</p>
+        <p className="mt-1 text-xs text-muted">Solo aparecen jornadas de la porra que aún no has usado. Cuando se publique otra, saldrá aquí.</p>
+        {state.slates.length ? (
         <select value={slateId} onChange={(e) => { setSlateId(e.target.value); setPicked([]); }} className="mt-2 h-10 rounded-md bg-surface-2 px-2 text-sm">
           {state.slates.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
         </select>
+        ) : <p className="mt-2 text-sm text-muted">No hay jornadas nuevas de la porra. Cuando se publique la siguiente, aparecerá aquí.</p>}
         <ul className="mt-2 space-y-1">
           {slate?.matches.map((m) => (
             <li key={m.id}><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={picked.includes(m.id)} onChange={(e) => setPicked((ids) => e.target.checked ? [...ids, m.id].slice(0, 10) : ids.filter((id) => id !== m.id))} />{m.home} – {m.away}</label></li>
