@@ -23,10 +23,10 @@ async function publishedSlates() {
   return (await listSlates()).filter((s) => s.published);
 }
 
-async function state(leagueId?: string): Promise<SuperPublic> {
+async function state(leagueId?: string, userOverride?: { id: string; name: string } | null): Promise<SuperPublic> {
   const session = await import("./session.server");
   const store = await import("./store.server");
-  const me = await session.currentSuperUser();
+  const me = userOverride === undefined ? await session.currentSuperUser() : userOverride;
   const admin = await webAdmin();
   const slates = await publishedSlates();
   const latest = slates[0];
@@ -83,7 +83,7 @@ export const superRegister = createServerFn({ method: "POST" })
     if (await store.findUserByName(name)) return { ok: false as const, error: "Ese usuario ya existe." };
     const user = await store.createUser(name, data.password, data.avatar);
     await session.writeSuperCookie(await session.issueUserToken(user.id, user.name));
-    return { ok: true as const, state: await state() };
+    return { ok: true as const, state: await state(undefined, { id: user.id, name: user.name }) };
   });
 
 export const superLogin = createServerFn({ method: "POST" })
@@ -94,7 +94,7 @@ export const superLogin = createServerFn({ method: "POST" })
     const user = await store.findUserByName(clean(data.name));
     if (!user || !(await store.checkPass(data.password, user.pass))) return { ok: false as const, error: "Usuario o contraseña incorrectos." };
     await session.writeSuperCookie(await session.issueUserToken(user.id, user.name));
-    return { ok: true as const, state: await state() };
+    return { ok: true as const, state: await state(undefined, { id: user.id, name: user.name }) };
   });
 
 export const superLogout = createServerFn({ method: "POST" }).handler(async () => {
