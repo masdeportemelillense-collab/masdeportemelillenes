@@ -14,8 +14,10 @@ function Home() {
   const { live, upcoming, recent, today } = useFeed();
   const favIds = useFavoriteIds();
   const favs = teams.filter((t) => favIds.includes(t.id));
-  const todayRest = today.filter((m) => m.status !== "live");
-  const restUpcoming = upcoming.filter((m) => !today.some((t) => t.id === m.id)).slice(0, 6);
+  const melilla = (m: { homeId?: string; awayId?: string }) => !!(m.homeId || m.awayId);
+  const todayRest = today.filter((m) => m.status !== "live" && melilla(m));
+  const restUpcoming = upcoming.filter((m) => melilla(m) && !today.some((t) => t.id === m.id)).slice(0, 6);
+  const recentMelilla = recent.filter(melilla);
 
   return (
     <div className="space-y-10">
@@ -40,7 +42,7 @@ function Home() {
         </div>
       </section>
 
-      {live.length > 0 && (<section><SectionHead title="En directo ahora" hint={`${live.length} en juego`} /><div className="grid gap-3 md:grid-cols-2">{live.map((m) => <MatchCard key={m.id} match={m} />)}</div></section>)}
+      {live.filter(melilla).length > 0 && (<section><SectionHead title="En directo ahora" hint={`${live.filter(melilla).length} en juego`} /><div className="grid gap-3 md:grid-cols-2">{live.filter(melilla).map((m) => <MatchCard key={m.id} match={m} />)}</div></section>)}
       {todayRest.length > 0 && (<section><SectionHead title="Hoy" hint="Hora de Madrid" /><div className="grid gap-3 md:grid-cols-2">{todayRest.map((m) => <MatchCard key={m.id} match={m} />)}</div></section>)}
       {favs.length > 0 && (<section><SectionHead title="Tus equipos" /><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{favs.map((t) => (<Link key={t.id} to="/equipo/$slug" params={{ slug: t.id }} className="flex items-center gap-3 rounded-xl bg-surface p-3 shadow-[var(--shadow-border)] transition-colors duration-150 hover:bg-surface-2"><Crest team={t} size={36} /><span className="min-w-0"><span className="block truncate text-sm font-medium">{t.name}</span><span className="block truncate text-xs text-muted">{t.category}</span></span></Link>))}</div></section>)}
       <section><SectionHead title="Deportes" /><div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">{SPORTS.map((s) => { const count = teams.filter((t) => t.sport === s.id).length; return (<Link key={s.id} to="/deporte/$sport" params={{ sport: s.id }} className="group rounded-xl bg-surface p-4 shadow-[var(--shadow-border)] transition-colors duration-150 hover:bg-surface-2"><SportMark sport={s.id} className="size-5 text-accent" /><p className="mt-3 font-medium">{s.label}</p><p className="text-xs text-muted">{count} {count === 1 ? "equipo" : "equipos"}</p></Link>); })}</div></section>
@@ -50,7 +52,7 @@ function Home() {
         <p className="mt-1 font-display text-3xl leading-none">Superporra Melillense</p>
         <p className="mt-2 text-sm text-muted">Ligas privadas de resultado exacto. Crea la tuya o únete a la de tus amigos.</p>
       </Link>
-      <section><SectionHead title="Últimos resultados" /><div className="grid gap-3 md:grid-cols-2">{recent.slice(0, 6).map((m) => <MatchCard key={m.id} match={m} />)}</div></section>
+      <section><SectionHead title="Últimos resultados" /><div className="grid gap-3 md:grid-cols-2">{recentMelilla.slice(0, 6).map((m) => <MatchCard key={m.id} match={m} />)}</div></section>
       <section><SectionHead title="Todos los equipos" /><div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">{teams.map((t) => <TeamChip key={t.id} id={t.id} />)}</div></section>
     </div>
   );
