@@ -20,7 +20,7 @@ import {
   superUpdateLeague,
 } from "@/lib/superporra/actions";
 import { scoreMatch } from "@/lib/superporra/score";
-import type { SportKind, SuperJornada, SuperPick, SuperPublic } from "@/lib/superporra/types";
+import type { SportKind, SuperPublic } from "@/lib/superporra/types";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/superporra")({
