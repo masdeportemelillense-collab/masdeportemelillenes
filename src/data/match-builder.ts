@@ -28,6 +28,7 @@ export type Spec = {
   live?: number;
   duration?: number;
   events?: EventSpec[];
+  status?: "scheduled" | "live" | "finished" | "suspended";
 };
 
 export function sideOf(token: string): { id?: string; name: string; short: string } {
@@ -87,5 +88,6 @@ export function m(spec: Spec): Match {
     liveElapsed: spec.live,
     events: buildEvents(spec.events),
     duration: spec.duration ?? DURATION[spec.sport],
+    status: spec.status,
   };
 }
