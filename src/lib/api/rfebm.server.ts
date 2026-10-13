@@ -12,6 +12,8 @@ type Comp = {
   leagueName: string;
   ours: RegExp;
   slug: string;
+  idCategoria: string;
+  idCompeticion: string;
 };
 
 const COMPS: Comp[] = [
@@ -21,20 +23,24 @@ const COMPS: Comp[] = [
     leagueName: "Primera División Masculina BM · Grupo F",
     ours: /virgen\s*de\s*la\s*victoria|melilla\s+ciudad\s+del\s+deporte\s+balonmano\s+virgen/i,
     slug: "virgen-victoria",
+    idCategoria: "3017",
+    idCompeticion: "211438",
   },
   {
-    id: "1031250",
+    id: "1038404",
     leagueId: "bm-dh-plata",
     leagueName: "División de Honor Plata Femenina BM · Grupo D",
-    ours: /t[\s-]*maravilla/i,
+    ours: /t[\s-]*maravilla|melilla\s+ciudad\s+del\s+deporte\s+bm\s+t[-\s]*maravilla/i,
     slug: "t-maravillas",
+    idCategoria: "3020",
+    idCompeticion: "211441",
   },
 ];
 
 function decode(html: string): string {
   return html
     .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
+    .replace(/&/g, "&")
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
 }
 
@@ -65,9 +71,9 @@ function madridIso(dmy: string, time: string): string {
 
 function parseCalendar(html: string, comp: Comp): ApiEvent[] {
   const events: ApiEvent[] = [];
-  const jornadaMarks = [...html.matchAll(/JORNADA\s*(\d+)/gi)];
+  const jornadaMarks = [...html.matchAll(/JORNADA\s*(\d+)|MATCHDAY\s*(\d+)/gi)];
   for (let i = 0; i < jornadaMarks.length; i++) {
-    const jornada = Number(jornadaMarks[i][1]);
+    const jornada = Number(jornadaMarks[i][1] || jornadaMarks[i][2]);
     const chunk = html.slice(jornadaMarks[i].index, jornadaMarks[i + 1]?.index);
     const rowRe =
       /id_equipo=(\d+)[^>]*>\s*([^<]+)<\/a>[\s\S]{0,120}?id_equipo=(\d+)[^>]*>\s*([^<]+)<\/a>[\s\S]{0,800}?<span class='resultado'>\s*(\d+)\s*[-]\s*(\d+)\s*<\/span>[\s\S]{0,900}?<td class="fecha">[\s\S]{0,80}?(\d{2}\/\d{2}\/\d{4})[\s\S]{0,40}?(\d{1,2}:\d{2})/gi;
@@ -168,8 +174,8 @@ function parseTable(html: string, comp: Comp): StandingRow[] {
 }
 
 async function fetchComp(comp: Comp): Promise<{ events: ApiEvent[]; table: StandingRow[] }> {
-  const calUrl = `https://resultadosbalonmano.isquad.es/calendario.php?seleccion=0&id=${comp.id}&id_ambito=1&id_territorial=9999&id_superficie=1&iframe=0&id_categoria=3017&id_competicion=211438`;
-  const claUrl = `https://resultadosbalonmano.isquad.es/clasificacion.php?seleccion=0&id=${comp.id}&id_ambito=1&id_territorial=9999&id_superficie=1&iframe=0&id_categoria=3017&id_competicion=211438`;
+  const calUrl = `https://resultadosbalonmano.isquad.es/calendario.php?seleccion=0&id=${comp.id}&id_ambito=1&id_territorial=9999&id_superficie=1&iframe=0&id_categoria=${comp.idCategoria}&id_competicion=${comp.idCompeticion}`;
+  const claUrl = `https://resultadosbalonmano.isquad.es/clasificacion.php?seleccion=0&id=${comp.id}&id_ambito=1&id_territorial=9999&id_superficie=1&iframe=0&id_categoria=${comp.idCategoria}&id_competicion=${comp.idCompeticion}`;
   const [cal, cla] = await Promise.allSettled([getText(calUrl), getText(claUrl)]);
   const events = cal.status === "fulfilled" ? parseCalendar(cal.value, comp) : [];
   const table = cla.status === "fulfilled" ? parseTable(cla.value, comp) : [];
