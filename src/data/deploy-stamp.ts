@@ -1,1 +1,1 @@
-export const DEPLOY_STAMP = "2026-10-14T00-tmav-fixed";
+export const DEPLOY_STAMP = "2026-10-14T02-tmav-no-static-scores";
