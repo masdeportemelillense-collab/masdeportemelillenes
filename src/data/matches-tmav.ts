@@ -4,12 +4,17 @@ import type { Match } from "@/lib/types";
 
 const LAZ = "Pabellón Lázaro Fernández";
 
+/**
+ * Solo calendario (sin resultados). Los scores y el estado finished
+ * vienen del scraper RFEBM (id 1038404) vía overlay.
+ * Así no se mezcla un 20-26 de Pozuelo con el partido de Estudiantes.
+ */
 const rows: Spec[] = [
-  // J1 – 03/10/2026 20:00 local – 23-31 vs Casa Álvarez Ciudad Imperial
-  {id:"tmav-j1", league:"bm-dh-plata", sport:"balonmano", at:"2026-10-03T20:00:00+02:00", venue:LAZ, jornada:1, home:"t-maravillas", away:"Casa Álvarez Ciudad Imperial|CAI", duration:70, events:[[60,"A","punto","Final","*23-31"]]},
-  // J2 – 11/10/2026 11:00 away – 20-26 win vs Pozuelo
-  {id:"tmav-j2", league:"bm-dh-plata", sport:"balonmano", at:"2026-10-11T11:00:00+02:00", venue:"Pabellón Municipal Carrión de Calatrava", jornada:2, home:"Ayto Carrión BM Pozuelo|POZ", away:"t-maravillas", duration:70, events:[[60,"A","punto","Final","*20-26"]]},
-  // J3 – 17/10/2026 20:00 local vs Club BM Estudiantes
+  // J1 – 03/10/2026 20:00 local vs Casa Álvarez Ciudad Imperial
+  {id:"tmav-j1", league:"bm-dh-plata", sport:"balonmano", at:"2026-10-03T20:00:00+02:00", venue:LAZ, jornada:1, home:"t-maravillas", away:"Casa Álvarez Ciudad Imperial|CAI", duration:70},
+  // J2 – 11/10/2026 11:00 away vs Pozuelo
+  {id:"tmav-j2", league:"bm-dh-plata", sport:"balonmano", at:"2026-10-11T11:00:00+02:00", venue:"Pabellón Municipal Carrión de Calatrava", jornada:2, home:"Ayto Carrión BM Pozuelo|POZ", away:"t-maravillas", duration:70},
+  // J3 – 17/10/2026 20:00 local vs Club BM Estudiantes  ← este no tiene resultado aún
   {id:"tmav-j3", league:"bm-dh-plata", sport:"balonmano", at:"2026-10-17T20:00:00+02:00", venue:LAZ, jornada:3, home:"t-maravillas", away:"Club BM Estudiantes|EST", duration:70},
   // J4 – 25/10/2026 13:00 away vs Deza CBM
   {id:"tmav-j4", league:"bm-dh-plata", sport:"balonmano", at:"2026-10-25T13:00:00+02:00", venue:"IDM Fátima", jornada:4, home:"Deza CBM|DEZ", away:"t-maravillas", duration:70},
