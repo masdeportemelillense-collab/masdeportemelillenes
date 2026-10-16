@@ -4,7 +4,6 @@ import { MatchCard } from "@/components/match-card";
 import { SportMark } from "@/components/sport-mark";
 import { StandingsTable } from "@/components/standings-table";
 import { leagueById } from "@/data/leagues";
-import { teams } from "@/data/teams";
 import { useFeed } from "@/lib/api/feed";
 import { recentOf, upcomingOf } from "@/lib/api/merge";
 import { SPORTS, sportLabel } from "@/lib/sports";
@@ -21,7 +20,7 @@ function isSport(value: string): value is Sport {
 function SportPage() {
   const { sport } = Route.useParams();
   if (!isSport(sport)) throw notFound();
-  const { live, all, standings } = useFeed();
+  const { live, all, standings, teams } = useFeed();
   const sportTeams = teams.filter((t) => t.sport === sport);
   const liveNow = live.filter((m) => m.sport === sport);
   const upcoming = upcomingOf(
