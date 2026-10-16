@@ -1,50 +1,53 @@
 // matches-aciras.ts - Calendario estático Aciras / Fortaleza
-// Datos conocidos de noticias + placeholders para auto-update futuro
-export const acirasMatches = [
-  // Masculino - Primera Andaluza Senior Masculina
+import type { Match } from "@/lib/types";
+
+export const acirasMatches: Match[] = [
   {
     id: "aciras-m-j1",
-    teamId: "aciras-masc",
-    jornada: 1,
-    at: "2026-10-18T20:00:00+02:00",
+    leagueId: "bm-pa-masc",
+    sport: "balonmano",
     venue: "Pabellón Lázaro Fernández / a domicilio",
-    home: "CD Agrinova BM Vícar",
-    away: "Balonmano El Aciras",
+    jornada: 1,
+    homeName: "CD Agrinova BM Vícar",
+    homeShort: "VIC",
+    awayName: "Balonmano El Aciras",
+    awayShort: "ACIRAS",
+    awayId: "aciras-masc",
+    kickoff: "2026-10-18T20:00:00+02:00",
+    events: [],
+    duration: 60,
     status: "scheduled",
   },
-  // Femenino - Primera Nacional Femenina
   {
     id: "aciras-f-j1",
-    teamId: "aciras-fem",
-    jornada: 1,
-    at: "2026-10-11T00:00:00+02:00",
+    leagueId: "bm-pn-fem",
+    sport: "balonmano",
     venue: "Ciudad Deportiva de Carranque (Málaga)",
-    home: "Universidad de Granada",
-    away: "Balonmano El Aciras",
+    jornada: 1,
+    homeName: "Universidad de Granada",
+    homeShort: "UGR",
+    awayName: "Balonmano El Aciras",
+    awayShort: "ACIRAS",
+    awayId: "aciras-fem",
+    kickoff: "2026-10-11T00:00:00+02:00",
+    events: [],
+    duration: 60,
     status: "finished",
-    score: { home: 34, away: 20 },
-    note: "Derrota en el debut. 34-20",
   },
-  // Más jornadas placeholder
   {
     id: "aciras-m-j2",
-    teamId: "aciras-masc",
-    jornada: 2,
-    at: "2026-10-25T00:00:00+02:00",
+    leagueId: "bm-pa-masc",
+    sport: "balonmano",
     venue: "Por confirmar",
-    home: "Balonmano El Aciras",
-    away: "Rival Grupo A",
+    jornada: 2,
+    homeName: "Balonmano El Aciras",
+    homeShort: "ACIRAS",
+    homeId: "aciras-masc",
+    awayName: "Rival Grupo A",
+    awayShort: "RIV",
+    kickoff: "2026-10-25T00:00:00+02:00",
+    events: [],
+    duration: 60,
     status: "scheduled",
   },
 ];
-
-export const classificationAciras = {
-  masculino: [
-    { pos: 1, team: "Líder Grupo A", pts: 0, pj: 0 },
-    { pos: 2, team: "Balonmano El Aciras", pts: 0, pj: 0, note: "Debut 18/10" },
-  ],
-  femenino: [
-    { pos: 3, team: "Universidad de Granada", pts: 2, pj: 1 },
-    { pos: 5, team: "Balonmano El Aciras", pts: 0, pj: 1, note: "Derrota 20-34" },
-  ],
-};
