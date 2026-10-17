@@ -12,7 +12,7 @@ const TOURNAMENT_LEAGUE: Record<string, { id: string; name: string }> = {
   "31": { id: "fs-segunda-m", name: "Segunda División Masculina FS" },
   "11": { id: "fs-segunda-f", name: "Segunda División Femenina FS" },
   "3": { id: "fs-segunda-b", name: "Segunda División B FS" },
-  "13": { id: "fs-dh-juv", name: "División de Honor Juvenil FS" },
+  // "13" (División de Honor Juvenil FS) excluded on purpose
   "4": { id: "fs-tercera-24", name: "Tercera División FS · Melilla" },
   "12": { id: "fs-autonomica-melilla", name: "Liga Autonómica Melilla" },
 };
@@ -22,12 +22,11 @@ const TEAM_HINTS: Array<{ re: RegExp; id: string }> = [
   { re: /torreblanca/i, id: "torreblanca" },
   { re: /melistar/i, id: "melistar" },
   { re: /nueva\s*era/i, id: "nueva-era" },
-  { re: /rusadir/i, id: "rusadir-fs-dh" },
-  { re: /p\.?r\.?\s*madrid|peña\s*real\s*madrid|melilla\s*s\.?c/i, id: "pena-rm-fs" },
+  // rusadir and peña RM youth excluded
 ];
 
 function isMelillaSide(name: string): boolean {
-  return /melilla|melistar|torreblanca|nueva\s*era|rusadir|imperio\s*melilla/i.test(name);
+  return /melilla|melistar|torreblanca|nueva\s*era|imperio\s*melilla/i.test(name);
 }
 
 function slugForName(name: string): string | undefined {
@@ -95,6 +94,9 @@ type RawMatch = {
 };
 
 function mapRaw(match: RawMatch, tournamentId: string, matchdayName: string): ApiEvent | null {
+  // Skip youth DH completely
+  if (tournamentId === "13" || String(match.matchday?.season?.tournament?.id ?? "") === "13") return null;
+
   const homeName = (match.team1?.t_name ?? "").replace(/\s+/g, " ").trim();
   const awayName = (match.team2?.t_name ?? "").replace(/\s+/g, " ").trim();
   if (!homeName || !awayName) return null;
@@ -106,6 +108,9 @@ function mapRaw(match: RawMatch, tournamentId: string, matchdayName: string): Ap
       id: `fs-sfs-${tournamentId}`,
       name: match.matchday?.season?.tournament?.name || matchdayName || "Fútbol sala",
     };
+
+  // Extra guard: never emit youth DH league
+  if (leagueMeta.id === "fs-dh-juv") return null;
 
   const status = statusOf(match.m_played);
   const homeScore = Number(match.score1) || 0;
