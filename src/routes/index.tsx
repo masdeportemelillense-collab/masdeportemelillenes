@@ -3,6 +3,7 @@ import { ChevronRight, Star } from "lucide-react";
 import { Crest } from "@/components/crest";
 import { MatchCard } from "@/components/match-card";
 import { SportMark } from "@/components/sport-mark";
+import { teams } from "@/data/teams";
 import { useFeed } from "@/lib/api/feed";
 import { useFavorite, useFavoriteIds } from "@/lib/favorites";
 import { SPORTS, sportLabel } from "@/lib/sports";
@@ -10,7 +11,7 @@ import { SPORTS, sportLabel } from "@/lib/sports";
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
-  const { live, recent, today, now, next: feedNext, teams } = useFeed();
+  const { live, recent, today, now, next: feedNext } = useFeed();
   const favIds = useFavoriteIds();
   const favs = teams.filter((t) => favIds.includes(t.id));
   const melilla = (m: { homeId?: string; awayId?: string }) => !!(m.homeId || m.awayId);
@@ -63,7 +64,7 @@ function Home() {
         <p className="mt-2 text-sm text-muted">Ligas privadas de resultado exacto. Crea la tuya o únete a la de tus amigos.</p>
       </Link>
       <section><SectionHead title="Últimos resultados" /><div className="grid gap-3 md:grid-cols-2">{recentMelilla.slice(0, 6).map((m) => <MatchCard key={m.id} match={m} />)}</div></section>
-      <section><SectionHead title="Todos los equipos" /><div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">{teams.map((t) => <TeamChip key={t.id} team={t} />)}</div></section>
+      <section><SectionHead title="Todos los equipos" /><div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">{teams.map((t) => <TeamChip key={t.id} id={t.id} />)}</div></section>
     </div>
   );
 }
@@ -72,16 +73,17 @@ function SectionHead({ title, hint }: { title: string; hint?: string }) {
   return (<div className="mb-4 flex items-end justify-between gap-3"><h2 className="font-display text-3xl leading-none">{title}</h2>{hint && <p className="text-xs uppercase tracking-wider text-muted">{hint}</p>}</div>);
 }
 
-function TeamChip({ team }: { team: { id: string; name: string; sport: string; category: string; badgeUrl?: string; primary?: string; secondary?: string } }) {
-  const { fav, toggle } = useFavorite(team.id);
+function TeamChip({ id }: { id: string }) {
+  const team = teams.find((t) => t.id === id)!;
+  const { fav, toggle } = useFavorite(id);
   return (
     <div className="flex items-center gap-3 rounded-xl bg-surface py-2 pr-2 pl-3 shadow-[var(--shadow-border)]">
       <Link to="/equipo/$slug" params={{ slug: team.id }} className="flex min-w-0 flex-1 items-center gap-3">
-        <Crest team={team as any} size={36} />
-        <span className="min-w-0"><span className="block truncate text-sm font-medium">{team.name}</span><span className="flex items-center gap-1.5 text-xs text-muted"><SportMark sport={team.sport as any} className="size-3" />{sportLabel[team.sport as any]} · {team.category}</span></span>
+        <Crest team={team} size={36} />
+        <span className="min-w-0"><span className="block truncate text-sm font-medium">{team.name}</span><span className="flex items-center gap-1.5 text-xs text-muted"><SportMark sport={team.sport} className="size-3" />{sportLabel[team.sport]} · {team.category}</span></span>
         <ChevronRight className="size-4 shrink-0 text-subtle" />
       </Link>
-      <button type="button" aria-label={fav ? "Quitar de favoritos" : "Añadir a favoritos"} onClick={() => toggle(team.id)} className="grid size-11 place-items-center rounded-md text-muted hover:text-fg"><Star className={fav ? "size-4 fill-accent text-accent" : "size-4"} /></button>
+      <button type="button" aria-label={fav ? "Quitar de favoritos" : "Añadir a favoritos"} onClick={() => toggle(id)} className="grid size-11 place-items-center rounded-md text-muted hover:text-fg"><Star className={fav ? "size-4 fill-accent text-accent" : "size-4"} /></button>
     </div>
   );
 }
