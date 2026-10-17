@@ -24,8 +24,7 @@ function TeamPage() {
   const base = getTeam(slug);
   if (!base) throw notFound();
   const feed = useFeed();
-  const overridden = feed.team(slug);
-  const team = overridden ? { ...base, ...overridden } : base;
+  const team = { ...base, badgeUrl: feed.team(slug)?.badgeUrl };
   const league = leagueById[team.leagueId];
   const all = feed.forTeam(team.id);
   const cupMatches = all.filter((m) => CUP_LEAGUE_IDS.has(m.leagueId));
