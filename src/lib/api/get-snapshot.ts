@@ -8,10 +8,21 @@ function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   ]);
 }
 
+const EMPTY_SNAP: LiveSnapshot = {
+  fetchedAt: Date.now(),
+  ok: false,
+  error: "timeout",
+  events: [],
+  tables: {},
+};
+
 export const getLiveSnapshot = createServerFn({ method: "GET" }).handler(
   async (): Promise<LiveSnapshot> => {
     const { fetchLiveSnapshot } = await import("./thesportsdb.server");
-    const snap = await fetchLiveSnapshot();
+
+    // Timeout the entire live fetch so a slow external API cannot hang the page
+    const snap = await withTimeout(fetchLiveSnapshot(), 6000, EMPTY_SNAP);
+
     try {
       const { listOverrides } = await import("@/lib/admin/store.server");
       const { getCatalog } = await import("@/lib/catalog/store.server");
@@ -28,7 +39,7 @@ export const getLiveSnapshot = createServerFn({ method: "GET" }).handler(
             nameOverrides: await listNameOverrides(),
           };
         })(),
-        4000,
+        3000,
         {
           overrides: [] as any[],
           catalogTeams: [] as any[],
