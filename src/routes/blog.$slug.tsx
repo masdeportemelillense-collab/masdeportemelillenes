@@ -10,47 +10,45 @@ function BlogPostPage() {
   const { slug } = Route.useParams();
   const q = useQuery({ queryKey: ["blog-post", slug], queryFn: () => getBlogPost({ data: { slug } }) });
   if (q.isLoading) return <p className="text-sm text-muted">Cargando…</p>;
-  if (!q.data) throw notFound();
+  if (!q.data) return <p className="text-sm text-muted">Entrada no encontrada (slug: {slug}).</p>;
   const post = q.data;
-  const rankings = post.rankings ?? [];
+  const rankings = Array.isArray(post.rankings) ? post.rankings : [];
   return (
-    <article className="mx-auto max-w-3xl space-y-8">
+    <article className="mx-auto max-w-3xl space-y-6">
       <header>
         <p className="text-[11px] uppercase tracking-wider text-muted">{new Date(post.createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })}</p>
-        <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">{post.title}</h1>
+        <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">{post.title || "Sin título"}</h1>
         {post.excerpt ? <p className="mt-3 text-base text-muted">{post.excerpt}</p> : null}
       </header>
 
-      {post.content && post.content.trim() ? (
-        <div className="rounded-xl bg-surface p-4 text-sm leading-relaxed text-fg whitespace-pre-wrap shadow-[var(--shadow-border)]">
-          {post.content}
+      {post.content && String(post.content).trim() ? (
+        <div className="rounded-xl bg-surface p-4 text-sm leading-relaxed text-fg whitespace-pre-wrap">
+          {String(post.content)}
         </div>
-      ) : null}
+      ) : (
+        <p className="text-sm text-muted">(Sin texto libre)</p>
+      )}
 
       {rankings.length > 0 ? (
         <section>
           <h2 className="mb-3 font-display text-2xl">Ranking de la semana</h2>
           <div className="space-y-3">
             {rankings.map((r, i) => (
-              <div key={i} className="rounded-xl bg-surface p-4 shadow-[var(--shadow-border)]">
+              <div key={i} className="rounded-xl bg-surface p-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={`inline-flex h-7 items-center rounded-full px-2.5 text-xs font-semibold ${GRADE_COLOR[r.grade]}`}>
-                    {GRADE_LABEL[r.grade]}
+                  <span className={`inline-flex h-7 items-center rounded-full px-2.5 text-xs font-semibold ${GRADE_COLOR[r.grade] || "bg-surface-2"}`}>
+                    {GRADE_LABEL[r.grade] || r.grade}
                   </span>
-                  <p className="font-medium text-base">{r.teamName}</p>
+                  <p className="font-medium">{r.teamName || "Equipo"}</p>
                 </div>
-                {r.note && r.note.trim() ? (
-                  <p className="mt-2 text-sm text-fg/90">{r.note}</p>
-                ) : null}
+                {r.note && String(r.note).trim() ? <p className="mt-2 text-sm text-fg">{String(r.note)}</p> : <p className="mt-1 text-xs text-muted">(sin nota)</p>}
               </div>
             ))}
           </div>
         </section>
-      ) : null}
-
-      {!post.content?.trim() && rankings.length === 0 ? (
-        <p className="text-sm text-muted">Esta entrada no tiene texto ni ranking.</p>
-      ) : null}
+      ) : (
+        <p className="text-sm text-muted">(Sin ranking)</p>
+      )}
 
       <Comments postId={post.id} />
     </article>
