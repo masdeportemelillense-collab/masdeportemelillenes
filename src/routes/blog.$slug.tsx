@@ -20,25 +20,36 @@ function BlogPostPage() {
         <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">{post.title}</h1>
         {post.excerpt ? <p className="mt-3 text-base text-muted">{post.excerpt}</p> : null}
       </header>
-      {post.content ? <div className="prose prose-invert max-w-none whitespace-pre-wrap text-sm leading-relaxed text-fg">{post.content}</div> : null}
+
+      {post.content && post.content.trim() ? (
+        <div className="rounded-xl bg-surface p-4 text-sm leading-relaxed text-fg whitespace-pre-wrap shadow-[var(--shadow-border)]">
+          {post.content}
+        </div>
+      ) : null}
 
       {rankings.length > 0 ? (
         <section>
           <h2 className="mb-3 font-display text-2xl">Ranking de la semana</h2>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {rankings.map((r, i) => (
-              <div key={i} className="flex flex-wrap items-start gap-3 rounded-xl bg-surface p-3 shadow-[var(--shadow-border)]">
-                <span className={`inline-flex h-7 items-center rounded-full px-2.5 text-xs font-medium ${GRADE_COLOR[r.grade]}`}>
-                  {GRADE_LABEL[r.grade]}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">{r.teamName}</p>
-                  {r.note ? <p className="mt-0.5 text-sm text-muted">{r.note}</p> : null}
+              <div key={i} className="rounded-xl bg-surface p-4 shadow-[var(--shadow-border)]">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex h-7 items-center rounded-full px-2.5 text-xs font-semibold ${GRADE_COLOR[r.grade]}`}>
+                    {GRADE_LABEL[r.grade]}
+                  </span>
+                  <p className="font-medium text-base">{r.teamName}</p>
                 </div>
+                {r.note && r.note.trim() ? (
+                  <p className="mt-2 text-sm text-fg/90">{r.note}</p>
+                ) : null}
               </div>
             ))}
           </div>
         </section>
+      ) : null}
+
+      {!post.content?.trim() && rankings.length === 0 ? (
+        <p className="text-sm text-muted">Esta entrada no tiene texto ni ranking.</p>
       ) : null}
 
       <Comments postId={post.id} />
