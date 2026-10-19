@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as PorraRouteImport } from './routes/porra'
 import { Route as SuperporraRouteImport } from './routes/superporra'
+import { Route as BlogRouteImport } from './routes/blog'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as DeporteSportRouteImport } from './routes/deporte.$sport'
 import { Route as EquipoSlugRouteImport } from './routes/equipo.$slug'
 import { Route as PartidoIdRouteImport } from './routes/partido.$id'
@@ -37,6 +39,16 @@ const SuperporraRoute = SuperporraRouteImport.update({
   path: '/superporra',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DeporteSportRoute = DeporteSportRouteImport.update({
   id: '/deporte/$sport',
   path: '/deporte/$sport',
@@ -58,6 +70,8 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/porra': typeof PorraRoute
   '/superporra': typeof SuperporraRoute
+  '/blog': typeof BlogRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/deporte/$sport': typeof DeporteSportRoute
   '/equipo/$slug': typeof EquipoSlugRoute
   '/partido/$id': typeof PartidoIdRoute
@@ -67,6 +81,8 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/porra': typeof PorraRoute
   '/superporra': typeof SuperporraRoute
+  '/blog': typeof BlogRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/deporte/$sport': typeof DeporteSportRoute
   '/equipo/$slug': typeof EquipoSlugRoute
   '/partido/$id': typeof PartidoIdRoute
@@ -77,16 +93,18 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/porra': typeof PorraRoute
   '/superporra': typeof SuperporraRoute
+  '/blog': typeof BlogRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/deporte/$sport': typeof DeporteSportRoute
   '/equipo/$slug': typeof EquipoSlugRoute
   '/partido/$id': typeof PartidoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/porra' | '/superporra' | '/deporte/$sport' | '/equipo/$slug' | '/partido/$id'
+  fullPaths: '/' | '/admin' | '/porra' | '/superporra' | '/blog' | '/blog/$slug' | '/deporte/$sport' | '/equipo/$slug' | '/partido/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/porra' | '/superporra' | '/deporte/$sport' | '/equipo/$slug' | '/partido/$id'
-  id: '__root__' | '/' | '/admin' | '/porra' | '/superporra' | '/deporte/$sport' | '/equipo/$slug' | '/partido/$id'
+  to: '/' | '/admin' | '/porra' | '/superporra' | '/blog' | '/blog/$slug' | '/deporte/$sport' | '/equipo/$slug' | '/partido/$id'
+  id: '__root__' | '/' | '/admin' | '/porra' | '/superporra' | '/blog' | '/blog/$slug' | '/deporte/$sport' | '/equipo/$slug' | '/partido/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -94,6 +112,8 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   PorraRoute: typeof PorraRoute
   SuperporraRoute: typeof SuperporraRoute
+  BlogRoute: typeof BlogRoute
+  BlogSlugRoute: typeof BlogSlugRoute
   DeporteSportRoute: typeof DeporteSportRoute
   EquipoSlugRoute: typeof EquipoSlugRoute
   PartidoIdRoute: typeof PartidoIdRoute
@@ -129,6 +149,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperporraRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/deporte/$sport': {
       id: '/deporte/$sport'
       path: '/deporte/$sport'
@@ -158,6 +192,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   PorraRoute: PorraRoute,
   SuperporraRoute: SuperporraRoute,
+  BlogRoute: BlogRoute,
+  BlogSlugRoute: BlogSlugRoute,
   DeporteSportRoute: DeporteSportRoute,
   EquipoSlugRoute: EquipoSlugRoute,
   PartidoIdRoute: PartidoIdRoute,
