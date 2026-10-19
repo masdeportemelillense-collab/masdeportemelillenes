@@ -23,7 +23,9 @@ function BlogList() {
             <Link key={p.id} to="/blog/$slug" params={{ slug: p.slug }} className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-border)] transition-colors hover:bg-surface-2">
               <p className="text-[11px] uppercase tracking-wider text-muted">{new Date(p.createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })}</p>
               <h2 className="mt-2 font-display text-2xl leading-tight">{p.title}</h2>
-              {p.excerpt ? <p className="mt-2 text-sm text-muted line-clamp-3">{p.excerpt}</p> : null}
+              {p.excerpt ? <p className="mt-2 text-sm text-muted line-clamp-2">{p.excerpt}</p> : null}
+              {p.content ? <p className="mt-2 text-sm text-fg/80 line-clamp-3 whitespace-pre-line">{p.content}</p> : null}
+              {p.rankings && p.rankings.length > 0 ? <p className="mt-2 text-xs text-accent">{p.rankings.length} equipos en el ranking</p> : null}
             </Link>
           ))}
         </div>
