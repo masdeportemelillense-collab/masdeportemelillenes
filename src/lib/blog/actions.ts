@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import type { BlogComment, BlogPost } from "./types";
+import type { BlogComment, BlogPost, RankingItem } from "./types";
 
 export const listBlogPosts = createServerFn({ method: "GET" }).handler(async (): Promise<BlogPost[]> => {
   const { listPosts } = await import("./store.server");
@@ -40,7 +40,7 @@ export const adminListBlogPosts = createServerFn({ method: "GET" }).handler(asyn
 });
 
 export const adminSaveBlogPost = createServerFn({ method: "POST" })
-  .inputValidator((d: { id?: string; title: string; excerpt?: string; content: string; published?: boolean }) => d)
+  .inputValidator((d: { id?: string; title: string; excerpt?: string; content: string; rankings?: RankingItem[]; published?: boolean }) => d)
   .handler(async ({ data }) => {
     const { requireAdmin } = await import("@/lib/admin/session.server");
     if (!(await requireAdmin())) return { ok: false as const, error: "Sesión caducada." };
