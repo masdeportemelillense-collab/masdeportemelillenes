@@ -2,6 +2,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { addBlogComment, getBlogPost, listBlogComments } from "@/lib/blog/actions";
+import { GRADE_COLOR, GRADE_LABEL } from "@/lib/blog/types";
 
 export const Route = createFileRoute("/blog/$slug")({ component: BlogPostPage });
 
@@ -11,6 +12,7 @@ function BlogPostPage() {
   if (q.isLoading) return <p className="text-sm text-muted">Cargando…</p>;
   if (!q.data) throw notFound();
   const post = q.data;
+  const rankings = post.rankings ?? [];
   return (
     <article className="mx-auto max-w-3xl space-y-8">
       <header>
@@ -18,7 +20,27 @@ function BlogPostPage() {
         <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">{post.title}</h1>
         {post.excerpt ? <p className="mt-3 text-base text-muted">{post.excerpt}</p> : null}
       </header>
-      <div className="prose prose-invert max-w-none whitespace-pre-wrap text-sm leading-relaxed text-fg">{post.content}</div>
+      {post.content ? <div className="prose prose-invert max-w-none whitespace-pre-wrap text-sm leading-relaxed text-fg">{post.content}</div> : null}
+
+      {rankings.length > 0 ? (
+        <section>
+          <h2 className="mb-3 font-display text-2xl">Ranking de la semana</h2>
+          <div className="space-y-2">
+            {rankings.map((r, i) => (
+              <div key={i} className="flex flex-wrap items-start gap-3 rounded-xl bg-surface p-3 shadow-[var(--shadow-border)]">
+                <span className={`inline-flex h-7 items-center rounded-full px-2.5 text-xs font-medium ${GRADE_COLOR[r.grade]}`}>
+                  {GRADE_LABEL[r.grade]}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{r.teamName}</p>
+                  {r.note ? <p className="mt-0.5 text-sm text-muted">{r.note}</p> : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <Comments postId={post.id} />
     </article>
   );
