@@ -14,6 +14,7 @@ import type { AdminOverride } from "@/lib/admin/types";
 import { CatalogAdmin } from "@/components/catalog-admin";
 import { LiveDesk } from "@/components/live-desk";
 import { PorraAdmin } from "@/components/porra-admin";
+import { BlogAdmin } from "@/components/blog-admin";
 import { useFeed } from "@/lib/api/feed";
 import type { EventKind, MatchStatus, ResolvedMatch, Side } from "@/lib/types";
 
@@ -67,7 +68,7 @@ function Editor({ onLogout }: { onLogout: () => void }) {
   const session = useQuery({ queryKey: ["admin-session"], queryFn: () => adminSession() });
   const scope = session.data && "scope" in session.data ? session.data.scope : "all";
   const limited = scope === "atm-melilla";
-  const [tab, setTab] = useState<"directo" | "resultados" | "equipos" | "porra">(limited ? "directo" : "equipos");
+  const [tab, setTab] = useState<"directo" | "resultados" | "equipos" | "porra" | "blog">(limited ? "directo" : "equipos");
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | MatchStatus>("all");
   const overridesQ = useQuery({ queryKey: ["admin-overrides"], queryFn: () => adminListOverrides() });
@@ -84,15 +85,17 @@ function Editor({ onLogout }: { onLogout: () => void }) {
       .filter((m) => !term || `${m.homeName} ${m.awayName} ${m.competition ?? ""} ${m.leagueId}`.toLowerCase().includes(term))
       .sort((a, b) => Date.parse(b.kickoff) - Date.parse(a.kickoff));
   }, [feed.all, filter, q]);
-  const title = tab === "porra" ? "Porra" : tab === "directo" ? "Directo" : tab === "equipos" ? "Equipos y partidos" : "Editar resultados";
+  const title = tab === "porra" ? "Porra" : tab === "blog" ? "Blog" : tab === "directo" ? "Directo" : tab === "equipos" ? "Equipos y partidos" : "Editar resultados";
   const subtitle =
     tab === "porra"
       ? "Publica los partidos de la quiniela y marca el 1-X-2 cuando terminen."
-      : tab === "directo"
-        ? "Pon el partido en directo y ve sumando el marcador. Sale en la web al momento."
-        : tab === "equipos"
-          ? "Alta de equipos nuevos, cambio de escudo (URL) y carga de partidos."
-        : "Cambia marcador, horario y cronología. Se publica al momento.";
+      : tab === "blog"
+        ? "Crea y edita entradas del blog (rankings semanales, notas, etc.)."
+        : tab === "directo"
+          ? "Pon el partido en directo y ve sumando el marcador. Sale en la web al momento."
+          : tab === "equipos"
+            ? "Alta de equipos nuevos, cambio de escudo (URL) y carga de partidos."
+            : "Cambia marcador, horario y cronología. Se publica al momento.";
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -109,9 +112,11 @@ function Editor({ onLogout }: { onLogout: () => void }) {
         <button type="button" onClick={() => setTab("directo")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "directo" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Directo</button>
         {limited ? null : <button type="button" onClick={() => setTab("resultados")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "resultados" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Resultados</button>}
         {limited ? null : <button type="button" onClick={() => setTab("porra")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "porra" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Porra</button>}
+        {limited ? null : <button type="button" onClick={() => setTab("blog")} className={`h-10 rounded-md px-3 text-xs uppercase tracking-wider ${tab === "blog" ? "bg-accent text-bg" : "bg-surface text-muted"}`}>Blog</button>}
       </div>
       {!limited && tab === "equipos" ? <CatalogAdmin /> : null}
       {!limited && tab === "porra" ? <PorraAdmin /> : null}
+      {!limited && tab === "blog" ? <BlogAdmin /> : null}
       {tab === "directo" || limited ? <LiveDesk overrides={overridesQ.data?.overrides ?? []} onSaved={refresh} teamId={limited ? "atm-melilla" : undefined} /> : null}
       {tab === "resultados" ? (
         <>
