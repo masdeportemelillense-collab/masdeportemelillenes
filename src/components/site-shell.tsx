@@ -90,6 +90,7 @@ function Header() {
         <Link to="/" className="flex shrink-0 items-center" onClick={() => setOpen(false)}><BrandMark className="h-14 w-14 sm:h-16 sm:w-16" /></Link>
         <nav className="ml-1 hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto lg:flex" aria-label="Principal">
           <Link to="/" className={navClass(pathname === "/")}>Inicio</Link>
+          <Link to="/blog" className={navClass(pathname.startsWith("/blog"))}>Blog</Link>
           <Link to="/porra" className={navClass(pathname === "/porra")}>Porra</Link>
           {SPORTS.map((s) => (<Link key={s.id} to="/deporte/$sport" params={{ sport: s.id }} className={navClass(pathname === `/deporte/${s.id}`)}><SportMark sport={s.id} />{s.label}</Link>))}
         </nav>
@@ -109,6 +110,7 @@ function Header() {
       {open && (
         <nav className="border-t border-border bg-surface-2 px-4 py-3 lg:hidden" aria-label="Móvil">
           <Link to="/" onClick={() => setOpen(false)} className={cn("mb-1 flex h-11 items-center rounded-md px-3 text-sm", pathname === "/" ? "bg-accent/15 text-accent" : "text-fg")}>Inicio</Link>
+          <Link to="/blog" onClick={() => setOpen(false)} className={cn("mb-1 flex h-11 items-center rounded-md px-3 text-sm", pathname.startsWith("/blog") ? "bg-accent/15 text-accent" : "text-fg")}>Blog</Link>
           <Link to="/porra" onClick={() => setOpen(false)} className={cn("mb-1 flex h-11 items-center rounded-md px-3 text-sm", pathname === "/porra" ? "bg-accent/15 text-accent" : "text-fg")}>Porra</Link>
           {SPORTS.map((s) => (<Link key={s.id} to="/deporte/$sport" params={{ sport: s.id }} onClick={() => setOpen(false)} className={cn("flex h-11 items-center gap-2 rounded-md px-3 text-sm", pathname === `/deporte/${s.id}` ? "bg-accent/15 text-accent" : "text-fg")}><SportMark sport={s.id} />{s.label}</Link>))}
         </nav>
