@@ -1,5 +1,5 @@
 import { readDoc, updateDoc } from "@/lib/persist.server";
-import type { BlogComment, BlogPost } from "./types";
+import type { BlogComment, BlogPost, RankingItem } from "./types";
 
 const POSTS_KEY = "blog-posts";
 const COMMENTS_KEY = "blog-comments";
@@ -31,6 +31,7 @@ export async function savePost(input: {
   title: string;
   excerpt?: string;
   content: string;
+  rankings?: RankingItem[];
   published?: boolean;
 }): Promise<BlogPost> {
   const title = input.title.trim();
@@ -51,6 +52,7 @@ export async function savePost(input: {
       title,
       excerpt: (input.excerpt ?? "").trim().slice(0, 200),
       content: input.content.trim(),
+      rankings: (input.rankings ?? []).filter((r) => r.teamName.trim().length > 0),
       published: input.published !== false,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
