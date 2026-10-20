@@ -1,1 +1,1 @@
-export const DEPLOY_STAMP = "2026-10-20T15-copa-gandia";
+export const DEPLOY_STAMP = "2026-10-20T20-kofi-banner";
