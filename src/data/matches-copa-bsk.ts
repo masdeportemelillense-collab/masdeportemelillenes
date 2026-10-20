@@ -49,4 +49,15 @@ export const copaBskMatches: Match[] = [
     away: "melilla-baloncesto",
     duration: 40,
   }),
+  m({
+    id: "melb-copa-16avos",
+    league: "copa-espana-bsk",
+    sport: "baloncesto",
+    at: "2026-10-21T20:00:00+02:00",
+    venue: IMB,
+    jornada: 16,
+    home: "melilla-baloncesto",
+    away: "UPB Gandía|GAN",
+    duration: 40,
+  }),
 ];
