@@ -24,12 +24,29 @@ function BrandMark({ className }: { className?: string }) {
   );
 }
 
+function KofiBanner() {
+  return (
+    <a
+      href="https://ko-fi.com/masdeporteml"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block border-b border-border bg-accent/10 hover:bg-accent/20 transition-colors"
+    >
+      <div className="mx-auto flex max-w-6xl items-center justify-center gap-3 px-4 py-2 text-sm sm:px-6">
+        <span className="text-accent font-medium">☕</span>
+        <span className="text-fg">Ayúdanos a seguir con el deporte melillense — <span className="text-accent underline underline-offset-2">Colabora en Ko-fi</span></span>
+      </div>
+    </a>
+  );
+}
+
 export function SiteShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col overflow-x-hidden bg-bg text-fg">
       <Header />
       <FeedBar />
       <LiveTicker />
+      <KofiBanner />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
