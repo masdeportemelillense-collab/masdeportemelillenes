@@ -1,1 +1,1 @@
-export const DEPLOY_STAMP = "2026-10-19T23-blog-routes-fixed";
+export const DEPLOY_STAMP = "2026-10-20T03-blog-expandable";
