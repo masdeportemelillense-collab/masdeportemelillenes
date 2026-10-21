@@ -25,6 +25,8 @@ export type AdminOverride = {
   pointAway?: number;
   /** Voleibol: marcador de cada set cerrado. */
   setScores?: { home: number; away: number }[];
+  /** Optional external live page (e.g. FEB BoxScore) to poll for the score. */
+  liveUrl?: string;
   deleted?: boolean;
   updatedAt: number;
 };
