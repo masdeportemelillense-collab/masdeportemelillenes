@@ -108,6 +108,7 @@ export function MatchCard({
   highlightId?: string;
 }) {
   const result = highlightId ? teamResult(match, highlightId) : null;
+  const isLive = match.status === "live";
 
   return (
     <Link
@@ -131,22 +132,29 @@ export function MatchCard({
       </div>
       <div className="flex flex-nowrap items-center gap-2 sm:gap-3">
         <Side id={match.homeId} name={match.homeName} short={match.homeShort} align="left" badgeUrl={match.homeBadge} />
-        <div className="shrink-0 rounded-lg border border-border bg-surface-2 px-3 py-2 text-center shadow-sm">
+        <div
+          className={cn(
+            "shrink-0 rounded-lg px-3 py-2 text-center shadow-sm",
+            isLive
+              ? "bg-live text-white"
+              : "bg-accent text-bg",
+          )}
+        >
           {match.status === "suspended" ? (
-            <p className="whitespace-nowrap font-display text-sm font-semibold uppercase leading-none text-loss sm:text-base">Suspendido</p>
+            <p className="whitespace-nowrap font-display text-sm font-semibold uppercase leading-none sm:text-base">Suspendido</p>
           ) : match.status === "scheduled" ? (
-            <p className="whitespace-nowrap font-display text-xl leading-none text-fg tabular-nums sm:text-2xl">
+            <p className="whitespace-nowrap font-display text-xl leading-none tabular-nums sm:text-2xl">
               {new Date(match.kickoff).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" })}
             </p>
           ) : (
-            <p className={cn("whitespace-nowrap font-display text-[1.35rem] leading-none tabular-nums sm:text-[2rem]", match.status === "live" && "text-live")}>
+            <p className="whitespace-nowrap font-display text-[1.35rem] leading-none tabular-nums sm:text-[2rem]">
               {match.homeScore}
-              <span className="mx-1 text-muted">–</span>
+              <span className="mx-1 opacity-70">–</span>
               {match.awayScore}
             </p>
           )}
           {match.setScores?.length || match.pointHome != null ? (
-            <p className="mt-1 text-[10px] leading-tight text-muted">
+            <p className="mt-1 text-[10px] leading-tight opacity-80">
               {(match.setScores ?? []).map((s) => `${s.home}-${s.away}`).join(" · ")}
               {match.status === "live" ? `${match.setScores?.length ? " · " : ""}${match.pointHome ?? 0}-${match.pointAway ?? 0}` : ""}
             </p>
@@ -160,20 +168,26 @@ export function MatchCard({
 }
 
 export function MatchRow({ match }: { match: ResolvedMatch }) {
+  const isLive = match.status === "live";
   return (
     <Link to="/partido/$id" params={{ id: match.id }} className="flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-surface-2">
-      <div className="w-16 shrink-0 rounded-md border border-border bg-surface-2 px-1.5 py-1 text-center">
+      <div
+        className={cn(
+          "w-16 shrink-0 rounded-md px-1.5 py-1 text-center",
+          isLive ? "bg-live text-white" : "bg-accent text-bg",
+        )}
+      >
         {match.status === "live" ? (
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium uppercase text-live">
-            <span className="pulse-live size-1.5 rounded-full bg-live" />
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium uppercase">
+            <span className="pulse-live size-1.5 rounded-full bg-white" />
             {match.displayClock}
           </span>
         ) : match.status === "suspended" ? (
-          <span className="text-[11px] font-semibold uppercase text-loss">SUS</span>
+          <span className="text-[11px] font-semibold uppercase">SUS</span>
         ) : match.status === "finished" ? (
-          <span className="text-[11px] uppercase text-muted">Fin</span>
+          <span className="text-[11px] uppercase">Fin</span>
         ) : (
-          <span className="text-[11px] tabular-nums text-fg">
+          <span className="text-[11px] tabular-nums">
             {new Date(match.kickoff).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" })}
           </span>
         )}
@@ -181,7 +195,12 @@ export function MatchRow({ match }: { match: ResolvedMatch }) {
       <p className="min-w-0 flex-1 text-sm leading-snug [overflow-wrap:anywhere]">
         {match.homeName} <span className="text-muted">–</span> {match.awayName}
       </p>
-      <p className="rounded-md border border-border bg-surface-2 px-2 py-1 font-display text-lg leading-none tabular-nums">
+      <p
+        className={cn(
+          "rounded-md px-2 py-1 font-display text-lg leading-none tabular-nums",
+          isLive ? "bg-live text-white" : "bg-accent text-bg",
+        )}
+      >
         {match.status === "suspended" ? "Suspendido" : match.status === "scheduled" ? "–" : `${match.homeScore}–${match.awayScore}`}
       </p>
     </Link>
