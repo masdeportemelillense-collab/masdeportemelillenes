@@ -1,1 +1,1 @@
-export const DEPLOY_STAMP = "2026-10-21T09-live-url";
+export const DEPLOY_STAMP = "2026-10-22T01-score-boxes";
