@@ -148,6 +148,7 @@ function MatchEditor({ match, saved, onSaved }: { match: ResolvedMatch; saved?: 
   const [status, setStatus] = useState<MatchStatus>(saved?.status ?? match.status);
   const [kickoff, setKickoff] = useState((saved?.kickoff ?? match.kickoff).slice(0, 16));
   const [venue, setVenue] = useState(saved?.venue ?? match.venue);
+  const [liveUrl, setLiveUrl] = useState(saved?.liveUrl ?? "");
   const [rows, setRows] = useState<DraftEvent[]>(toDraft(saved?.events?.length ? saved.events : match.happened));
   const [msg, setMsg] = useState("");
   function syncScore(next: DraftEvent[]) {
@@ -161,7 +162,7 @@ function MatchEditor({ match, saved, onSaved }: { match: ResolvedMatch; saved?: 
     mutationFn: () => {
       const events = draftsToEvents(rows);
       const totals = events.length ? scoreFromEvents(events) : { home: Number(home) || 0, away: Number(away) || 0, minute: 0 };
-      return adminSaveOverride({ data: { matchId: match.id, homeScore: totals.home, awayScore: totals.away, minute: totals.minute, status, kickoff: kickoff.length === 16 ? `${kickoff}:00` : kickoff, venue, events, updatedAt: Date.now() } });
+      return adminSaveOverride({ data: { matchId: match.id, homeScore: totals.home, awayScore: totals.away, minute: totals.minute, status, kickoff: kickoff.length === 16 ? `${kickoff}:00` : kickoff, venue, liveUrl: liveUrl.trim() || undefined, events, updatedAt: Date.now() } });
     },
     onSuccess: (res) => { setMsg(res.ok ? "Guardado" : res.error || "Error"); if (res.ok) onSaved(); },
   });
@@ -182,6 +183,10 @@ function MatchEditor({ match, saved, onSaved }: { match: ResolvedMatch; saved?: 
         <label className="text-xs text-muted sm:col-span-2">Fecha y hora<input type="datetime-local" value={kickoff} onChange={(e) => setKickoff(e.target.value)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm" /></label>
         <label className="text-xs text-muted">Pabellón<input value={venue} onChange={(e) => setVenue(e.target.value)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm" /></label>
       </div>
+      <label className="mt-2 block text-xs text-muted">Enlace en directo (FEB u otra web)
+        <input value={liveUrl} onChange={(e) => setLiveUrl(e.target.value)} placeholder="https://baloncestoenvivo.feb.es/BoxScore.aspx?p=..." className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm" />
+      </label>
+      <p className="mt-1 text-[11px] text-muted">Si el partido está «En directo» y pones un enlace de BoxScore de la FEB, el marcador se actualiza solo cada minuto.</p>
       <div className="mt-4 border-t border-border pt-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-medium uppercase tracking-wider text-muted">Cronología y goleadores</p>
