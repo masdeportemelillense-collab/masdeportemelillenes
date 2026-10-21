@@ -131,11 +131,11 @@ export function MatchCard({
       </div>
       <div className="flex flex-nowrap items-center gap-2 sm:gap-3">
         <Side id={match.homeId} name={match.homeName} short={match.homeShort} align="left" badgeUrl={match.homeBadge} />
-        <div className="shrink-0 whitespace-nowrap px-1 text-center">
+        <div className="shrink-0 rounded-lg border border-border bg-surface-2 px-3 py-2 text-center shadow-sm">
           {match.status === "suspended" ? (
             <p className="whitespace-nowrap font-display text-sm font-semibold uppercase leading-none text-loss sm:text-base">Suspendido</p>
           ) : match.status === "scheduled" ? (
-            <p className="whitespace-nowrap font-display text-xl leading-none text-muted tabular-nums sm:text-2xl">
+            <p className="whitespace-nowrap font-display text-xl leading-none text-fg tabular-nums sm:text-2xl">
               {new Date(match.kickoff).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" })}
             </p>
           ) : (
@@ -162,18 +162,18 @@ export function MatchCard({
 export function MatchRow({ match }: { match: ResolvedMatch }) {
   return (
     <Link to="/partido/$id" params={{ id: match.id }} className="flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-surface-2">
-      <div className="w-16 shrink-0">
+      <div className="w-16 shrink-0 rounded-md border border-border bg-surface-2 px-1.5 py-1 text-center">
         {match.status === "live" ? (
           <span className="inline-flex items-center gap-1 text-[11px] font-medium uppercase text-live">
             <span className="pulse-live size-1.5 rounded-full bg-live" />
             {match.displayClock}
           </span>
         ) : match.status === "suspended" ? (
-          <span className="text-[11px] font-semibold uppercase text-loss">Suspendido</span>
+          <span className="text-[11px] font-semibold uppercase text-loss">SUS</span>
         ) : match.status === "finished" ? (
           <span className="text-[11px] uppercase text-muted">Fin</span>
         ) : (
-          <span className="text-[11px] tabular-nums text-muted">
+          <span className="text-[11px] tabular-nums text-fg">
             {new Date(match.kickoff).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" })}
           </span>
         )}
@@ -181,7 +181,7 @@ export function MatchRow({ match }: { match: ResolvedMatch }) {
       <p className="min-w-0 flex-1 text-sm leading-snug [overflow-wrap:anywhere]">
         {match.homeName} <span className="text-muted">–</span> {match.awayName}
       </p>
-      <p className="font-display text-lg leading-none tabular-nums">
+      <p className="rounded-md border border-border bg-surface-2 px-2 py-1 font-display text-lg leading-none tabular-nums">
         {match.status === "suspended" ? "Suspendido" : match.status === "scheduled" ? "–" : `${match.homeScore}–${match.awayScore}`}
       </p>
     </Link>
