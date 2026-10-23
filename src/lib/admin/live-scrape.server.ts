@@ -7,77 +7,61 @@ export async function scrapeLiveScore(url: string): Promise<{ home: number; away
   if (!url || !/^https?:\/\//i.test(url)) return null;
   try {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 7000);
+    const t = setTimeout(() => ctrl.abort(), 8000);
     const res = await fetch(url, {
       signal: ctrl.signal,
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; MasDeporteMelillense/1.0)",
-        Accept: "text/html",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        Accept: "text/html,application/xhtml+xml",
       },
     });
     clearTimeout(t);
     if (!res.ok) return null;
     const html = await res.text();
 
-    // 1. SoloFutsal specific: the main score is in score-badge-hero
-    const soloHero = html.match(/score-badge-hero[^>]*>\s*(\d{1,3})\s*[-\u2013]\s*(\d{1,3})/i);
+    // 1. SoloFutsal: score-badge-hero is the main live score
+    const soloHero = html.match(/score-badge-hero[^>]*>\s*(\d+)\s*[-\u2013]\s*(\d+)/i);
     if (soloHero) {
       const home = Number(soloHero[1]);
       const away = Number(soloHero[2]);
       if (isValid(home, away)) return { home, away };
     }
 
-    // 2. FEB specific
-    const feb = html.match(/ESTADISTICAS DEL PARTIDO[\s\S]{0,250}?(\d{1,3})\s*[-\u2013]\s*(\d{1,3})/i);
+    // 2. Alternative SoloFutsal pattern (sometimes the class is split)
+    const soloAlt = html.match(/class=["']score-badge-hero["'][^>]*>\s*(\d+)\s*[-\u2013]\s*(\d+)/i);
+    if (soloAlt) {
+      const home = Number(soloAlt[1]);
+      const away = Number(soloAlt[2]);
+      if (isValid(home, away)) return { home, away };
+    }
+
+    // 3. FEB
+    const feb = html.match(/ESTADISTICAS DEL PARTIDO[\s\S]{0,300}?(\d+)\s*[-\u2013]\s*(\d+)/i);
     if (feb) {
       const home = Number(feb[1]);
       const away = Number(feb[2]);
       if (isValid(home, away)) return { home, away };
     }
 
-    // 3. SoloFutsal fallback: score near DIRECTO
-    const solo = html.match(/(\d{1,3})\s*[-\u2013]\s*(\d{1,3})[\s\S]{0,150}DIRECTO/i)
-      || html.match(/DIRECTO[\s\S]{0,150}(\d{1,3})\s*[-\u2013]\s*(\d{1,3})/i);
-    if (solo) {
-      const home = Number(solo[1]);
-      const away = Number(solo[2]);
+    // 4. Score right before or after DIRECTO badge
+    const directo = html.match(/(\d+)\s*[-\u2013]\s*(\d+)[\s\S]{0,200}DIRECTO/i)
+      || html.match(/DIRECTO[\s\S]{0,200}(\d+)\s*[-\u2013]\s*(\d+)/i);
+    if (directo) {
+      const home = Number(directo[1]);
+      const away = Number(directo[2]);
       if (isValid(home, away)) return { home, away };
     }
 
-    // 4. Prefer the first score after the match header
-    const headerIdx = html.search(/Pabell[oó]n|score-badge|DIRECTO|Acta del/i);
-    const searchFrom = headerIdx > 0 ? headerIdx : 0;
-    const mainArea = html.slice(searchFrom, searchFrom + 2000);
-    const mainMatch = mainArea.match(/(\d{1,3})\s*[-\u2013]\s*(\d{1,3})/);
-    if (mainMatch) {
-      const home = Number(mainMatch[1]);
-      const away = Number(mainMatch[2]);
-      if (isValid(home, away)) return { home, away };
-    }
-
-    // 5. Weighted fallback
-    const candidates: { home: number; away: number; weight: number }[] = [];
-    const scoreRegex = /(\d{1,3})\s*[-\u2013]\s*(\d{1,3})/g;
-    let m: RegExpExecArray | null;
-    while ((m = scoreRegex.exec(html)) !== null) {
-      const home = Number(m[1]);
-      const away = Number(m[2]);
-      if (!isValid(home, away)) continue;
-
-      let weight = 1;
-      const context = html.slice(Math.max(0, m.index - 150), m.index + 150).toLowerCase();
-
-      if (/score-badge|directo|live|marcador/.test(context)) weight += 5;
-      if (/pabell|jornada|acta/.test(context)) weight += 2;
-      if (m.index < html.length * 0.25) weight += 2;
-      if (m.index > html.length * 0.5) weight -= 2;
-
-      candidates.push({ home, away, weight });
-    }
-
-    if (candidates.length) {
-      candidates.sort((a, b) => b.weight - a.weight);
-      return { home: candidates[0].home, away: candidates[0].away };
+    // 5. First score in the main content area (after the date/jornada header)
+    const header = html.search(/Jornada|Pabell|score-badge|DIRECTO/i);
+    if (header > 0) {
+      const area = html.slice(header, header + 1500);
+      const first = area.match(/(\d+)\s*[-\u2013]\s*(\d+)/);
+      if (first) {
+        const home = Number(first[1]);
+        const away = Number(first[2]);
+        if (isValid(home, away)) return { home, away };
+      }
     }
 
     return null;
@@ -87,12 +71,5 @@ export async function scrapeLiveScore(url: string): Promise<{ home: number; away
 }
 
 function isValid(home: number, away: number): boolean {
-  return (
-    Number.isFinite(home) &&
-    Number.isFinite(away) &&
-    home >= 0 &&
-    away >= 0 &&
-    home < 250 &&
-    away < 250
-  );
+  return Number.isFinite(home) && Number.isFinite(away) && home >= 0 && away >= 0 && home < 250 && away < 250;
 }
