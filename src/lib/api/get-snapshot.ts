@@ -31,27 +31,39 @@ export const getLiveSnapshot = createServerFn({ method: "GET" }).handler(
       const extras = await withTimeout(
         (async () => {
           const catalog = await getCatalog();
-          const overrides = await listOverrides();
+          let overrides = await listOverrides();
 
-          // Poll any liveUrl overrides (best-effort, max 3 per snapshot)
+          // One-time cleanup: reset obviously wrong scores on SoloFutsal live matches
+          for (const ov of overrides) {
+            if (ov.liveUrl && /solofutsal\.es/i.test(ov.liveUrl) && ov.status === "live") {
+              if ((ov.homeScore ?? 0) > 15 || (ov.awayScore ?? 0) > 15) {
+                await upsertOverride({
+                  ...ov,
+                  homeScore: 0,
+                  awayScore: 0,
+                  updatedAt: Date.now(),
+                });
+              }
+            }
+          }
+          overrides = await listOverrides();
+
+          // Poll any liveUrl overrides
           const withUrl = overrides.filter((o) => o.liveUrl && o.status === "live").slice(0, 3);
           for (const ov of withUrl) {
             try {
               const score = await scrapeLiveScore(ov.liveUrl!);
-              if (score) {
-                // Always update if the scraped score is different
-                if (score.home !== ov.homeScore || score.away !== ov.awayScore) {
-                  await upsertOverride({
-                    ...ov,
-                    homeScore: score.home,
-                    awayScore: score.away,
-                    status: "live",
-                    updatedAt: Date.now(),
-                  });
-                }
+              if (score && (score.home !== ov.homeScore || score.away !== ov.awayScore)) {
+                await upsertOverride({
+                  ...ov,
+                  homeScore: score.home,
+                  awayScore: score.away,
+                  status: "live",
+                  updatedAt: Date.now(),
+                });
               }
             } catch {
-              // ignore individual scrape failures
+              // ignore
             }
           }
 
@@ -63,7 +75,7 @@ export const getLiveSnapshot = createServerFn({ method: "GET" }).handler(
             nameOverrides: await listNameOverrides(),
           };
         })(),
-        8000,
+        10000,
         {
           overrides: [] as any[],
           catalogTeams: [] as any[],
