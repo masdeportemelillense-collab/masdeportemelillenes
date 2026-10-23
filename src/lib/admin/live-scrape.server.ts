@@ -1,7 +1,8 @@
 /**
- * Generic live score scraper.
- * Works for FEB, SoloFutsal, Futbolme and most sports sites.
- * Looks for score numbers only (home - away), ignores team names.
+ * Live score scraper.
+ * For SoloFutsal: only reads the score-badge-hero element.
+ * For FEB: reads ESTADISTICAS DEL PARTIDO.
+ * Ignores team names completely.
  */
 export async function scrapeLiveScore(url: string): Promise<{ home: number; away: number } | null> {
   if (!url || !/^https?:\/\//i.test(url)) return null;
@@ -11,57 +12,38 @@ export async function scrapeLiveScore(url: string): Promise<{ home: number; away
     const res = await fetch(url, {
       signal: ctrl.signal,
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        Accept: "text/html,application/xhtml+xml",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "text/html",
       },
     });
     clearTimeout(t);
     if (!res.ok) return null;
     const html = await res.text();
 
-    // 1. SoloFutsal: score-badge-hero is the main live score
-    const soloHero = html.match(/score-badge-hero[^>]*>\s*(\d+)\s*[-\u2013]\s*(\d+)/i);
-    if (soloHero) {
-      const home = Number(soloHero[1]);
-      const away = Number(soloHero[2]);
-      if (isValid(home, away)) return { home, away };
+    // SoloFutsal: the live score is exclusively in this element
+    if (/solofutsal\.es/i.test(url)) {
+      const hero = html.match(/<div[^>]*class=["'][^"']*score-badge-hero[^"']*["'][^>]*>\s*(\d+)\s*[-\u2013]\s*(\d+)\s*<\/div>/i);
+      if (hero) {
+        const home = Number(hero[1]);
+        const away = Number(hero[2]);
+        if (isValid(home, away)) return { home, away };
+      }
+      // Fallback for SoloFutsal: look for the pattern near DIRECTO
+      const nearDirecto = html.match(/(\d+)\s*[-\u2013]\s*(\d+)[\s\S]{0,80}DIRECTO/i);
+      if (nearDirecto) {
+        const home = Number(nearDirecto[1]);
+        const away = Number(nearDirecto[2]);
+        if (isValid(home, away)) return { home, away };
+      }
+      return null; // Do not guess on SoloFutsal
     }
 
-    // 2. Alternative SoloFutsal pattern (sometimes the class is split)
-    const soloAlt = html.match(/class=["']score-badge-hero["'][^>]*>\s*(\d+)\s*[-\u2013]\s*(\d+)/i);
-    if (soloAlt) {
-      const home = Number(soloAlt[1]);
-      const away = Number(soloAlt[2]);
-      if (isValid(home, away)) return { home, away };
-    }
-
-    // 3. FEB
+    // FEB
     const feb = html.match(/ESTADISTICAS DEL PARTIDO[\s\S]{0,300}?(\d+)\s*[-\u2013]\s*(\d+)/i);
     if (feb) {
       const home = Number(feb[1]);
       const away = Number(feb[2]);
       if (isValid(home, away)) return { home, away };
-    }
-
-    // 4. Score right before or after DIRECTO badge
-    const directo = html.match(/(\d+)\s*[-\u2013]\s*(\d+)[\s\S]{0,200}DIRECTO/i)
-      || html.match(/DIRECTO[\s\S]{0,200}(\d+)\s*[-\u2013]\s*(\d+)/i);
-    if (directo) {
-      const home = Number(directo[1]);
-      const away = Number(directo[2]);
-      if (isValid(home, away)) return { home, away };
-    }
-
-    // 5. First score in the main content area (after the date/jornada header)
-    const header = html.search(/Jornada|Pabell|score-badge|DIRECTO/i);
-    if (header > 0) {
-      const area = html.slice(header, header + 1500);
-      const first = area.match(/(\d+)\s*[-\u2013]\s*(\d+)/);
-      if (first) {
-        const home = Number(first[1]);
-        const away = Number(first[2]);
-        if (isValid(home, away)) return { home, away };
-      }
     }
 
     return null;
