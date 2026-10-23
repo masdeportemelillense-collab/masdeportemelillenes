@@ -10,6 +10,8 @@ export type AdminOverride = {
   jornada?: number;
   homeName?: string;
   awayName?: string;
+  homeBadge?: string;
+  awayBadge?: string;
   minute?: number;
   periodLabel?: string;
   /** If true, the public site shows a running MM:SS clock. */
