@@ -33,19 +33,22 @@ export const getLiveSnapshot = createServerFn({ method: "GET" }).handler(
           const catalog = await getCatalog();
           const overrides = await listOverrides();
 
-          // Poll any liveUrl overrides (best-effort, max 3 per snapshot to stay fast)
+          // Poll any liveUrl overrides (best-effort, max 3 per snapshot)
           const withUrl = overrides.filter((o) => o.liveUrl && o.status === "live").slice(0, 3);
           for (const ov of withUrl) {
             try {
               const score = await scrapeLiveScore(ov.liveUrl!);
-              if (score && (score.home !== ov.homeScore || score.away !== ov.awayScore)) {
-                await upsertOverride({
-                  ...ov,
-                  homeScore: score.home,
-                  awayScore: score.away,
-                  status: "live",
-                  updatedAt: Date.now(),
-                });
+              if (score) {
+                // Always update if the scraped score is different
+                if (score.home !== ov.homeScore || score.away !== ov.awayScore) {
+                  await upsertOverride({
+                    ...ov,
+                    homeScore: score.home,
+                    awayScore: score.away,
+                    status: "live",
+                    updatedAt: Date.now(),
+                  });
+                }
               }
             } catch {
               // ignore individual scrape failures
@@ -53,14 +56,14 @@ export const getLiveSnapshot = createServerFn({ method: "GET" }).handler(
           }
 
           return {
-            overrides: await listOverrides(), // re-read after possible updates
+            overrides: await listOverrides(),
             catalogTeams: catalog.teams,
             catalogMatches: catalog.matches,
             badgeOverrides: await listBadgeOverrides(),
             nameOverrides: await listNameOverrides(),
           };
         })(),
-        6000,
+        8000,
         {
           overrides: [] as any[],
           catalogTeams: [] as any[],
