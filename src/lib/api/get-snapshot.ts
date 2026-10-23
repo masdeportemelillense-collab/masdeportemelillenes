@@ -23,7 +23,7 @@ export const getLiveSnapshot = createServerFn({ method: "GET" }).handler(
     const snap = await withTimeout(fetchLiveSnapshot(), 8000, EMPTY_SNAP);
 
     try {
-      const { listOverrides, upsertOverride } = await import("@/lib/admin/store.server");
+      const { listOverrides, upsertOverride, removeOverride } = await import("@/lib/admin/store.server");
       const { getCatalog } = await import("@/lib/catalog/store.server");
       const { listBadgeOverrides, listNameOverrides } = await import("@/lib/badges/store.server");
       const { scrapeLiveScore } = await import("@/lib/admin/live-scrape.server");
@@ -33,22 +33,19 @@ export const getLiveSnapshot = createServerFn({ method: "GET" }).handler(
           const catalog = await getCatalog();
           let overrides = await listOverrides();
 
-          // One-time cleanup: reset obviously wrong scores on SoloFutsal live matches
-          for (const ov of overrides) {
-            if (ov.liveUrl && /solofutsal\.es/i.test(ov.liveUrl) && ov.status === "live") {
-              if ((ov.homeScore ?? 0) > 15 || (ov.awayScore ?? 0) > 15) {
-                await upsertOverride({
-                  ...ov,
-                  homeScore: 0,
-                  awayScore: 0,
-                  updatedAt: Date.now(),
-                });
-              }
-            }
+          // Force clean the Rusadir match (dhj-41) if it has a bad score
+          const rusadir = overrides.find((o) => o.matchId === "dhj-41");
+          if (rusadir && ((rusadir.homeScore ?? 0) > 10 || (rusadir.awayScore ?? 0) > 10)) {
+            await upsertOverride({
+              ...rusadir,
+              homeScore: 0,
+              awayScore: 0,
+              updatedAt: Date.now(),
+            });
+            overrides = await listOverrides();
           }
-          overrides = await listOverrides();
 
-          // Poll any liveUrl overrides
+          // Poll liveUrl overrides
           const withUrl = overrides.filter((o) => o.liveUrl && o.status === "live").slice(0, 3);
           for (const ov of withUrl) {
             try {
@@ -75,7 +72,7 @@ export const getLiveSnapshot = createServerFn({ method: "GET" }).handler(
             nameOverrides: await listNameOverrides(),
           };
         })(),
-        10000,
+        12000,
         {
           overrides: [] as any[],
           catalogTeams: [] as any[],
