@@ -13,9 +13,9 @@ const rows: Spec[] = [
   { id: "dhj-26", league: "fs-dh-juv", sport: "futsal", at: "2026-10-10T18:00:00+02:00", venue: "P.M. Tiro De Pichón", jornada: 4, home: "pena-rm-fs", away: "C.D. Boca F.S. Priego Js|CBF", status: "finished", events: [[48, "H", "gol", "", "*2-2"]] },
   { id: "dhj-33", league: "fs-dh-juv", sport: "futsal", at: "2026-10-17T18:00:00+02:00", venue: "Pabellón Lázaro Fernández", jornada: 5, home: "rusadir-fs-dh", away: "C.D. Puerto On365 Js|CPO", status: "finished", events: [[48, "H", "gol", "", "*3-1"]] },
   { id: "dhj-34", league: "fs-dh-juv", sport: "futsal", at: "2026-10-17T18:00:00+02:00", venue: "P.M. Tiro De Pichón", jornada: 5, home: "pena-rm-fs", away: "Xerez Constr. Viloita Js|XCV", status: "finished", events: [[48, "H", "gol", "", "*4-3"]] },
-  // Jornada 6 - oficial SoloFutsal
+  // Jornada 6
   { id: "dhj-41", league: "fs-dh-juv", sport: "futsal", at: "2026-10-23T19:00:00+02:00", venue: "Pabellón Centro Deportivo Mendigorria", jornada: 6, home: "A.D. San Francisco de Paula Js|SFP", away: "rusadir-fs-dh" },
-  { id: "dhj-42", league: "fs-dh-juv", sport: "futsal", at: "2026-10-24T13:30:00+02:00", venue: "Pabellón Lázaro Fernández", jornada: 6, home: "C.D. Albolote Futsal Js|CAF", away: "pena-rm-fs" },
+  { id: "dhj-42", league: "fs-dh-juv", sport: "futsal", at: "2026-10-24T18:00:00+02:00", venue: "P.M. Tiro De Pichón", jornada: 6, home: "pena-rm-fs", away: "Xerez Constr. Viloita Js|XCV" },
   // Próximas jornadas
   { id: "dhj-49", league: "fs-dh-juv", sport: "futsal", at: "2026-10-31T18:00:00+01:00", venue: "Pabellón Lázaro Fernández", jornada: 7, home: "rusadir-fs-dh", away: "C.D. Puerto On365 Js|CPO" },
   { id: "dhj-50", league: "fs-dh-juv", sport: "futsal", at: "2026-10-31T18:00:00+01:00", venue: "P.M. Guillermo Molina Ríos", jornada: 7, home: "pena-rm-fs", away: "Unión África Ceutí Js|UÁC" },
