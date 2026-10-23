@@ -11,6 +11,7 @@ import { salleBMatches } from "@/data/matches-salle-b";
 import { vdvMatches } from "@/data/matches-vdv";
 import { tmavMatches } from "@/data/matches-tmav";
 import { acirasMatches } from "@/data/matches-aciras";
+import { dhfsMatches } from "@/data/matches-dhfs";
 import type { Match } from "@/lib/types";
 
 export const matches: Match[] = [
@@ -26,6 +27,7 @@ export const matches: Match[] = [
   ...vdvMatches,
   ...tmavMatches,
   ...acirasMatches,
+  ...dhfsMatches,
   ...restoMatches,
 ];
 
