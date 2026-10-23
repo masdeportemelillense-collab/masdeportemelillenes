@@ -95,7 +95,7 @@ function Editor({ onLogout }: { onLogout: () => void }) {
           ? "Pon el partido en directo y ve sumando el marcador. Sale en la web al momento."
           : tab === "equipos"
             ? "Alta de equipos nuevos, cambio de escudo (URL) y carga de partidos."
-            : "Cambia marcador, horario y cronología. Se publica al momento.";
+            : "Cambia marcador, horario, escudos y cronología. Se publica al momento.";
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -149,6 +149,8 @@ function MatchEditor({ match, saved, onSaved }: { match: ResolvedMatch; saved?: 
   const [kickoff, setKickoff] = useState((saved?.kickoff ?? match.kickoff).slice(0, 16));
   const [venue, setVenue] = useState(saved?.venue ?? match.venue);
   const [liveUrl, setLiveUrl] = useState(saved?.liveUrl ?? "");
+  const [homeBadge, setHomeBadge] = useState(saved?.homeBadge ?? match.homeBadge ?? "");
+  const [awayBadge, setAwayBadge] = useState(saved?.awayBadge ?? match.awayBadge ?? "");
   const [rows, setRows] = useState<DraftEvent[]>(toDraft(saved?.events?.length ? saved.events : match.happened));
   const [msg, setMsg] = useState("");
   function syncScore(next: DraftEvent[]) {
@@ -162,7 +164,7 @@ function MatchEditor({ match, saved, onSaved }: { match: ResolvedMatch; saved?: 
     mutationFn: () => {
       const events = draftsToEvents(rows);
       const totals = events.length ? scoreFromEvents(events) : { home: Number(home) || 0, away: Number(away) || 0, minute: 0 };
-      return adminSaveOverride({ data: { matchId: match.id, homeScore: totals.home, awayScore: totals.away, minute: totals.minute, status, kickoff: kickoff.length === 16 ? `${kickoff}:00` : kickoff, venue, liveUrl: liveUrl.trim() || undefined, events, updatedAt: Date.now() } });
+      return adminSaveOverride({ data: { matchId: match.id, homeScore: totals.home, awayScore: totals.away, minute: totals.minute, status, kickoff: kickoff.length === 16 ? `${kickoff}:00` : kickoff, venue, liveUrl: liveUrl.trim() || undefined, homeBadge: homeBadge.trim() || undefined, awayBadge: awayBadge.trim() || undefined, events, updatedAt: Date.now() } });
     },
     onSuccess: (res) => { setMsg(res.ok ? "Guardado" : res.error || "Error"); if (res.ok) onSaved(); },
   });
@@ -182,6 +184,10 @@ function MatchEditor({ match, saved, onSaved }: { match: ResolvedMatch; saved?: 
         <label className="text-xs text-muted">Estado<select value={status} onChange={(e) => setStatus(e.target.value as MatchStatus)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm"><option value="scheduled">Previsto</option><option value="live">En directo</option><option value="finished">Finalizado</option><option value="suspended">Suspendido</option></select></label>
         <label className="text-xs text-muted sm:col-span-2">Fecha y hora<input type="datetime-local" value={kickoff} onChange={(e) => setKickoff(e.target.value)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm" /></label>
         <label className="text-xs text-muted">Pabellón<input value={venue} onChange={(e) => setVenue(e.target.value)} className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm" /></label>
+      </div>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        <label className="text-xs text-muted">Escudo local (URL)<input value={homeBadge} onChange={(e) => setHomeBadge(e.target.value)} placeholder="https://...png" className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm" /></label>
+        <label className="text-xs text-muted">Escudo visitante (URL)<input value={awayBadge} onChange={(e) => setAwayBadge(e.target.value)} placeholder="https://...png" className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm" /></label>
       </div>
       <label className="mt-2 block text-xs text-muted">Enlace en directo (FEB u otra web)
         <input value={liveUrl} onChange={(e) => setLiveUrl(e.target.value)} placeholder="https://baloncestoenvivo.feb.es/BoxScore.aspx?p=..." className="mt-1 h-10 w-full rounded-md bg-surface-2 px-2 text-sm" />
