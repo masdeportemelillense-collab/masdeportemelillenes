@@ -12,6 +12,7 @@ import { vdvMatches } from "@/data/matches-vdv";
 import { tmavMatches } from "@/data/matches-tmav";
 import { acirasMatches } from "@/data/matches-aciras";
 import { dhfsMatches } from "@/data/matches-dhfs";
+import { higicontrolMatches } from "@/data/matches-higicontrol";
 import type { Match } from "@/lib/types";
 
 export const matches: Match[] = [
@@ -28,6 +29,7 @@ export const matches: Match[] = [
   ...tmavMatches,
   ...acirasMatches,
   ...dhfsMatches,
+  ...higicontrolMatches,
   ...restoMatches,
 ];
 
