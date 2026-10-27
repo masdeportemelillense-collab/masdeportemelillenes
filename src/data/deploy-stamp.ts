@@ -1,1 +1,1 @@
-export const DEPLOY_STAMP = "2026-10-23T20-force-reset";
+export const DEPLOY_STAMP = "2026-10-27T09-higicontrol-wwc";
