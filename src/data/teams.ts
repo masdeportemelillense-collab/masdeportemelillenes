@@ -385,6 +385,23 @@ export const teams: Team[] = [
     summary:
       "Equipo senior femenino del Club Balonmano El Aciras. Debut en Primera Nacional Femenina 2026-27 con derrota 20-34 ante Universidad de Granada.",
   },
+  {
+    id: "higicontrol-melilla",
+    name: "Higicontrol Melilla",
+    short: "HIGI",
+    sport: "futbol",
+    gender: "f",
+    category: "Fútbol Playa",
+    leagueId: "wwc-fem",
+    venue: "Alanya, Turquía",
+    founded: 2015,
+    primary: "#1a5c3a",
+    secondary: "#e8e6dc",
+    nickname: "Higicontrol",
+    summary:
+      "El CD Higicontrol Melilla es el vigente campeón del mundo de fútbol playa femenino y tetracampeón de Europa. Disputa la Women's World Winners Cup 2026 en Alanya (26 oct - 1 nov).",
+    badgeUrl: "https://beachsoccer.com/wp-content/uploads/2021/06/14.-CD-Higicontrol-Melilla-ESP.png",
+  },
 ];
 
 export const teamById = Object.fromEntries(teams.map((t) => [t.id, t])) as Record<
