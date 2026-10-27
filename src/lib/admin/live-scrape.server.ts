@@ -2,6 +2,7 @@
  * Live score scraper.
  * For SoloFutsal: only reads the score-badge-hero element.
  * For FEB: reads ESTADISTICAS DEL PARTIDO.
+ * For Beach Soccer Worldwide: reads the main score display.
  * Ignores team names completely.
  */
 export async function scrapeLiveScore(url: string): Promise<{ home: number; away: number } | null> {
@@ -20,7 +21,7 @@ export async function scrapeLiveScore(url: string): Promise<{ home: number; away
     if (!res.ok) return null;
     const html = await res.text();
 
-    // SoloFutsal: the live score is exclusively in this element
+    // SoloFutsal
     if (/solofutsal\.es/i.test(url)) {
       const hero = html.match(/<div[^>]*class=["'][^"']*score-badge-hero[^"']*["'][^>]*>\s*(\d+)\s*[-\u2013]\s*(\d+)\s*<\/div>/i);
       if (hero) {
@@ -28,14 +29,13 @@ export async function scrapeLiveScore(url: string): Promise<{ home: number; away
         const away = Number(hero[2]);
         if (isValid(home, away)) return { home, away };
       }
-      // Fallback for SoloFutsal: look for the pattern near DIRECTO
       const nearDirecto = html.match(/(\d+)\s*[-\u2013]\s*(\d+)[\s\S]{0,80}DIRECTO/i);
       if (nearDirecto) {
         const home = Number(nearDirecto[1]);
         const away = Number(nearDirecto[2]);
         if (isValid(home, away)) return { home, away };
       }
-      return null; // Do not guess on SoloFutsal
+      return null;
     }
 
     // FEB
@@ -44,6 +44,17 @@ export async function scrapeLiveScore(url: string): Promise<{ home: number; away
       const home = Number(feb[1]);
       const away = Number(feb[2]);
       if (isValid(home, away)) return { home, away };
+    }
+
+    // Beach Soccer Worldwide (beachsoccer.com)
+    if (/beachsoccer\.com/i.test(url)) {
+      // Look for the score in the match header, e.g. "0 - 8" or similar prominent display
+      const scoreMatch = html.match(/(\d+)\s*[-\u2013]\s*(\d+)/);
+      if (scoreMatch) {
+        const home = Number(scoreMatch[1]);
+        const away = Number(scoreMatch[2]);
+        if (isValid(home, away)) return { home, away };
+      }
     }
 
     return null;
