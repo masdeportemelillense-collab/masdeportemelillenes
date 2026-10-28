@@ -1,1 +1,214 @@
-PLACEHOLDER
+import { Link } from "@tanstack/react-router";
+import { Crest, OpponentMark } from "@/components/crest";
+import { SportMark } from "@/components/sport-mark";
+import { Badge } from "@/components/ui/badge";
+import { leagueById } from "@/data/leagues";
+import { getTeam } from "@/data/teams";
+import { teamResult } from "@/lib/live";
+import { sportLabel } from "@/lib/sports";
+import type { ResolvedMatch } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+function Side({
+  id,
+  name,
+  short,
+  align,
+  badgeUrl,
+}: {
+  id?: string;
+  name: string;
+  short: string;
+  align: "left" | "right";
+  badgeUrl?: string;
+}) {
+  const team = id ? getTeam(id) : undefined;
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 flex-1 items-center gap-2.5",
+        align === "right" && "flex-row-reverse text-right",
+      )}
+    >
+      {team ? (
+        <Crest team={{ ...team, badgeUrl }} size={36} />
+      ) : (
+        <OpponentMark short={short} name={name} size={36} badgeUrl={badgeUrl} />
+      )}
+      <div className="min-w-0">
+        <p className="text-[13px] font-medium leading-tight text-fg [overflow-wrap:anywhere] sm:text-sm">{name}</p>
+        <p className="hidden text-xs text-muted sm:block">{short}</p>
+      </div>
+    </div>
+  );
+}
+
+function StatusChip({ match }: { match: ResolvedMatch }) {
+  if (match.status === "live") {
+    const label = match.inPenalties ? "Tanda de penaltis" : (match.source === "api" ? "Oficial" : "En directo");
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-live">
+        <span className="pulse-live size-1.5 rounded-full bg-live" />
+        {label} · {match.displayClock}
+      </span>
+    );
+  }
+  if (match.status === "suspended") {
+    return (
+      <span className="text-[11px] font-medium uppercase tracking-wider text-loss">Suspendido</span>
+    );
+  }
+  if (match.status === "finished") {
+    return (
+      <span className="text-[11px] font-medium uppercase tracking-wider text-muted">
+        {match.source === "api" ? "Final oficial" : "Final"}
+      </span>
+    );
+  }
+  return (
+    <span className="text-[11px] font-medium uppercase tracking-wider text-muted">
+      {formatKickoff(match.kickoff)}
+    </span>
+  );
+}
+
+export function competitionLine(match: ResolvedMatch): string {
+  const league = leagueById[match.leagueId];
+  const name = league?.shortName ?? match.competition ?? match.leagueId;
+  if (match.isCup || league?.format === "cup") return name;
+  if (match.jornada > 0) return `${name} · J${match.jornada}`;
+  return `${name} · Amistoso`;
+}
+
+export function formatKickoff(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleString("es-ES", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Madrid",
+  });
+}
+
+export function formatDay(iso: string): string {
+  return new Date(iso).toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "Europe/Madrid",
+  });
+}
+
+export function MatchCard({
+  match,
+  highlightId,
+}: {
+  match: ResolvedMatch;
+  highlightId?: string;
+}) {
+  const result = highlightId ? teamResult(match, highlightId) : null;
+  const isLive = match.status === "live";
+
+  return (
+    <Link
+      to="/partido/$id"
+      params={{ id: match.id }}
+      className="block rounded-xl bg-surface p-3.5 shadow-[var(--shadow-border)] transition-[background-color,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-surface-2"
+    >
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2 text-muted">
+          <SportMark sport={match.sport} />
+          <span className="text-xs leading-snug [overflow-wrap:anywhere]">
+            {sportLabel[match.sport]} · {competitionLine(match)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {result === "W" && <Badge variant="win">Victoria</Badge>}
+          {result === "D" && <Badge variant="draw">Empate</Badge>}
+          {result === "L" && <Badge variant="loss">Derrota</Badge>}
+          <StatusChip match={match} />
+        </div>
+      </div>
+      <div className="flex flex-nowrap items-center gap-2 sm:gap-3">
+        <Side id={match.homeId} name={match.homeName} short={match.homeShort} align="left" badgeUrl={match.homeBadge} />
+        <div
+          className={cn(
+            "shrink-0 rounded-lg px-3 py-2 text-center shadow-sm",
+            isLive
+              ? "bg-live text-white"
+              : "bg-accent text-bg",
+          )}
+        >
+          {match.status === "suspended" ? (
+            <p className="whitespace-nowrap font-display text-sm font-semibold uppercase leading-none sm:text-base">Suspendido</p>
+          ) : match.status === "scheduled" ? (
+            <p className="whitespace-nowrap font-display text-xl leading-none tabular-nums sm:text-2xl">
+              {new Date(match.kickoff).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" })}
+            </p>
+          ) : (
+            <p className="whitespace-nowrap font-display text-[1.35rem] leading-none tabular-nums sm:text-[2rem]">
+              {match.homeScore}
+              <span className="mx-1 opacity-70">–</span>
+              {match.awayScore}
+            </p>
+          )}
+          {match.setScores?.length || match.pointHome != null ? (
+            <p className="mt-1 text-[10px] leading-tight opacity-80">
+              {(match.setScores ?? []).map((s) => `${s.home}-${s.away}`).join(" · ")}
+              {match.status === "live" ? `${match.setScores?.length ? " · " : ""}${match.pointHome ?? 0}-${match.pointAway ?? 0}` : ""}
+            </p>
+          ) : null}
+          {match.penaltyHome != null && match.penaltyAway != null ? (
+            <p className="mt-1 text-[10px] leading-tight font-medium opacity-90">
+              (pen. {match.penaltyHome}-{match.penaltyAway})
+            </p>
+          ) : null}
+        </div>
+        <Side id={match.awayId} name={match.awayName} short={match.awayShort} align="right" badgeUrl={match.awayBadge} />
+      </div>
+      <p className="mt-3 text-xs leading-snug text-subtle [overflow-wrap:anywhere]">{match.venue}</p>
+    </Link>
+  );
+}
+
+export function MatchRow({ match }: { match: ResolvedMatch }) {
+  const isLive = match.status === "live";
+  return (
+    <Link to="/partido/$id" params={{ id: match.id }} className="flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-surface-2">
+      <div
+        className={cn(
+          "w-16 shrink-0 rounded-md px-1.5 py-1 text-center",
+          isLive ? "bg-live text-white" : "bg-accent text-bg",
+        )}
+      >
+        {match.status === "live" ? (
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium uppercase">
+            <span className="pulse-live size-1.5 rounded-full bg-white" />
+            {match.displayClock}
+          </span>
+        ) : match.status === "suspended" ? (
+          <span className="text-[11px] font-semibold uppercase">SUS</span>
+        ) : match.status === "finished" ? (
+          <span className="text-[11px] uppercase">Fin</span>
+        ) : (
+          <span className="text-[11px] tabular-nums">
+            {new Date(match.kickoff).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" })}
+          </span>
+        )}
+      </div>
+      <p className="min-w-0 flex-1 text-sm leading-snug [overflow-wrap:anywhere]">
+        {match.homeName} <span className="text-muted">–</span> {match.awayName}
+      </p>
+      <p
+        className={cn(
+          "rounded-md px-2 py-1 font-display text-lg leading-none tabular-nums",
+          isLive ? "bg-live text-white" : "bg-accent text-bg",
+        )}
+      >
+        {match.status === "suspended" ? "Suspendido" : match.status === "scheduled" ? "–" : `${match.homeScore}–${match.awayScore}`}
+      </p>
+    </Link>
+  );
+}
