@@ -117,4 +117,7 @@ export type ResolvedMatch = Match & {
   pointHome?: number;
   pointAway?: number;
   setScores?: { home: number; away: number }[];
+  penaltyHome?: number;
+  penaltyAway?: number;
+  inPenalties?: boolean;
 };
