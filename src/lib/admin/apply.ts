@@ -98,6 +98,9 @@ export function applyAdminOverrides(
       pointHome,
       pointAway,
       setScores,
+      penaltyHome: hit.penaltyHome,
+      penaltyAway: hit.penaltyAway,
+      inPenalties: hit.inPenalties,
     });
   }
 
