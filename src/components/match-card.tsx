@@ -110,6 +110,7 @@ export function MatchCard({
 }) {
   const result = highlightId ? teamResult(match, highlightId) : null;
   const isLive = match.status === "live";
+  const hasSets = !!(match.setScores?.length || match.pointHome != null);
 
   return (
     <Link
@@ -154,12 +155,6 @@ export function MatchCard({
               {match.awayScore}
             </p>
           )}
-          {match.setScores?.length || match.pointHome != null ? (
-            <p className="mt-1 text-[10px] leading-tight opacity-80">
-              {(match.setScores ?? []).map((s) => `${s.home}-${s.away}`).join(" · ")}
-              {match.status === "live" ? `${match.setScores?.length ? " · " : ""}${match.pointHome ?? 0}-${match.pointAway ?? 0}` : ""}
-            </p>
-          ) : null}
           {match.penaltyHome != null && match.penaltyAway != null ? (
             <p className="mt-1 text-[10px] leading-tight font-medium opacity-90">
               (pen. {match.penaltyHome}-{match.penaltyAway})
@@ -168,6 +163,16 @@ export function MatchCard({
         </div>
         <Side id={match.awayId} name={match.awayName} short={match.awayShort} align="right" badgeUrl={match.awayBadge} />
       </div>
+      {hasSets ? (
+        <p className="mt-2 text-center text-[11px] leading-tight text-muted tabular-nums">
+          {(match.setScores ?? []).map((s) => `${s.home}-${s.away}`).join(" · ")}
+          {match.status === "live" && match.pointHome != null ? (
+            <span className="font-medium text-live">
+              {match.setScores?.length ? " · " : ""}{match.pointHome ?? 0}-{match.pointAway ?? 0}
+            </span>
+          ) : null}
+        </p>
+      ) : null}
       <p className="mt-3 text-xs leading-snug text-subtle [overflow-wrap:anywhere]">{match.venue}</p>
     </Link>
   );
