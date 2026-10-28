@@ -29,6 +29,10 @@ export type AdminOverride = {
   setScores?: { home: number; away: number }[];
   /** Optional external live page (e.g. FEB BoxScore) to poll for the score. */
   liveUrl?: string;
+  /** Tanda de penaltis (fútbol, futsal, playa). */
+  penaltyHome?: number;
+  penaltyAway?: number;
+  inPenalties?: boolean;
   deleted?: boolean;
   updatedAt: number;
 };
