@@ -157,7 +157,6 @@ function MatchEditor({ match, saved, onSaved }: { match: ResolvedMatch; saved?: 
   const [rows, setRows] = useState<DraftEvent[]>(toDraft(saved?.events?.length ? saved.events : match.happened));
   const [msg, setMsg] = useState("");
 
-  // Re-sync badge fields when the saved override updates (so the URL you just saved appears)
   useEffect(() => {
     setHomeBadge(saved?.homeBadge ?? match.homeBadge ?? "");
     setAwayBadge(saved?.awayBadge ?? match.awayBadge ?? "");
@@ -174,7 +173,25 @@ function MatchEditor({ match, saved, onSaved }: { match: ResolvedMatch; saved?: 
     mutationFn: () => {
       const events = draftsToEvents(rows);
       const totals = events.length ? scoreFromEvents(events) : { home: Number(home) || 0, away: Number(away) || 0, minute: 0 };
-      return adminSaveOverride({ data: { matchId: match.id, homeScore: totals.home, awayScore: totals.away, minute: totals.minute, status, kickoff: kickoff.length === 16 ? `${kickoff}:00` : kickoff, venue, liveUrl: liveUrl.trim() || undefined, homeBadge: homeBadge.trim() || undefined, awayBadge: awayBadge.trim() || undefined, events, penaltyHome: penaltyHome.trim() === "" ? undefined : Number(penaltyHome), penaltyAway: penaltyAway.trim() === "" ? undefined : Number(penaltyAway), inPenalties, updatedAt: Date.now() } });
+      return adminSaveOverride({ data: { 
+        matchId: match.id, 
+        homeName: match.homeName, 
+        awayName: match.awayName,
+        homeScore: totals.home, 
+        awayScore: totals.away, 
+        minute: totals.minute, 
+        status, 
+        kickoff: kickoff.length === 16 ? `${kickoff}:00` : kickoff, 
+        venue, 
+        liveUrl: liveUrl.trim() || undefined, 
+        homeBadge: homeBadge.trim() || undefined, 
+        awayBadge: awayBadge.trim() || undefined, 
+        events, 
+        penaltyHome: penaltyHome.trim() === "" ? undefined : Number(penaltyHome), 
+        penaltyAway: penaltyAway.trim() === "" ? undefined : Number(penaltyAway), 
+        inPenalties, 
+        updatedAt: Date.now() 
+      } });
     },
     onSuccess: (res) => { setMsg(res.ok ? "Guardado" : res.error || "Error"); if (res.ok) onSaved(); },
   });
