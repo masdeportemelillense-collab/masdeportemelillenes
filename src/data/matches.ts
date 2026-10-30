@@ -13,6 +13,8 @@ import { tmavMatches } from "@/data/matches-tmav";
 import { acirasMatches } from "@/data/matches-aciras";
 import { dhfsMatches } from "@/data/matches-dhfs";
 import { higicontrolMatches } from "@/data/matches-higicontrol";
+import { maritimoMatches } from "@/data/matches-maritimo";
+import { voleyMatches } from "@/data/matches-voley";
 import type { Match } from "@/lib/types";
 
 export const matches: Match[] = [
@@ -30,6 +32,8 @@ export const matches: Match[] = [
   ...acirasMatches,
   ...dhfsMatches,
   ...higicontrolMatches,
+  ...maritimoMatches,
+  ...voleyMatches,
   ...restoMatches,
 ];
 
