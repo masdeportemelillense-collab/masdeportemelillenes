@@ -2,6 +2,7 @@ import { teams as staticTeams } from "@/data/teams";
 import type { CatalogMatch, CatalogState, CatalogTeam, MatchDraft, TeamDraft } from "@/lib/catalog/types";
 import { readDoc, updateDoc } from "@/lib/persist.server";
 import type { MatchEvent, Sport } from "@/lib/types";
+import { setBadgeOverride, setNameOverride } from "@/lib/badges/store.server";
 
 const KEY = "catalog";
 const EMPTY: CatalogState = { teams: [], matches: [] };
@@ -58,6 +59,16 @@ export async function saveTeam(draft: TeamDraft): Promise<CatalogTeam> {
     const others = cur.teams.filter((t) => t.id !== id);
     return { ...cur, teams: [...others, team] };
   });
+
+  // Also write badge and name overrides so they apply everywhere (matches, opponents, etc.)
+  const originalName = base?.name || draft.name;
+  if (team.badgeUrl) {
+    await setBadgeOverride(id, [originalName, team.name], team.badgeUrl);
+  }
+  if (team.name && team.name !== originalName) {
+    await setNameOverride(id, originalName, team.name);
+  }
+
   return team;
 }
 
