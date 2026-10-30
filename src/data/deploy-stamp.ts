@@ -1,1 +1,1 @@
-export const DEPLOY_STAMP = "2026-10-30T13-badge-save-fixed";
+export const DEPLOY_STAMP = "2026-10-30T14-badge-overrides-wired";
