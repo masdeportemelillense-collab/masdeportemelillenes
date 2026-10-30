@@ -80,8 +80,9 @@ export function applyAdminOverrides(
       ...match,
       homeName: hit.homeName || match.homeName,
       awayName: hit.awayName || match.awayName,
-      homeBadge: hit.homeBadge || match.homeBadge,
-      awayBadge: hit.awayBadge || match.awayBadge,
+      // El escudo que pongas en el partido tiene prioridad absoluta
+      homeBadge: hit.homeBadge !== undefined ? hit.homeBadge : match.homeBadge,
+      awayBadge: hit.awayBadge !== undefined ? hit.awayBadge : match.awayBadge,
       venue: hit.venue || match.venue,
       jornada: hit.jornada ?? match.jornada,
       kickoff: hit.kickoff || match.kickoff,
