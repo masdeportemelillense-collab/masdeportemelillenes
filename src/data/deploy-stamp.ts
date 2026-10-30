@@ -1,1 +1,1 @@
-export const DEPLOY_STAMP = "2026-10-30T01-dhfs-calendars";
+export const DEPLOY_STAMP = "2026-10-30T01-expand-calendars";
