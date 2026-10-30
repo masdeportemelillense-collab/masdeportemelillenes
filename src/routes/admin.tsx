@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   adminDeleteOverride,
   adminListOverrides,
@@ -156,6 +156,13 @@ function MatchEditor({ match, saved, onSaved }: { match: ResolvedMatch; saved?: 
   const [awayBadge, setAwayBadge] = useState(saved?.awayBadge ?? match.awayBadge ?? "");
   const [rows, setRows] = useState<DraftEvent[]>(toDraft(saved?.events?.length ? saved.events : match.happened));
   const [msg, setMsg] = useState("");
+
+  // Re-sync badge fields when the saved override updates (so the URL you just saved appears)
+  useEffect(() => {
+    setHomeBadge(saved?.homeBadge ?? match.homeBadge ?? "");
+    setAwayBadge(saved?.awayBadge ?? match.awayBadge ?? "");
+  }, [saved?.homeBadge, saved?.awayBadge, match.homeBadge, match.awayBadge]);
+
   function syncScore(next: DraftEvent[]) {
     const totals = scoreFromEvents(draftsToEvents(next));
     setHome(String(totals.home)); setAway(String(totals.away));
