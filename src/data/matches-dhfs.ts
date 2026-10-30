@@ -23,7 +23,7 @@ const rows: Spec[] = [
   { id: "dhj-41", league: "fs-dh-juv", sport: "futsal", at: "2026-10-23T19:00:00+02:00", venue: "Pabellón Centro Deportivo Mendigorria", jornada: 6, home: "A.D. San Francisco de Paula Js|SFP", away: "rusadir-fs-dh", status: "finished", events: [[48, "A", "gol", "", "*2-3"]] },
   { id: "dhj-42", league: "fs-dh-juv", sport: "futsal", at: "2026-10-24T13:30:00+02:00", venue: LAZ, jornada: 6, home: "pena-rm-fs", away: "Unión África Ceutí Js|UÁC", status: "finished", events: [[48, "H", "gol", "", "*4-2"]] },
   // J7
-  { id: "dhj-49", league: "fs-dh-juv", sport: "futsal", at: "2026-10-31T18:00:00+01:00", venue: "P.M. Guillermo Molina Ríos", jornada: 7, home: "C.D. Marqués de Nervión Js|CMD", away: "pena-rm-fs" },
+  { id: "dhj-49", league: "fs-dh-juv", sport: "futsal", at: "2026-10-31T18:00:00+01:00", venue: "P.M. Guillermo Molina Ríos", jornada: 7, home: "C.D. Marqués de Nervión Js|CMD", away: "pena-rm-fs", homeBadge: "https://pbs.twimg.com/profile_images/1425413243971977216/1t3hh0ob_400x400.jpg" },
   { id: "dhj-50", league: "fs-dh-juv", sport: "futsal", at: "2026-10-31T18:00:00+01:00", venue: LAZ, jornada: 7, home: "rusadir-fs-dh", away: "C.D. Puerto On365 Js|CPO" },
   // J8
   { id: "dhj-57", league: "fs-dh-juv", sport: "futsal", at: "2026-11-07T18:00:00+01:00", venue: LAZ, jornada: 8, home: "pena-rm-fs", away: "C.D. Albolote Futsal Js|CAF" },
