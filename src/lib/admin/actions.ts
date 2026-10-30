@@ -44,6 +44,18 @@ export const adminSaveOverride = createServerFn({ method: "POST" })
       }
       const { upsertOverride } = await import("./store.server");
       const saved = await upsertOverride(data);
+
+      // Also write badge overrides so they apply by name (for opponents too)
+      if (data.homeBadge || data.awayBadge) {
+        const { setBadgeOverride } = await import("@/lib/badges/store.server");
+        if (data.homeBadge && data.homeName) {
+          await setBadgeOverride(undefined, [data.homeName], data.homeBadge);
+        }
+        if (data.awayBadge && data.awayName) {
+          await setBadgeOverride(undefined, [data.awayName], data.awayBadge);
+        }
+      }
+
       return { ok: true as const, override: saved };
     } catch (err) {
       console.error("[admin] save override", err);
