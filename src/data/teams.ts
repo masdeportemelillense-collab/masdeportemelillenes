@@ -320,7 +320,7 @@ export const teams: Team[] = [
     nickname: "Rusadir DH",
     summary:
       "El juvenil de fútbol sala del Rusadir CF disputa la División de Honor, la máxima categoría de base del futsal español.",
-    badgeUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Rusadir_CF_logo.png/200px-Rusadir_CF_logo.png",
+    badgeUrl: "https://upload.wikimedia.org/wikipedia/en/5/59/CF_Rusadir.png",
   },
   {
     id: "pena-rm-fs",
