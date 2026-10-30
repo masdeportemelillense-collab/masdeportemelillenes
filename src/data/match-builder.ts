@@ -29,6 +29,8 @@ export type Spec = {
   duration?: number;
   events?: EventSpec[];
   status?: "scheduled" | "live" | "finished" | "suspended";
+  homeBadge?: string;
+  awayBadge?: string;
 };
 
 export function sideOf(token: string): { id?: string; name: string; short: string } {
@@ -63,8 +65,8 @@ export function buildEvents(specs: EventSpec[] | undefined): MatchEvent[] {
   });
 }
 
-function resolveBadge(id?: string, name?: string): string | undefined {
-  return officialBadge(id, name) || solofutsalBadge(id, name) || futbolmeBadge(id, name) || badgeFor(id, name);
+function resolveBadge(id?: string, name?: string, explicit?: string): string | undefined {
+  return explicit || officialBadge(id, name) || solofutsalBadge(id, name) || futbolmeBadge(id, name) || badgeFor(id, name);
 }
 
 export function m(spec: Spec): Match {
@@ -79,11 +81,11 @@ export function m(spec: Spec): Match {
     homeId: home.id,
     homeName: home.name,
     homeShort: home.short,
-    homeBadge: resolveBadge(home.id, home.name),
+    homeBadge: resolveBadge(home.id, home.name, spec.homeBadge),
     awayId: away.id,
     awayName: away.name,
     awayShort: away.short,
-    awayBadge: resolveBadge(away.id, away.name),
+    awayBadge: resolveBadge(away.id, away.name, spec.awayBadge),
     kickoff: spec.at,
     liveElapsed: spec.live,
     events: buildEvents(spec.events),
