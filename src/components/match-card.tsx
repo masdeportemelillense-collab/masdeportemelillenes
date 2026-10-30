@@ -23,8 +23,8 @@ function Side({
   badgeUrl?: string;
 }) {
   const team = id ? getTeam(id) : undefined;
-  // El escudo del equipo (badgeUrl en teams.ts o override) tiene siempre prioridad
-  const finalBadge = team?.badgeUrl || badgeUrl;
+  // El escudo que pongas en el partido (override) tiene prioridad. Si no hay, usa el del equipo.
+  const finalBadge = badgeUrl || team?.badgeUrl;
   return (
     <div
       className={cn(
