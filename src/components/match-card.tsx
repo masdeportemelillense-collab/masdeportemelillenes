@@ -23,6 +23,8 @@ function Side({
   badgeUrl?: string;
 }) {
   const team = id ? getTeam(id) : undefined;
+  // El escudo del equipo (badgeUrl en teams.ts o override) tiene siempre prioridad
+  const finalBadge = team?.badgeUrl || badgeUrl;
   return (
     <div
       className={cn(
@@ -31,9 +33,9 @@ function Side({
       )}
     >
       {team ? (
-        <Crest team={{ ...team, badgeUrl }} size={36} />
+        <Crest team={{ ...team, badgeUrl: finalBadge }} size={36} />
       ) : (
-        <OpponentMark short={short} name={name} size={36} badgeUrl={badgeUrl} />
+        <OpponentMark short={short} name={name} size={36} badgeUrl={finalBadge} />
       )}
       <div className="min-w-0">
         <p className="text-[13px] font-medium leading-tight text-fg [overflow-wrap:anywhere] sm:text-sm">{name}</p>
