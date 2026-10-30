@@ -23,7 +23,7 @@ function Side({
   badgeUrl?: string;
 }) {
   const team = id ? getTeam(id) : undefined;
-  // El escudo que pongas en el partido (override) tiene prioridad. Si no hay, usa el del equipo.
+  // El escudo que pongas en el partido tiene prioridad absoluta
   const finalBadge = badgeUrl || team?.badgeUrl;
   return (
     <div
