@@ -1,1 +1,1 @@
-export const DEPLOY_STAMP = "2026-10-30T13-match-badge-priority";
+export const DEPLOY_STAMP = "2026-10-30T13-badge-save-fixed";
