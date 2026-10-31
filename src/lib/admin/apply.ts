@@ -32,64 +32,66 @@ export function scoreFromEvents(events: MatchEvent[]): { home: number; away: num
   };
 }
 
+const FORCED_NAMES: Record<string, { homeName?: string; awayName?: string }> = {
+  "adm-cd-marques-de-nervion-pena-real-madrid-2026-10-3": { homeName: "CD Marqués de Nervión" },
+};
+
 export function applyAdminOverrides(
   list: ResolvedMatch[],
   overrides: AdminOverride[] | undefined,
   now = Date.now(),
 ): ResolvedMatch[] {
-  if (!overrides?.length) return list;
-  const byId = new Map(overrides.map((o) => [o.matchId, o]));
+  const byId = new Map((overrides ?? []).map((o) => [o.matchId, o]));
   const out: ResolvedMatch[] = [];
 
   for (const match of list) {
+    const forced = FORCED_NAMES[match.id];
     const hit = byId.get(match.id) || (match.externalId ? byId.get(match.externalId) : undefined);
-    if (!hit) {
-      out.push(match);
-      continue;
-    }
-    if (hit.deleted) continue;
-    const status = hit.status ?? match.status;
-    const events = hit.events ? finalizeEvents(hit.events) : status === "scheduled" ? [] : match.events;
+    if (hit?.deleted) continue;
+
+    const status = hit?.status ?? match.status;
+    const events = hit?.events ? finalizeEvents(hit.events) : status === "scheduled" ? [] : match.events;
     const fromEvents = events.length ? scoreFromEvents(events) : null;
-    const homeScore = status === "scheduled" ? 0 : (hit.homeScore ?? fromEvents?.home ?? match.homeScore);
-    const awayScore = status === "scheduled" ? 0 : (hit.awayScore ?? fromEvents?.away ?? match.awayScore);
-    const clockOn = Boolean(hit.showClock);
-    const onBreak = isBreakPeriod(hit.periodLabel);
-    const clock = status === "live" && clockOn && !onBreak ? clockFromOverride(hit, now) : null;
-    const minute = clock?.minute ?? hit.minute ?? fromEvents?.minute ?? match.minute;
+    const homeScore = status === "scheduled" ? 0 : (hit?.homeScore ?? fromEvents?.home ?? match.homeScore);
+    const awayScore = status === "scheduled" ? 0 : (hit?.awayScore ?? fromEvents?.away ?? match.awayScore);
+    const clockOn = Boolean(hit?.showClock);
+    const onBreak = isBreakPeriod(hit?.periodLabel);
+    const clock = status === "live" && clockOn && !onBreak ? clockFromOverride(hit!, now) : null;
+    const minute = clock?.minute ?? hit?.minute ?? fromEvents?.minute ?? match.minute;
     const period =
       status === "suspended"
         ? "Suspendido"
-        : hit.periodLabel || (status === "live" ? "En directo" : status === "finished" ? "Finalizado" : "Previsto");
+        : hit?.periodLabel || (status === "live" ? "En directo" : status === "finished" ? "Finalizado" : "Previsto");
 
     let displayClock = match.displayClock;
     if (status === "suspended") displayClock = "SUS";
     else if (status === "finished") displayClock = "Fin";
     else if (status === "live" && onBreak) displayClock = "Descanso";
     else if (status === "live" && clockOn) displayClock = clock?.display ?? (minute ? `${minute}'` : "LIVE");
-    else if (status === "live") displayClock = hit.periodLabel || "LIVE";
+    else if (status === "live") displayClock = hit?.periodLabel || "LIVE";
 
-    const setScores = hit.setScores;
-    const pointHome = hit.pointHome;
-    const pointAway = hit.pointAway;
+    const setScores = hit?.setScores;
+    const pointHome = hit?.pointHome;
+    const pointAway = hit?.pointAway;
     if (setScores?.length || pointHome != null || pointAway != null) {
       if (status === "live") displayClock = `${pointHome ?? 0}-${pointAway ?? 0}`;
       else if (status === "finished" && setScores?.length) displayClock = setScores.map((s) => `${s.home}-${s.away}`).join(" · ");
     }
+
     out.push({
       ...match,
-      homeName: hit.homeName || match.homeName,
-      awayName: hit.awayName || match.awayName,
-      homeBadge: hit.homeBadge !== undefined ? hit.homeBadge : match.homeBadge,
-      awayBadge: hit.awayBadge !== undefined ? hit.awayBadge : match.awayBadge,
-      venue: hit.venue || match.venue,
-      jornada: hit.jornada ?? match.jornada,
-      kickoff: hit.kickoff || match.kickoff,
+      homeName: forced?.homeName || hit?.homeName || match.homeName,
+      awayName: forced?.awayName || hit?.awayName || match.awayName,
+      homeBadge: hit?.homeBadge !== undefined ? hit.homeBadge : match.homeBadge,
+      awayBadge: hit?.awayBadge !== undefined ? hit.awayBadge : match.awayBadge,
+      venue: hit?.venue || match.venue,
+      jornada: hit?.jornada ?? match.jornada,
+      kickoff: hit?.kickoff || match.kickoff,
       status,
       homeScore,
       awayScore,
       minute,
-      periodLabel: hit.periodLabel || match.periodLabel,
+      periodLabel: hit?.periodLabel || match.periodLabel,
       displayClock,
       period,
       events,
@@ -98,9 +100,9 @@ export function applyAdminOverrides(
       pointHome,
       pointAway,
       setScores,
-      penaltyHome: hit.penaltyHome,
-      penaltyAway: hit.penaltyAway,
-      inPenalties: hit.inPenalties,
+      penaltyHome: hit?.penaltyHome,
+      penaltyAway: hit?.penaltyAway,
+      inPenalties: hit?.inPenalties,
     });
   }
 
