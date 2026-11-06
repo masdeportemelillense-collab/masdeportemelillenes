@@ -142,11 +142,24 @@ function toDraft(events: ResolvedMatch["happened"]): DraftEvent[] {
   return events.map((ev) => ({ minute: String(ev.minute), side: ev.side, kind: ev.kind, player: ev.player }));
 }
 
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fromLocalInput(local: string): string {
+  if (!local) return "";
+  const d = new Date(local);
+  return Number.isNaN(d.getTime()) ? local : d.toISOString();
+}
+
 function MatchEditor({ match, saved, onSaved }: { match: ResolvedMatch; saved?: AdminOverride; onSaved: () => void }) {
   const [home, setHome] = useState(String(saved?.homeScore ?? match.homeScore));
   const [away, setAway] = useState(String(saved?.awayScore ?? match.awayScore));
   const [status, setStatus] = useState<MatchStatus>(saved?.status ?? match.status);
-  const [kickoff, setKickoff] = useState((saved?.kickoff ?? match.kickoff).slice(0, 16));
+  const [kickoff, setKickoff] = useState(toLocalInput(saved?.kickoff ?? match.kickoff));
   const [venue, setVenue] = useState(saved?.venue ?? match.venue);
   const [liveUrl, setLiveUrl] = useState(saved?.liveUrl ?? "");
   const [penaltyHome, setPenaltyHome] = useState(String(saved?.penaltyHome ?? ""));
@@ -160,7 +173,8 @@ function MatchEditor({ match, saved, onSaved }: { match: ResolvedMatch; saved?: 
   useEffect(() => {
     setHomeBadge(saved?.homeBadge ?? match.homeBadge ?? "");
     setAwayBadge(saved?.awayBadge ?? match.awayBadge ?? "");
-  }, [saved?.homeBadge, saved?.awayBadge, match.homeBadge, match.awayBadge]);
+    setKickoff(toLocalInput(saved?.kickoff ?? match.kickoff));
+  }, [saved?.homeBadge, saved?.awayBadge, saved?.kickoff, match.homeBadge, match.awayBadge, match.kickoff]);
 
   function syncScore(next: DraftEvent[]) {
     const totals = scoreFromEvents(draftsToEvents(next));
@@ -181,7 +195,7 @@ function MatchEditor({ match, saved, onSaved }: { match: ResolvedMatch; saved?: 
         awayScore: totals.away, 
         minute: totals.minute, 
         status, 
-        kickoff: kickoff.length === 16 ? `${kickoff}:00` : kickoff, 
+        kickoff: fromLocalInput(kickoff) || match.kickoff, 
         venue, 
         liveUrl: liveUrl.trim() || undefined, 
         homeBadge: homeBadge.trim() || undefined, 
