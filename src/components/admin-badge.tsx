@@ -12,8 +12,8 @@ export function AdminBadgeEditor({ match }: { match: ResolvedMatch }) {
       <h2 className="font-display text-3xl leading-none">Equipos · administración</h2>
       <p className="mt-1 text-xs text-muted">Solo lo ves tú. Cambia el nombre o pega el escudo. Vale para el equipo melillense y para el rival, y se aplica en todos sus partidos.</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <TeamField teamId={match.homeId} name={match.homeName} badge={match.homeBadge} />
-        <TeamField teamId={match.awayId} name={match.awayName} badge={match.awayBadge} />
+        <TeamField match={match} side="home" teamId={match.homeId} name={match.homeName} badge={match.homeBadge} />
+        <TeamField match={match} side="away" teamId={match.awayId} name={match.awayName} badge={match.awayBadge} />
       </div>
       <ScheduleEditor match={match} />
     </section>
@@ -76,26 +76,60 @@ function ScheduleEditor({ match }: { match: ResolvedMatch }) {
   );
 }
 
-function TeamField({ teamId, name, badge }: { teamId?: string; name: string; badge?: string }) {
+function TeamField({
+  match,
+  side,
+  teamId,
+  name,
+  badge,
+}: {
+  match: ResolvedMatch;
+  side: "home" | "away";
+  teamId?: string;
+  name: string;
+  badge?: string;
+}) {
   const qc = useQueryClient();
   const [nextName, setNextName] = useState(name);
   const [url, setUrl] = useState(badge ?? "");
   const [msg, setMsg] = useState("");
   const refresh = () => void qc.invalidateQueries({ queryKey: ["live-snapshot"] });
+
   const saveName = useMutation({
-    mutationFn: () => adminSetName({ data: { teamId, originalName: name, name: nextName } }),
-    onSuccess: (res) => {
-      setMsg(res.ok ? "Nombre guardado." : res.error);
-      if (res.ok) refresh();
+    mutationFn: async () => {
+      await adminSetName({ data: { teamId, originalName: name, name: nextName } });
+      // Also write match-level override so it sticks on this fixture
+      await adminSaveOverride({
+        data: {
+          matchId: match.id,
+          ...(side === "home" ? { homeName: nextName } : { awayName: nextName }),
+          updatedAt: Date.now(),
+        },
+      });
+    },
+    onSuccess: () => {
+      setMsg("Nombre guardado.");
+      refresh();
     },
   });
+
   const saveBadge = useMutation({
-    mutationFn: () => adminSetBadge({ data: { teamId, originalName: name, name: nextName || name, badgeUrl: url } }),
-    onSuccess: (res) => {
-      setMsg(res.ok ? "Escudo guardado." : res.error);
-      if (res.ok) refresh();
+    mutationFn: async () => {
+      await adminSetBadge({ data: { teamId, originalName: name, name: nextName || name, badgeUrl: url } });
+      await adminSaveOverride({
+        data: {
+          matchId: match.id,
+          ...(side === "home" ? { homeBadge: url.trim() || undefined } : { awayBadge: url.trim() || undefined }),
+          updatedAt: Date.now(),
+        },
+      });
+    },
+    onSuccess: () => {
+      setMsg("Escudo guardado.");
+      refresh();
     },
   });
+
   return (
     <div className="rounded-xl bg-surface-2 p-3">
       <label className="block text-xs uppercase tracking-wider text-muted">
