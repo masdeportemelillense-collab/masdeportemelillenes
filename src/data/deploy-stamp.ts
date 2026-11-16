@@ -1,1 +1,1 @@
-export const DEPLOY_STAMP = "2026-11-12T22-match-level-name-badge";
+export const DEPLOY_STAMP = "2026-11-16T22-copa-alicante";
