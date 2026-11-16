@@ -60,4 +60,15 @@ export const copaBskMatches: Match[] = [
     away: "UPB Gandía|GAN",
     duration: 40,
   }),
+  m({
+    id: "melb-copa-octavos",
+    league: "copa-espana-bsk",
+    sport: "baloncesto",
+    at: "2026-11-18T20:30:00+01:00",
+    venue: IMB,
+    jornada: 8,
+    home: "melilla-baloncesto",
+    away: "HLA Alicante|ALI",
+    duration: 40,
+  }),
 ];
